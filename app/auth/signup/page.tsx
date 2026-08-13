@@ -4,7 +4,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
@@ -17,82 +16,78 @@ export default function SignupPage() {
   return (
     <main className="flex flex-1 flex-col items-center justify-center bg-sky-50 px-4 py-10 dark:bg-background">
       <div className="flex w-full max-w-sm flex-col gap-6">
-        <div className="flex items-center justify-center gap-2">
-          <CommandIcon className="size-5" />
-          <span className="text-base font-semibold">Tavly AI</span>
-        </div>
-
         <Card>
-          <CardHeader className="text-center">
+          <CardHeader className="gap-3 text-center">
+            <div className="flex items-center justify-center gap-2">
+              <CommandIcon className="size-6" />
+              <span className="text-base font-semibold">Tavly AI</span>
+            </div>
             <CardTitle>
-              <h1>Create your account</h1>
+              <h1 className="text-xl">Create Your Account</h1>
             </CardTitle>
             <CardDescription>
-              Start building your AI workspace in minutes.
+              Sign up to Tavly AI to continue to your workspace.
             </CardDescription>
           </CardHeader>
 
           <CardContent>
             <form className="flex flex-col gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="name">Full name</Label>
-                <Input
-                  id="name"
-                  name="name"
-                  placeholder="Your name"
-                  autoComplete="name"
-                />
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="email">Work email</Label>
                 <Input
                   id="email"
                   name="email"
                   type="email"
-                  placeholder="name@company.com"
+                  placeholder="work@email.com"
                   autoComplete="email"
                 />
               </div>
 
-              <div className="grid gap-2">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  name="password"
-                  type="password"
-                  placeholder="Create a password"
-                  autoComplete="new-password"
-                />
-              </div>
-
               <Button type="button" size="lg" className="w-full">
-                Create account
+                Continue
               </Button>
+
+              <div className="flex items-center justify-center text-xs text-muted-foreground">
+                Already have an account?
+                <Button
+                  variant="link"
+                  size="sm"
+                  className="h-auto px-1 text-xs"
+                  render={<a href="/auth/login" />}
+                >
+                  Log in
+                </Button>
+              </div>
 
               <div className="flex items-center gap-3">
                 <Separator className="flex-1" />
-                <span className="text-xs text-muted-foreground">
-                  Or continue with
-                </span>
+                <span className="text-xs text-muted-foreground">OR</span>
                 <Separator className="flex-1" />
               </div>
 
               <GoogleOAuth />
+
+              <div className="flex flex-wrap items-center justify-center text-xs text-muted-foreground">
+                By signing up, you agree to our
+                <Button
+                  variant="link"
+                  size="sm"
+                  className="h-auto px-1 text-xs"
+                  render={<a href="#" />}
+                >
+                  Terms of Service
+                </Button>
+                and
+                <Button
+                  variant="link"
+                  size="sm"
+                  className="h-auto px-1 text-xs"
+                  render={<a href="#" />}
+                >
+                  Privacy Policy
+                </Button>
+              </div>
             </form>
           </CardContent>
-
-          <CardFooter className="justify-center text-xs text-muted-foreground">
-            Already have an account?
-            <Button
-              variant="link"
-              size="sm"
-              className="h-auto px-1 text-xs"
-              render={<a href="/auth/login" />}
-            >
-              Sign in
-            </Button>
-          </CardFooter>
         </Card>
       </div>
     </main>
