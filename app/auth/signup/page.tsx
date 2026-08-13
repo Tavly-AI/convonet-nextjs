@@ -8,9 +8,8 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
-import { CommandIcon } from "lucide-react"
+import { COMPANY_LOGO, COMPANY_NAME } from "@/lib/constants"
 
 export default function SignupPage() {
   return (
@@ -19,14 +18,17 @@ export default function SignupPage() {
         <Card>
           <CardHeader className="gap-3 text-center">
             <div className="flex items-center justify-center gap-2">
-              <CommandIcon className="size-6" />
-              <span className="text-base font-semibold">Tavly AI</span>
+              <span
+                className="[&_svg]:size-8"
+                dangerouslySetInnerHTML={{ __html: COMPANY_LOGO }}
+              />
+              <span className="text-base font-semibold">{COMPANY_NAME}</span>
             </div>
             <CardTitle>
               <h1 className="text-xl">Create Your Account</h1>
             </CardTitle>
             <CardDescription>
-              Sign up to Tavly AI to continue to your workspace.
+              Sign up to {COMPANY_NAME} to continue to your workspace.
             </CardDescription>
           </CardHeader>
 

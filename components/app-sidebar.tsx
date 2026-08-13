@@ -24,7 +24,6 @@ import {
   MessageCircleIcon,
   UserIcon,
   CircleHelpIcon,
-  CommandIcon,
   Settings2Icon,
   SearchIcon,
   CameraIcon,
@@ -37,6 +36,7 @@ import {
   KeyRoundIcon,
   BoxIcon,
 } from "lucide-react"
+import { COMPANY_LOGO, COMPANY_NAME } from "@/lib/constants"
 import { usePathname } from "next/navigation"
 
 const data1 = {
@@ -241,8 +241,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               className="data-[slot=sidebar-menu-button]:p-1.5!"
               render={<a href="#" />}
             >
-              <CommandIcon className="size-5!" />
-              <span className="text-base font-semibold">Tavly AI</span>
+              <span
+                className="[&_svg]:size-5"
+                dangerouslySetInnerHTML={{ __html: COMPANY_LOGO }}
+              />
+              <span className="text-base font-semibold">{COMPANY_NAME}</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
