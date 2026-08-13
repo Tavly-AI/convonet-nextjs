@@ -222,7 +222,7 @@ const data2 = {
     },
     {
       name: "Workspace",
-      url: "/settings/workspace",
+      url: "/dashboard/settings/workspace",
       icon: <UsersIcon />,
     },
   ],
