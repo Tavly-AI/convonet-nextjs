@@ -1,5 +1,15 @@
 "use client"
 
+import { useState, useTransition } from "react"
+import { useRouter } from "next/navigation"
+import { toast } from "sonner"
+import {
+  addWorkspaceMember,
+  deleteWorkspace,
+  removeWorkspaceMember,
+  updateMemberRole,
+  updateWorkspaceName,
+} from "../actions"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -10,6 +20,16 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet"
 import {
   Table,
   TableBody,
@@ -31,29 +51,49 @@ import {
   UserCogIcon,
   UsersIcon,
 } from "lucide-react"
+import { WORKSPACE_ROLES, WorkspaceRole } from "@/lib/enums/roles"
 
-const roles = [
-  {
-    role: "Admin",
-    description:
-      "Full control over workspace resources and members, including billing, user management, and organization settings.",
-    type: "System",
-  },
-  {
-    role: "Developer",
-    description:
-      "Build and test agents, view raw data, and manage analytics and settings. Cannot manage billing or workspace members.",
-    type: "System",
-  },
-  {
-    role: "Member",
-    description:
-      "Read-only access to agents, testing, scrubbed history, analytics, and phone numbers.",
-    type: "System",
-  },
-]
+type WorkspaceSettingsProps = {
+  workspace: {
+    id: string
+    name: string
+    users: {
+      id: number
+      email: string | null
+      role: string | null
+    }[]
+  }
+  currentUserId: number
+}
 
-export function WorkspaceSettings() {
+const roleEntries = Object.entries(WORKSPACE_ROLES) as [
+  WorkspaceRole,
+  (typeof WORKSPACE_ROLES)[WorkspaceRole],
+][]
+
+export function WorkspaceSettings({
+  workspace,
+  currentUserId,
+}: WorkspaceSettingsProps) {
+  const router = useRouter()
+  const [isPending, startTransition] = useTransition()
+  const [name, setName] = useState(workspace.name)
+  const [email, setEmail] = useState("")
+  const [inviteRole, setInviteRole] = useState(WorkspaceRole.MEMBER)
+  const [inviteOpen, setInviteOpen] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
+
+  function runAction(action: () => Promise<void>, successMessage: string) {
+    startTransition(async () => {
+      try {
+        await action()
+        toast.success(successMessage)
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "Something went wrong.")
+      }
+    })
+  }
+
   return (
     <Tabs
       defaultValue="general"
@@ -65,10 +105,7 @@ export function WorkspaceSettings() {
           Workspace
         </div>
         <TabsList className="w-full items-stretch justify-start gap-3 bg-transparent p-3 max-md:flex-row! max-md:overflow-x-auto md:flex-col">
-          <TabsTrigger
-            value="general"
-            className="max-md:w-auto! md:w-full"
-          >
+          <TabsTrigger value="general" className="max-md:w-auto! md:w-full">
             <HexagonIcon />
             General
           </TabsTrigger>
@@ -87,51 +124,141 @@ export function WorkspaceSettings() {
         <TabsContent value="general" className="flex flex-col gap-6">
           <div className="flex items-center justify-between gap-3">
             <h1 className="text-lg font-medium">General</h1>
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                render={<Button variant="outline" size="icon" />}
-              >
-                <EllipsisIcon />
-                <span className="sr-only">Workspace actions</span>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem variant="destructive">
-                  Delete
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <Sheet open={deleteOpen} onOpenChange={setDeleteOpen}>
+              <DropdownMenu>
+                <DropdownMenuTrigger render={<Button variant="outline" size="icon" />}>
+                  <EllipsisIcon />
+                  <span className="sr-only">Workspace actions</span>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <SheetTrigger render={<DropdownMenuItem variant="destructive" />}>
+                    Delete workspace
+                  </SheetTrigger>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <SheetContent>
+                <SheetHeader>
+                  <SheetTitle>Delete workspace</SheetTitle>
+                  <SheetDescription>
+                    This removes the workspace and disconnects every member.
+                  </SheetDescription>
+                </SheetHeader>
+                <SheetFooter>
+                  <SheetClose render={<Button variant="outline" />}>Cancel</SheetClose>
+                  <Button
+                    variant="destructive"
+                    disabled={isPending}
+                    onClick={() =>
+                      startTransition(async () => {
+                        try {
+                          await deleteWorkspace()
+                          router.replace("/dashboard")
+                        } catch (error) {
+                          toast.error(
+                            error instanceof Error ? error.message : "Could not delete workspace."
+                          )
+                        }
+                      })
+                    }
+                  >
+                    Delete workspace
+                  </Button>
+                </SheetFooter>
+              </SheetContent>
+            </Sheet>
           </div>
 
-          <div className="grid max-w-2xl gap-5">
+          <form
+            className="grid max-w-2xl gap-5"
+            onSubmit={(event) => {
+              event.preventDefault()
+              runAction(() => updateWorkspaceName(name), "Workspace updated.")
+            }}
+          >
             <div className="grid gap-2">
               <Label htmlFor="workspace-name">Workspace Name</Label>
               <Input
                 id="workspace-name"
-                defaultValue="My Workspace"
+                value={name}
+                onChange={(event) => setName(event.target.value)}
                 aria-describedby="workspace-id"
+                required
               />
             </div>
-
             <div className="grid gap-1">
               <Label>Workspace ID</Label>
               <p id="workspace-id" className="text-sm text-muted-foreground">
-                org_3YadqM8Bczai2GBo
+                {workspace.id}
               </p>
             </div>
-
-            <Button type="button" className="w-fit">
+            <Button type="submit" className="w-fit" disabled={isPending || name === workspace.name}>
               Save
             </Button>
-          </div>
+          </form>
         </TabsContent>
 
         <TabsContent value="users" className="flex flex-col gap-4">
           <div className="flex items-center justify-between gap-3">
             <h1 className="text-lg font-medium">Users</h1>
-            <Button type="button" variant="outline">
-              <PlusIcon />
-              Invite member
-            </Button>
+            <Sheet open={inviteOpen} onOpenChange={setInviteOpen}>
+              <SheetTrigger render={<Button type="button" variant="outline" />}>
+                <PlusIcon />
+                Invite member
+              </SheetTrigger>
+              <SheetContent>
+                <SheetHeader>
+                  <SheetTitle>Invite member</SheetTitle>
+                  <SheetDescription>
+                    Add an existing account to this workspace.
+                  </SheetDescription>
+                </SheetHeader>
+                <form
+                  className="grid gap-4 px-4"
+                  onSubmit={(event) => {
+                    event.preventDefault()
+                    startTransition(async () => {
+                      try {
+                        await addWorkspaceMember(email, inviteRole)
+                        setEmail("")
+                        setInviteOpen(false)
+                        toast.success("Member added.")
+                      } catch (error) {
+                        // note: add send mail function later
+                        toast.error(error instanceof Error ? error.message : "Could not add member.")
+                      }
+                    })
+                  }}
+                >
+                  <div className="grid gap-2">
+                    <Label htmlFor="member-email">Email</Label>
+                    <Input
+                      id="member-email"
+                      type="email"
+                      value={email}
+                      onChange={(event) => setEmail(event.target.value)}
+                      placeholder="name@company.com"
+                      required
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Role</Label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {roleEntries.map(([value, role]) => (
+                        <Button
+                          key={value}
+                          type="button"
+                          variant={inviteRole === value ? "secondary" : "outline"}
+                          onClick={() => setInviteRole(value)}
+                        >
+                          {role.label}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                  <Button type="submit" disabled={isPending}>Add member</Button>
+                </form>
+              </SheetContent>
+            </Sheet>
           </div>
 
           <div className="overflow-hidden rounded-lg border">
@@ -140,41 +267,60 @@ export function WorkspaceSettings() {
                 <TableRow>
                   <TableHead>Email</TableHead>
                   <TableHead>Role</TableHead>
-                  <TableHead className="w-12">
-                    <span className="sr-only">Actions</span>
-                  </TableHead>
+                  <TableHead className="w-12"><span className="sr-only">Actions</span></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                <TableRow>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <span>you@company.com</span>
-                      <Badge variant="secondary">You</Badge>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="secondary">Admin</Badge>
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger
-                        render={
-                          <Button variant="ghost" size="icon-sm" />
-                        }
-                      >
-                        <EllipsisIcon />
-                        <span className="sr-only">User actions</span>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem>Change role</DropdownMenuItem>
-                        <DropdownMenuItem variant="destructive">
-                          Remove
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
+                {workspace.users.map((member) => {
+                  const role = WORKSPACE_ROLES[member.role as WorkspaceRole]
+                  const isCurrentUser = member.id === currentUserId
+
+                  return (
+                    <TableRow key={member.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <span>{member.email ?? "No email"}</span>
+                          {isCurrentUser && <Badge variant="secondary">You</Badge>}
+                        </div>
+                      </TableCell>
+                      <TableCell><Badge variant="secondary">{role?.label ?? "Member"}</Badge></TableCell>
+                      <TableCell>
+                        {!isCurrentUser && (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" />}>
+                              <EllipsisIcon />
+                              <span className="sr-only">Member actions</span>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              {roleEntries.map(([value, item]) => (
+                                <DropdownMenuItem
+                                  key={value}
+                                  disabled={member.role === value || isPending}
+                                  onClick={() => runAction(
+                                    () => updateMemberRole(member.id, value),
+                                    "Member role updated."
+                                  )}
+                                >
+                                  Set as {item.label}
+                                </DropdownMenuItem>
+                              ))}
+                              <DropdownMenuItem
+                                variant="destructive"
+                                disabled={isPending}
+                                onClick={() => runAction(
+                                  () => removeWorkspaceMember(member.id),
+                                  "Member removed."
+                                )}
+                              >
+                                Remove member
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
               </TableBody>
             </Table>
           </div>
@@ -183,12 +329,8 @@ export function WorkspaceSettings() {
         <TabsContent value="roles" className="flex flex-col gap-4">
           <div className="flex items-center justify-between gap-3">
             <h1 className="text-lg font-medium">Roles</h1>
-            <Button type="button" variant="outline" disabled>
-              <PlusIcon />
-              Add role
-            </Button>
+            <Button type="button" variant="outline" disabled><PlusIcon />Add role</Button>
           </div>
-
           <div className="overflow-hidden rounded-lg border">
             <Table>
               <TableHeader className="bg-muted/50">
@@ -199,9 +341,9 @@ export function WorkspaceSettings() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {roles.map((role) => (
-                  <TableRow key={role.role}>
-                    <TableCell className="font-medium">{role.role}</TableCell>
+                {roleEntries.map(([value, role]) => (
+                  <TableRow key={value}>
+                    <TableCell className="font-medium">{role.label}</TableCell>
                     <TableCell className="min-w-96 whitespace-normal text-muted-foreground">
                       {role.description}
                     </TableCell>

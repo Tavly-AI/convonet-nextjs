@@ -8,10 +8,25 @@ datasource db {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  sub       String   @unique
-  email     String?  @unique
-  phone     String?  @unique
+  id          Int        @id @default(autoincrement())
+  sub         String     @unique
+  email       String?    @unique
+  phone       String?    @unique
+  role        String?
+  
+  workspaceId String?
+  workspace   Workspace? @relation(fields: [workspaceId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([workspaceId])
+}
+
+model Workspace {
+  id    String @id @default(cuid())
+  name  String
+  users User[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
