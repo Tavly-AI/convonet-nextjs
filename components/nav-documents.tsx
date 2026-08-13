@@ -17,6 +17,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import { MoreHorizontalIcon, FolderIcon, ShareIcon, Trash2Icon } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 export function NavDocuments({
   items,
@@ -30,9 +31,15 @@ export function NavDocuments({
   title: string
 }) {
   const { isMobile } = useSidebar()
+  const router = useRouter()
   return (
     <SidebarGroup className="group-data-[collapsible=icon]:hidden">
-      <SidebarGroupLabel>{title}</SidebarGroupLabel>
+      <SidebarGroupLabel
+        onClick={() => title === "< GO BACK" && router.back()}
+        className={title === "< GO BACK" ? "cursor-pointer" : ""}
+      >
+        {title}
+      </SidebarGroupLabel>
       <SidebarMenu>
         {items.map((item) => (
           <SidebarMenuItem key={item.name}>

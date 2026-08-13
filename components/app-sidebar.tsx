@@ -32,9 +32,14 @@ import {
   LayoutDashboardIcon,
   WorkflowIcon,
   ReceiptTextIcon,
+  RulerIcon,
+  ShieldCheckIcon,
+  KeyRoundIcon,
+  BoxIcon,
 } from "lucide-react"
+import { usePathname } from "next/navigation"
 
-const data = {
+const data1 = {
   user: {
     name: "shadcn",
     email: "m@example.com",
@@ -182,12 +187,51 @@ const data = {
     },
     {
       name: "Settings",
-      url: "#",
+      url: "/dashboard/settings",
       icon: <Settings2Icon />,
     },
   ],
 }
+
+const data2 = {
+  user: {
+    name: "shadcn",
+    email: "m@example.com",
+    avatar: "/avatars/shadcn.jpg",
+  },
+  goBack: [
+    {
+      name: "Limits",
+      url: "/settings/limits",
+      icon: <RulerIcon />,
+    },
+    {
+      name: "Reliability",
+      url: "/settings/reliability",
+      icon: <ShieldCheckIcon />,
+    },
+    {
+      name: "API Keys",
+      url: "/settings/api-keys",
+      icon: <KeyRoundIcon />,
+    },
+    {
+      name: "Webhooks",
+      url: "/settings/webhooks",
+      icon: <BoxIcon />,
+    },
+    {
+      name: "Workspace",
+      url: "/settings/workspace",
+      icon: <UsersIcon />,
+    },
+  ],
+}
+
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const pathname = usePathname()
+  const isSettings = pathname.includes("/settings")
+
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
@@ -204,17 +248,26 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
+        <NavMain items={data1.navMain} />
 
-        <NavDocuments title="BUILD" items={data.build} />
-        <NavDocuments title="DEPLOY" items={data.deploy} />
-        <NavDocuments title="DATA" items={data.data} />
-        <NavDocuments title="SYSTEM" items={data.system} />
+        {!isSettings && (
+          <>
+            <NavDocuments title="BUILD" items={data1.build} />
+            <NavDocuments title="DEPLOY" items={data1.deploy} />
+            <NavDocuments title="DATA" items={data1.data} />
+            <NavDocuments title="SYSTEM" items={data1.system} />
+          </>
+        )}
 
-        <NavSecondary items={data.navSecondary} className="mt-auto" />
+        {isSettings && (
+          <>
+            <NavDocuments title="< GO BACK" items={data2.goBack} />
+          </>
+        )}
+        <NavSecondary items={data1.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser user={data1.user || data2.user} />
       </SidebarFooter>
     </Sidebar>
   )
