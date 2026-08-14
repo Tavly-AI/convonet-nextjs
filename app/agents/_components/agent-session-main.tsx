@@ -2,7 +2,7 @@
 
 import { Card, CardHeader } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { AgentSessionTabSecondary } from "./agent-session-tab-secondary"
+import { AgentSessionTabSecondary } from "./agent-session-secondary-tab"
 
 export function AgentSessionMain() {
     return (

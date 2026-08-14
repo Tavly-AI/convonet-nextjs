@@ -8,12 +8,12 @@ datasource db {
 }
 
 model User {
-  id          Int        @id @default(autoincrement())
-  sub         String     @unique
-  email       String?    @unique
-  phone       String?    @unique
-  role        String?
-  
+  id    Int     @id @default(autoincrement())
+  sub   String  @unique
+  email String? @unique
+  phone String? @unique
+  role  String?
+
   workspaceId String?
   workspace   Workspace? @relation(fields: [workspaceId], references: [id])
 
@@ -24,10 +24,25 @@ model User {
 }
 
 model Workspace {
-  id    String @id @default(cuid())
-  name  String
-  users User[]
+  id     String  @id @default(cuid())
+  name   String
+  users  User[]
+  agents Agent[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Agent {
+  id          String    @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  name        String
+  config      Json
+  llmConfig   Json
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([workspaceId])
 }
