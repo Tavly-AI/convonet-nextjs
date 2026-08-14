@@ -120,7 +120,7 @@ export function AgentsList({ agents }: { agents: AgentListItem[] }) {
           </TableHeader>
           <TableBody>
             {visibleAgents.map((agent) => (
-              <TableRow key={agent.id}>
+              <TableRow key={agent.id} onClick={() => { window.location.href = `/agents?agentId=${encodeURIComponent(agent.id)}` }}>
                 <TableCell className="h-14 pl-4 font-medium">
                   <div className="flex max-w-64 items-center gap-3">
                     <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
@@ -167,7 +167,7 @@ export function AgentsList({ agents }: { agents: AgentListItem[] }) {
                           <Link href={`/agents?agentId=${encodeURIComponent(agent.id)}`} />
                         }
                       >
-                        Open in builder
+                        Export
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
