@@ -1,7 +1,6 @@
 "use client"
 
-import { AgentSessionMain } from "./_components/agent-session-main";
-import { VoiceModalPopup } from "./_components/voice-modal-popup";
+import { AgentSessionMain } from "./_components/main/agent-session-main";
 
 export default function Page() {
     return (

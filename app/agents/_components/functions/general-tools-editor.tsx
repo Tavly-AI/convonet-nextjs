@@ -31,7 +31,7 @@ import type {
   EndCallTool,
   GeneralTool,
   TransferCallTool,
-} from "@/app/agents/_lib/fucntions/general-tools"
+} from "@/app/agents/_lib/functions/general-tools"
 import { GeneralToolForm } from "./general-tool-form"
 
 const TOOL_OPTIONS = [

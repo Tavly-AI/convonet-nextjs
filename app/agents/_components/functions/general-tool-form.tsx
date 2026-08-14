@@ -23,7 +23,7 @@ import type {
   KeyValue,
   TransferCallTool,
   TransferMode,
-} from "@/app/agents/_lib/fucntions/general-tools"
+} from "@/app/agents/_lib/functions/general-tools"
 
 export function GeneralToolForm({
   value,
