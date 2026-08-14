@@ -136,7 +136,7 @@ const data1 = {
   build: [
     {
       name: "Agents",
-      url: "#",
+      url: "/agents",
       icon: <BotIcon />,
     },
     {

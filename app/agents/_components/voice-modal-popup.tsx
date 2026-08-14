@@ -36,7 +36,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { VOICES_DATA, type Voice } from "@/app/dashboard/agents/_data/voices"
+import { VOICES_DATA, type Voice } from "@/app/agents/_data/voices"
 
 export type VoiceModalPopupProps = {
   open: boolean

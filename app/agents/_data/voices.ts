@@ -3,7 +3,7 @@ export type Voice = {
     voice_type: "standard";
     standard_voice_type?: "preset" | "retell";
     voice_name: string;
-    provider: "cartesia" | "minimax" | "elevenlabs" | "openai" | "platform" | "fish_audio";
+    provider: "cartesia" | "minimax" | "elevenlabs" | "openai" | "fish_audio";
     accent: string;
     gender: "male" | "female" | "Male" | "Female";
     age: "Young" | "Middle Aged" | "Old" | "Older" | "Middle Aged";
