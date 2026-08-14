@@ -32,6 +32,10 @@ import type {
   GeneralTool,
   TransferCallTool,
 } from "@/app/agents/_lib/functions/general-tools"
+import {
+  getGeneralTools,
+  writeGeneralTools,
+} from "@/app/agents/_lib/session-storage/agent-session"
 import { GeneralToolForm } from "./general-tool-form"
 
 const TOOL_OPTIONS = [
@@ -56,11 +60,16 @@ const TOOL_OPTIONS = [
 ]
 
 export function GeneralToolsEditor() {
-  const [tools, setTools] = React.useState<GeneralTool[]>([])
+  const [tools, setTools] = React.useState(getGeneralTools)
   const [draft, setDraft] = React.useState<GeneralTool | null>(null)
   const [editingIndex, setEditingIndex] = React.useState<number | null>(null)
   const [deleteIndex, setDeleteIndex] = React.useState<number | null>(null)
   const [error, setError] = React.useState("")
+
+  function updateTools(nextTools: GeneralTool[]) {
+    writeGeneralTools(nextTools)
+    setTools(nextTools)
+  }
 
   function openNew(type: GeneralTool["type"]) {
     setEditingIndex(null)
@@ -85,11 +94,12 @@ export function GeneralToolsEditor() {
 
     const nextDraft = normalizeTool(draft)
 
-    setTools((current) =>
+    const nextTools =
       editingIndex === null
-        ? [...current, nextDraft]
-        : current.map((tool, index) => (index === editingIndex ? nextDraft : tool))
-    )
+        ? [...tools, nextDraft]
+        : tools.map((tool, index) => (index === editingIndex ? nextDraft : tool))
+
+    updateTools(nextTools)
     setDraft(null)
   }
 
@@ -209,7 +219,7 @@ export function GeneralToolsEditor() {
               variant="destructive"
               onClick={() => {
                 if (deleteIndex !== null) {
-                  setTools((current) => current.filter((_, index) => index !== deleteIndex))
+                  updateTools(tools.filter((_, index) => index !== deleteIndex))
                 }
                 setDeleteIndex(null)
                 setDraft(null)

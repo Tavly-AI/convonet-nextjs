@@ -1,12 +1,10 @@
-"use client"
-
+import { Suspense } from "react";
 import { AgentSessionMain } from "./_components/main/agent-session-main";
 
 export default function Page() {
     return (
-        <>
-            {/* <VoiceModalPopup onOpenChange={() => { }} open={true} selectedVoiceId={null} /> */}
+        <Suspense fallback={null}>
             <AgentSessionMain />
-        </>
+        </Suspense>
     )
 }

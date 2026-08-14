@@ -1,7 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useTransition } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 import {
   BotIcon,
   ChevronLeftIcon,
@@ -9,6 +11,7 @@ import {
   EllipsisVerticalIcon,
   SearchIcon,
 } from "lucide-react"
+import { createAgent as createAgentAction } from "@/app/agents/actions"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -51,6 +54,27 @@ export function AgentsList({ agents }: { agents: AgentListItem[] }) {
     page * pageSize
   )
 
+  const router = useRouter()
+  const [isCreating, startCreating] = useTransition()
+
+  function createAgent() {
+    startCreating(async () => {
+      try {
+        const agent = await createAgentAction({
+          name: "Untitled Agent",
+          config: {},
+          llmConfig: {},
+        })
+
+        router.push(`/agents?agentId=${encodeURIComponent(agent.id)}`)
+      } catch (error) {
+        toast.error(
+          error instanceof Error ? error.message : "Failed to create agent."
+        )
+      }
+    })
+  }
+
   return (
     <section className="flex min-h-0 flex-1 flex-col gap-5 rounded-xl bg-card p-4 ring-1 ring-foreground/10 lg:p-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center">
@@ -74,7 +98,9 @@ export function AgentsList({ agents }: { agents: AgentListItem[] }) {
               aria-label="Search agents"
             />
           </div>
-          <Button render={<Link href="/agents" />}>Create an Agent</Button>
+          <Button type="button" disabled={isCreating} onClick={createAgent}>
+            {isCreating ? "Creating..." : "Create an Agent"}
+          </Button>
         </div>
       </div>
 
@@ -136,7 +162,11 @@ export function AgentsList({ agents }: { agents: AgentListItem[] }) {
                       <EllipsisVerticalIcon />
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem render={<Link href="/agents" />}>
+                      <DropdownMenuItem
+                        render={
+                          <Link href={`/agents?agentId=${encodeURIComponent(agent.id)}`} />
+                        }
+                      >
                         Open in builder
                       </DropdownMenuItem>
                     </DropdownMenuContent>
