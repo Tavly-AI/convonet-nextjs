@@ -17,6 +17,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import { MoreHorizontalIcon, FolderIcon, ShareIcon, Trash2Icon } from "lucide-react"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
 
 export function NavDocuments({
@@ -43,7 +44,7 @@ export function NavDocuments({
       <SidebarMenu>
         {items.map((item) => (
           <SidebarMenuItem key={item.name}>
-            <SidebarMenuButton render={<a href={item.url} />}>
+            <SidebarMenuButton render={<Link href={item.url} />}>
               {item.icon}
               <span>{item.name}</span>
             </SidebarMenuButton>
