@@ -111,32 +111,6 @@ export const VOICES_DATA: Voice[] = [
         "preview_audio_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/Dorothy.mp3"
     },
     {
-        "voice_id": "retell-Willa",
-        "voice_type": "standard",
-        "standard_voice_type": "retell",
-        "voice_name": "Willa",
-        "provider": "platform",
-        "accent": "British",
-        "gender": "female",
-        "age": "Middle Aged",
-        "avatar_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/Willa.png",
-        "preview_audio_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/minimax-Willa.mp3",
-        "recommended": true
-    },
-    {
-        "voice_id": "retell-Alejandro",
-        "voice_type": "standard",
-        "standard_voice_type": "retell",
-        "voice_name": "Alejandro",
-        "provider": "platform",
-        "accent": "Mexican",
-        "gender": "male",
-        "age": "Young",
-        "avatar_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/Alejandro.png",
-        "preview_audio_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/minimax-Alejandro.mp3",
-        "recommended": true
-    },
-    {
         "voice_id": "openai-Nova",
         "voice_type": "standard",
         "standard_voice_type": "preset",
@@ -245,19 +219,6 @@ export const VOICES_DATA: Voice[] = [
         "preview_audio_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/cartesia-f80e7298-93f5-46d0-86f2-b8f29cfc88bd.mp3"
     },
     {
-        "voice_id": "retell-Nico",
-        "voice_type": "standard",
-        "standard_voice_type": "retell",
-        "voice_name": "Nico",
-        "provider": "platform",
-        "accent": "American",
-        "gender": "male",
-        "age": "Middle Aged",
-        "avatar_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/Nico.png",
-        "preview_audio_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/minimax_nico.mp3",
-        "recommended": true
-    },
-    {
         "voice_id": "minimax-Max",
         "voice_type": "standard",
         "standard_voice_type": "preset",
@@ -268,19 +229,6 @@ export const VOICES_DATA: Voice[] = [
         "age": "Young",
         "avatar_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/max.png",
         "preview_audio_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/max.mp3"
-    },
-    {
-        "voice_id": "retell-Leland",
-        "voice_type": "standard",
-        "standard_voice_type": "retell",
-        "voice_name": "Leland",
-        "provider": "platform",
-        "accent": "American",
-        "gender": "male",
-        "age": "Young",
-        "avatar_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/Leland.png",
-        "preview_audio_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/minimax-Leland.mp3",
-        "recommended": true
     },
     {
         "voice_id": "cartesia-Andrew",
@@ -414,19 +362,6 @@ export const VOICES_DATA: Voice[] = [
         "age": "Middle Aged",
         "avatar_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/Nico.png",
         "preview_audio_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/cartesia-d184915e-0757-4063-b8d4-0e218f05e770.mp3",
-        "recommended": true
-    },
-    {
-        "voice_id": "retell-Della",
-        "voice_type": "standard",
-        "standard_voice_type": "retell",
-        "voice_name": "Della",
-        "provider": "platform",
-        "accent": "American",
-        "gender": "female",
-        "age": "Young",
-        "avatar_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/Della.png",
-        "preview_audio_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/minimax-Della.mp3",
         "recommended": true
     },
     {
@@ -720,19 +655,6 @@ export const VOICES_DATA: Voice[] = [
         "recommended": true
     },
     {
-        "voice_id": "retell-Marissa",
-        "voice_type": "standard",
-        "standard_voice_type": "retell",
-        "voice_name": "Marissa",
-        "provider": "platform",
-        "accent": "American",
-        "gender": "female",
-        "age": "Middle Aged",
-        "avatar_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/Marissa.png",
-        "preview_audio_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/fish_audio-Marissa.mp3",
-        "recommended": true
-    },
-    {
         "voice_id": "openai-Adrian",
         "voice_type": "standard",
         "standard_voice_type": "retell",
@@ -889,19 +811,6 @@ export const VOICES_DATA: Voice[] = [
         "preview_audio_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/cartesia-a167e0f3-df7e-4d52-a9c3-f949145efdab.mp3"
     },
     {
-        "voice_id": "retell-Andrea",
-        "voice_type": "standard",
-        "standard_voice_type": "retell",
-        "voice_name": "Andrea",
-        "provider": "platform",
-        "accent": "Mexican",
-        "gender": "female",
-        "age": "Middle Aged",
-        "avatar_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/Andrea.png",
-        "preview_audio_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/minimax-Andrea.mp3",
-        "recommended": true
-    },
-    {
         "voice_id": "cartesia-Brooke",
         "voice_type": "standard",
         "standard_voice_type": "preset",
@@ -984,19 +893,6 @@ export const VOICES_DATA: Voice[] = [
         "age": "Young",
         "avatar_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/Maren.png",
         "preview_audio_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/minimax-Maren.mp3"
-    },
-    {
-        "voice_id": "retell-Chloe",
-        "voice_type": "standard",
-        "standard_voice_type": "retell",
-        "voice_name": "Chloe",
-        "provider": "platform",
-        "accent": "American",
-        "gender": "female",
-        "age": "Young",
-        "avatar_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/Chloe.png",
-        "preview_audio_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/cartesia-Chloe.mp3",
-        "recommended": true
     },
     {
         "voice_id": "minimax-Nia",
@@ -1408,18 +1304,6 @@ export const VOICES_DATA: Voice[] = [
         "age": "Young",
         "avatar_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/Leland.png",
         "preview_audio_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/fish_audio-Leland.mp3"
-    },
-    {
-        "voice_id": "retell-Lily",
-        "voice_type": "standard",
-        "standard_voice_type": "retell",
-        "voice_name": "Lily",
-        "provider": "platform",
-        "accent": "American",
-        "gender": "female",
-        "age": "Middle Aged",
-        "avatar_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/Lily.png",
-        "preview_audio_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/retell-Lily.mp3"
     },
     {
         "voice_id": "11labs-Chloe",
@@ -1893,19 +1777,6 @@ export const VOICES_DATA: Voice[] = [
         "preview_audio_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/openai-voice_689b96f7be508191b78ddf92e3872262.mp3"
     },
     {
-        "voice_id": "retell-Gaby",
-        "voice_type": "standard",
-        "standard_voice_type": "retell",
-        "voice_name": "Gaby",
-        "provider": "platform",
-        "accent": "Mexican",
-        "gender": "female",
-        "age": "Young",
-        "avatar_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/Gaby.png",
-        "preview_audio_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/minimax-Gaby.mp3",
-        "recommended": true
-    },
-    {
         "voice_id": "cartesia-Sarah",
         "voice_type": "standard",
         "standard_voice_type": "preset",
@@ -1940,19 +1811,6 @@ export const VOICES_DATA: Voice[] = [
         "age": "Middle Aged",
         "avatar_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/Julia.png",
         "preview_audio_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/cartesia-c135732d-788c-43e9-a7a2-1c535323b3be.mp3"
-    },
-    {
-        "voice_id": "retell-Sloane",
-        "voice_type": "standard",
-        "standard_voice_type": "retell",
-        "voice_name": "Sloane",
-        "provider": "platform",
-        "accent": "American",
-        "gender": "female",
-        "age": "Middle Aged",
-        "avatar_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/Sloane.png",
-        "preview_audio_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/minimax-Sloane.mp3",
-        "recommended": true
     },
     {
         "voice_id": "cartesia-Manuel",
@@ -2051,19 +1909,6 @@ export const VOICES_DATA: Voice[] = [
         "preview_audio_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/cartesia-607167f6-9bf2-473c-accc-ac7b3b66b30b.mp3"
     },
     {
-        "voice_id": "retell-Tamsin",
-        "voice_type": "standard",
-        "standard_voice_type": "retell",
-        "voice_name": "Tamsin",
-        "provider": "platform",
-        "accent": "American",
-        "gender": "female",
-        "age": "Middle Aged",
-        "avatar_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/Tamsin.png",
-        "preview_audio_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/minimax-Tamsin.mp3",
-        "recommended": true
-    },
-    {
         "voice_id": "fish_audio-Chloe",
         "voice_type": "standard",
         "standard_voice_type": "retell",
@@ -2122,19 +1967,6 @@ export const VOICES_DATA: Voice[] = [
         "age": "Old",
         "avatar_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/Zuri.png",
         "preview_audio_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/cartesia-635fd98a-3e77-4276-8246-3ba40d1c4641.mp3"
-    },
-    {
-        "voice_id": "retell-Grace",
-        "voice_type": "standard",
-        "standard_voice_type": "retell",
-        "voice_name": "Grace",
-        "provider": "platform",
-        "accent": "American",
-        "gender": "female",
-        "age": "Middle Aged",
-        "avatar_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/grace.png",
-        "preview_audio_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/fish_audio-Grace.mp3",
-        "recommended": true
     },
     {
         "voice_id": "openai-Brian",
@@ -2244,19 +2076,6 @@ export const VOICES_DATA: Voice[] = [
         "age": "Young",
         "avatar_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/Chloe.png",
         "preview_audio_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/cartesia-Chloe.mp3"
-    },
-    {
-        "voice_id": "retell-Merritt",
-        "voice_type": "standard",
-        "standard_voice_type": "retell",
-        "voice_name": "Merritt",
-        "provider": "platform",
-        "accent": "American",
-        "gender": "female",
-        "age": "Middle Aged",
-        "avatar_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/Merritt.png",
-        "preview_audio_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/minimax-Merritt.mp3",
-        "recommended": true
     },
     {
         "voice_id": "minimax-Adrian",
@@ -2608,19 +2427,6 @@ export const VOICES_DATA: Voice[] = [
         "preview_audio_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/cartesia-146485fd-8736-41c7-88a8-7cdd0da34d84.mp3"
     },
     {
-        "voice_id": "retell-Maren",
-        "voice_type": "standard",
-        "standard_voice_type": "retell",
-        "voice_name": "Maren",
-        "provider": "platform",
-        "accent": "British",
-        "gender": "female",
-        "age": "Young",
-        "avatar_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/Maren.png",
-        "preview_audio_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/minimax-Maren.mp3",
-        "recommended": true
-    },
-    {
         "voice_id": "openai-Kate",
         "voice_type": "standard",
         "standard_voice_type": "retell",
@@ -2851,19 +2657,6 @@ export const VOICES_DATA: Voice[] = [
         "preview_audio_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/cartesia-cefcb124-080b-4655-b31f-932f3ee743de.mp3"
     },
     {
-        "voice_id": "retell-Cimo",
-        "voice_type": "standard",
-        "standard_voice_type": "retell",
-        "voice_name": "Cimo",
-        "provider": "platform",
-        "accent": "American",
-        "gender": "female",
-        "age": "Middle Aged",
-        "avatar_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/cimo.png",
-        "preview_audio_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/minimax_cimo.mp3",
-        "recommended": true
-    },
-    {
         "voice_id": "minimax-Hailey",
         "voice_type": "standard",
         "standard_voice_type": "retell",
@@ -2874,19 +2667,6 @@ export const VOICES_DATA: Voice[] = [
         "age": "Young",
         "avatar_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/Hailey.png",
         "preview_audio_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/minimax_hailey.mp3",
-        "recommended": true
-    },
-    {
-        "voice_id": "retell-Brynne",
-        "voice_type": "standard",
-        "standard_voice_type": "retell",
-        "voice_name": "Brynne",
-        "provider": "platform",
-        "accent": "American",
-        "gender": "female",
-        "age": "Middle Aged",
-        "avatar_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/Brynne.png",
-        "preview_audio_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/minimax-Brynne.mp3",
         "recommended": true
     },
     {
@@ -3024,18 +2804,6 @@ export const VOICES_DATA: Voice[] = [
         "preview_audio_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/fish_audio-Tamsin.mp3"
     },
     {
-        "voice_id": "retell-Ashley",
-        "voice_type": "standard",
-        "standard_voice_type": "retell",
-        "voice_name": "Ashley",
-        "provider": "platform",
-        "accent": "American",
-        "gender": "female",
-        "age": "Middle Aged",
-        "avatar_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/Ashley.png",
-        "preview_audio_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/retell-Ashley.mp3"
-    },
-    {
         "voice_id": "fish_audio-Gaby",
         "voice_type": "standard",
         "standard_voice_type": "retell",
@@ -3110,19 +2878,6 @@ export const VOICES_DATA: Voice[] = [
         "recommended": true
     },
     {
-        "voice_id": "retell-Rita",
-        "voice_type": "standard",
-        "standard_voice_type": "retell",
-        "voice_name": "Rita",
-        "provider": "platform",
-        "accent": "American",
-        "gender": "female",
-        "age": "Young",
-        "avatar_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/rita.png",
-        "preview_audio_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/rita.mp3",
-        "recommended": true
-    },
-    {
         "voice_id": "minimax-Grace",
         "voice_type": "standard",
         "standard_voice_type": "retell",
@@ -3194,32 +2949,6 @@ export const VOICES_DATA: Voice[] = [
         "age": "Middle Aged",
         "avatar_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/customvoice-icon.png",
         "preview_audio_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/cartesia-911b8b22-887f-4caf-bf87-85d834c08708.mp3"
-    },
-    {
-        "voice_id": "retell-Claudia",
-        "voice_type": "standard",
-        "standard_voice_type": "retell",
-        "voice_name": "Claudia",
-        "provider": "platform",
-        "accent": "Mexican",
-        "gender": "female",
-        "age": "Middle Aged",
-        "avatar_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/Claudia.png",
-        "preview_audio_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/minimax-Claudia.mp3",
-        "recommended": true
-    },
-    {
-        "voice_id": "retell-Kate",
-        "voice_type": "standard",
-        "standard_voice_type": "retell",
-        "voice_name": "Kate",
-        "provider": "platform",
-        "accent": "American",
-        "gender": "female",
-        "age": "Middle Aged",
-        "avatar_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/Kate.png",
-        "preview_audio_url": "https://retell-utils-public.s3.us-west-2.amazonaws.com/minimax-Kate.mp3",
-        "recommended": true
     },
     {
         "voice_id": "cartesia-Lucas",

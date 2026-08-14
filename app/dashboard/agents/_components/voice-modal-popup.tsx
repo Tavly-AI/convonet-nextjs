@@ -5,7 +5,6 @@ import {
   BadgeCheckIcon,
   PauseIcon,
   PlayIcon,
-  PlusIcon,
 } from "lucide-react"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -36,7 +35,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { VOICES_DATA, type Voice } from "@/app/dashboard/agents/_data/voices"
 
 export type VoiceModalPopupProps = {
@@ -45,7 +44,6 @@ export type VoiceModalPopupProps = {
   selectedVoiceId: Voice["voice_id"] | null
 }
 
-type VoiceTab = "platform" | "custom"
 type GenderFilter = "all" | "female" | "male"
 type CustomProvider = Exclude<Voice["provider"], "platform">
 
@@ -64,7 +62,6 @@ export function VoiceModalPopup({
   onOpenChange,
   selectedVoiceId,
 }: VoiceModalPopupProps) {
-  const [voiceTab, setVoiceTab] = React.useState<VoiceTab>("platform")
   const [provider, setProvider] = React.useState<CustomProvider>("minimax")
   const [gender, setGender] = React.useState<GenderFilter>("all")
   const [accent, setAccent] = React.useState("all")
@@ -79,10 +76,7 @@ export function VoiceModalPopup({
     const query = search.trim().toLowerCase()
 
     return VOICES_DATA.filter((voice) => {
-      const matchesProvider =
-        voiceTab === "platform"
-          ? voice.provider === "platform"
-          : voice.provider === provider
+      const matchesProvider = voice.provider === provider
       const matchesGender =
         gender === "all" || voice.gender.toLowerCase() === gender
       const matchesAccent = accent === "all" || voice.accent === accent
@@ -93,156 +87,105 @@ export function VoiceModalPopup({
 
       return matchesProvider && matchesGender && matchesAccent && matchesSearch
     })
-  }, [accent, gender, provider, search, voiceTab])
-
-  function handleOpenChange(nextOpen: boolean) {
-    onOpenChange(nextOpen)
-  }
+  }, [accent, gender, provider, search])
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="flex h-[min(92svh,54rem)] max-w-[96rem] flex-col overflow-hidden p-0">
         <DialogHeader className="shrink-0 px-5 pt-5 sm:px-6 sm:pt-6">
           <DialogTitle className="text-xl sm:text-2xl">Select Voice</DialogTitle>
           <DialogDescription className="sr-only">
-            Browse platform and custom provider voices.
+            Browse voices from custom providers.
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs
-          value={voiceTab}
-          onValueChange={(value) => setVoiceTab(value as VoiceTab)}
-          className="min-h-0 flex-1 gap-0"
-        >
-          <TabsList
-            variant="line"
-            className="mx-5 h-12 w-auto shrink-0 justify-start border-b px-0 sm:mx-6"
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-4 sm:px-6">
+          <Tabs
+            value={provider}
+            onValueChange={(value) => setProvider(value as CustomProvider)}
+            className="gap-4"
           >
-            <TabsTrigger value="platform" className="flex-none px-0 pr-5 text-base">
-              Platform Voices
-            </TabsTrigger>
-            <TabsTrigger value="custom" className="flex-none px-0 text-base">
-              Custom Providers
-            </TabsTrigger>
-          </TabsList>
+            <TabsList className="grid h-auto w-full grid-cols-2 sm:grid-cols-5">
+              {CUSTOM_PROVIDERS.map((item) => (
+                <TabsTrigger key={item.value} value={item.value}>
+                  {item.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
 
-          <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 sm:px-6">
-            <TabsContent value="platform" className="space-y-4">
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[auto_15rem_15rem_minmax(16rem,1fr)]">
-                <Button type="button" size="lg" className="sm:col-span-2 xl:col-span-1">
-                  <PlusIcon />
-                  Add voice clone
-                </Button>
-                <VoiceFilters
-                  gender={gender}
-                  onGenderChange={setGender}
-                  accent={accent}
-                  onAccentChange={setAccent}
-                  search={search}
-                  onSearchChange={setSearch}
-                />
-              </div>
-
-              {filteredVoices.length === 0 ? (
-                emptyState()
-              ) : (
-                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                  {filteredVoices.map((voice) => (
-                    <VoiceCard key={voice.voice_id} voice={voice} />
-                  ))}
-                </div>
-              )}
-            </TabsContent>
-
-            <TabsContent value="custom" className="space-y-4">
-              <Tabs
-                value={provider}
-                onValueChange={(value) => setProvider(value as CustomProvider)}
-                className="gap-4"
-              >
-                <TabsList className="grid h-auto w-full grid-cols-2 sm:grid-cols-5">
-                  {CUSTOM_PROVIDERS.map((item) => (
-                    <TabsTrigger key={item.value} value={item.value}>
-                      {item.label}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-              </Tabs>
-
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[15rem_15rem_minmax(16rem,1fr)]">
-                <VoiceFilters
-                  gender={gender}
-                  onGenderChange={setGender}
-                  accent={accent}
-                  onAccentChange={setAccent}
-                  search={search}
-                  onSearchChange={setSearch}
-                />
-              </div>
-
-              {filteredVoices.length === 0 ? (
-                emptyState()
-              ) : (
-                <>
-                  {filteredVoices.some((voice) => voice.recommended) && (
-                    <section className="space-y-2">
-                      <h2 className="font-medium">Recommended Voices</h2>
-                      <div className="grid auto-cols-[minmax(18rem,1fr)] grid-flow-col gap-3 overflow-x-auto pb-1 xl:auto-cols-[minmax(20rem,calc((100%-2.25rem)/4))]">
-                        {filteredVoices
-                          .filter((voice) => voice.recommended)
-                          .map((voice) => (
-                            <VoiceCard key={voice.voice_id} voice={voice} />
-                          ))}
-                      </div>
-                    </section>
-                  )}
-
-                  <div className="overflow-hidden rounded-xl border">
-                    <Table>
-                      <TableHeader className="bg-muted/60">
-                        <TableRow className="hover:bg-transparent">
-                          <TableHead className="w-16" />
-                          <TableHead>Voice</TableHead>
-                          <TableHead>Trait</TableHead>
-                          <TableHead>Voice ID</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {filteredVoices.map((voice) => (
-                          <TableRow key={voice.voice_id}>
-                            <TableCell>
-                              <PreviewButton voice={voice} />
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-3">
-                                <VoiceAvatar voice={voice} />
-                                <span className="font-medium">{voice.voice_name}</span>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex gap-1.5">
-                                <Badge variant="secondary">{voice.accent}</Badge>
-                                <Badge variant="secondary">{voice.age}</Badge>
-                                <Badge variant="secondary">
-                                  {voice.standard_voice_type === "retell"
-                                    ? "Retell"
-                                    : "Provider"}
-                                </Badge>
-                              </div>
-                            </TableCell>
-                            <TableCell className="font-mono text-muted-foreground">
-                              {voice.voice_id}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </>
-              )}
-            </TabsContent>
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[15rem_15rem_minmax(16rem,1fr)]">
+            <VoiceFilters
+              gender={gender}
+              onGenderChange={setGender}
+              accent={accent}
+              onAccentChange={setAccent}
+              search={search}
+              onSearchChange={setSearch}
+            />
           </div>
-        </Tabs>
+
+          {filteredVoices.length === 0 ? (
+            emptyState()
+          ) : (
+            <>
+              {filteredVoices.some((voice) => voice.recommended) && (
+                <section className="space-y-2">
+                  <h2 className="font-medium">Recommended Voices</h2>
+                  <div className="grid auto-cols-[minmax(18rem,1fr)] grid-flow-col gap-3 overflow-x-auto pb-1 xl:auto-cols-[minmax(20rem,calc((100%-2.25rem)/4))]">
+                    {filteredVoices
+                      .filter((voice) => voice.recommended)
+                      .map((voice) => (
+                        <VoiceCard key={voice.voice_id} voice={voice} />
+                      ))}
+                  </div>
+                </section>
+              )}
+
+              <div className="overflow-hidden rounded-xl border">
+                <Table>
+                  <TableHeader className="bg-muted/60">
+                    <TableRow className="hover:bg-transparent">
+                      <TableHead className="w-16" />
+                      <TableHead>Voice</TableHead>
+                      <TableHead>Trait</TableHead>
+                      <TableHead>Voice ID</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredVoices.map((voice) => (
+                      <TableRow key={voice.voice_id}>
+                        <TableCell>
+                          <PreviewButton voice={voice} />
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <VoiceAvatar voice={voice} />
+                            <span className="font-medium">{voice.voice_name}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-1.5">
+                            <Badge variant="secondary">{voice.accent}</Badge>
+                            <Badge variant="secondary">{voice.age}</Badge>
+                            <Badge variant="secondary">
+                              {voice.standard_voice_type === "retell"
+                                ? "Retell"
+                                : "Provider"}
+                            </Badge>
+                          </div>
+                        </TableCell>
+                        <TableCell className="font-mono text-muted-foreground">
+                          {voice.voice_id}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
+          )}
+        </div>
 
         <DialogFooter className="shrink-0 items-center border-t bg-background px-5 py-4 sm:px-6">
           <div className="flex min-w-0 items-center gap-3 sm:mr-auto">
