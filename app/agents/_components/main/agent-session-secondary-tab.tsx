@@ -18,6 +18,7 @@ import {
 
 import { GeneralToolsEditor } from "@/app/agents/_components/functions/general-tools-editor"
 import { McpTools } from "@/app/agents/_components/mcp/mcp-tools"
+import { SpeechSettings } from "@/app/agents/_components/speech-settings/speech-settings"
 import { Card } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 
@@ -36,7 +37,7 @@ const SECONDARY_TABS = [
     content: GeneralToolsEditor,
   },
   { id: "knowledge-base", label: "Knowledge Base", icon: BookOpenIcon },
-  { id: "speech", label: "Speech Settings", icon: SpeechIcon },
+  { id: "speech", label: "Speech Settings", icon: SpeechIcon, content: SpeechSettings },
   {
     id: "transcription",
     label: "Realtime Transcription Settings",

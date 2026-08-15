@@ -6,6 +6,22 @@ import type { McpConfig } from "@/app/agents/_lib/mcp/mcp"
 
 const SESSION_KEY = "agent-session"
 
+export type PronunciationDictionaryEntry = {
+    word: string
+    alphabet: "ipa" | "pinyin" | "jyutping"
+    phoneme: string
+}
+
+export type SpeechSettings = {
+    ambient_sound: string
+    responsiveness: number
+    enable_dynamic_responsiveness: boolean
+    interruption_sensitivity: number
+    reminder_trigger_ms: number
+    reminder_max_count: number
+    pronunciation_dictionary: PronunciationDictionaryEntry[]
+}
+
 export type AgentSessionConfig = Record<string, unknown> & {
     agentType: string
     voiceId: string | null
@@ -127,6 +143,29 @@ export function writeGeneralTools(tools: GeneralTool[]) {
     })
 
     return tools
+}
+
+// =================================================================
+// ======================== SPEECH SETTINGS ========================
+// =================================================================
+
+export function getSpeechSettings(): Partial<SpeechSettings> {
+    return (getAgentSession()?.config ?? {}) as Partial<SpeechSettings>
+}
+
+export function writeSpeechSettings(settings: Partial<SpeechSettings>) {
+    const agent = getAgentSession()
+    if (!agent) throw new Error("Agent session is not initialized.")
+
+    writeAgentSession({
+        ...agent,
+        config: {
+            ...agent.config,
+            ...settings,
+        },
+    })
+
+    return settings
 }
 
 // =================================================================
