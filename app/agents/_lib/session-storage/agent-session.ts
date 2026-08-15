@@ -1,6 +1,7 @@
 "use client"
 
 import type { GeneralTool } from "@/app/agents/_lib/functions/general-tools"
+import type { McpConfig } from "@/app/agents/_lib/mcp/mcp"
 
 const SESSION_KEY = "agent-session"
 
@@ -11,12 +12,16 @@ export type AgentSessionConfig = Record<string, unknown> & {
     generalTools: GeneralTool[]
 }
 
+export type AgentSessionLlmConfig = Record<string, unknown> & {
+    mcps: McpConfig[]
+}
+
 export type AgentSessionAgent = {
     id: string | null
     workspaceId: string | null
     name: string
     config: AgentSessionConfig
-    llmConfig: Record<string, unknown>
+    llmConfig: AgentSessionLlmConfig
     createdAt: string | null
     updatedAt: string | null
 }
@@ -37,7 +42,9 @@ const EMPTY_AGENT: AgentSessionAgent = {
         phoneNumber: null,
         generalTools: [],
     },
-    llmConfig: {},
+    llmConfig: {
+        mcps: [],
+    },
     createdAt: null,
     updatedAt: null,
 }
@@ -62,6 +69,7 @@ export function getAgentSession(): AgentSessionAgent | null {
 export function initializeAgentSession(agent: AgentSessionSource | null = null) {
     const storage = getStorage()
     const storedConfig = agent?.config ?? {}
+    const storedLlmConfig = agent?.llmConfig ?? {}
 
     storage?.removeItem("agent-session:fresh")
     storage?.removeItem("agent-session:stale")
@@ -76,7 +84,13 @@ export function initializeAgentSession(agent: AgentSessionSource | null = null) 
                 ? storedConfig.generalTools as GeneralTool[]
                 : EMPTY_AGENT.config.generalTools,
         },
-        llmConfig: agent?.llmConfig ?? EMPTY_AGENT.llmConfig,
+        llmConfig: {
+            ...EMPTY_AGENT.llmConfig,
+            ...storedLlmConfig,
+            mcps: Array.isArray(storedLlmConfig.mcps)
+                ? storedLlmConfig.mcps as McpConfig[]
+                : EMPTY_AGENT.llmConfig.mcps,
+        },
     })
 }
 
@@ -110,6 +124,29 @@ export function writeGeneralTools(tools: GeneralTool[]) {
     })
 
     return tools
+}
+
+// =================================================================
+// ============================== MCPS ==============================
+// =================================================================
+
+export function getMcps() {
+    return getAgentSession()?.llmConfig.mcps ?? []
+}
+
+export function writeMcps(mcps: McpConfig[]) {
+    const agent = getAgentSession()
+    if (!agent) throw new Error("Agent session is not initialized.")
+
+    writeAgentSession({
+        ...agent,
+        llmConfig: {
+            ...agent.llmConfig,
+            mcps,
+        },
+    })
+
+    return mcps
 }
 
 function getStorage() {

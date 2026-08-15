@@ -116,7 +116,7 @@ export async function publishAgent(
     workspaceId: agent.workspaceId,
     name: agent.name,
     config: parsed.config as AgentSessionAgent["config"],
-    llmConfig: parsed.llmConfig,
+    llmConfig: parsed.llmConfig as AgentSessionAgent["llmConfig"],
     createdAt: agent.createdAt.toISOString(),
     updatedAt: agent.updatedAt.toISOString(),
   }

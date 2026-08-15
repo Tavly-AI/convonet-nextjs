@@ -17,6 +17,7 @@ import {
 } from "lucide-react"
 
 import { GeneralToolsEditor } from "@/app/agents/_components/functions/general-tools-editor"
+import { McpTools } from "@/app/agents/_components/mcp/mcp-tools"
 import { Card } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 
@@ -53,7 +54,7 @@ const SECONDARY_TABS = [
     icon: ShieldCheckIcon,
   },
   { id: "webhook", label: "Webhook Settings", icon: WebhookIcon },
-  { id: "mcps", label: "MCPs", icon: PaperclipIcon },
+  { id: "mcps", label: "MCPs", icon: PaperclipIcon, content: McpTools },
 ] as const satisfies readonly SecondaryTab[]
 
 type SecondaryTabId = (typeof SECONDARY_TABS)[number]["id"]

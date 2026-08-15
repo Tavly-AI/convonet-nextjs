@@ -16,11 +16,11 @@ import {
 } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
+import { KeyValueEditor } from "@/app/agents/_components/shared/key-value-editor"
 import type {
   CustomFunctionTool,
   FunctionParameter,
   GeneralTool,
-  KeyValue,
   TransferCallTool,
   TransferMode,
 } from "@/app/agents/_lib/functions/general-tools"
@@ -572,50 +572,6 @@ function ParameterEditor({
       >
         <PlusIcon data-icon="inline-start" />
         Add parameter
-      </Button>
-    </div>
-  )
-}
-
-function KeyValueEditor({
-  value,
-  onChange,
-  keyPlaceholder,
-  valuePlaceholder,
-}: {
-  value: KeyValue[]
-  onChange: (value: KeyValue[]) => void
-  keyPlaceholder: string
-  valuePlaceholder: string
-}) {
-  return (
-    <div className="space-y-2">
-      {value.map((item, index) => (
-        <div key={index} className="grid grid-cols-[1fr_1fr_auto] gap-2">
-          <Input
-            value={item.key}
-            onChange={(event) => onChange(value.map((row, rowIndex) => rowIndex === index ? { ...row, key: event.target.value } : row))}
-            placeholder={keyPlaceholder}
-          />
-          <Input
-            value={item.value}
-            onChange={(event) => onChange(value.map((row, rowIndex) => rowIndex === index ? { ...row, value: event.target.value } : row))}
-            placeholder={valuePlaceholder}
-          />
-          <Button
-            type="button"
-            size="icon"
-            variant="ghost"
-            aria-label="Remove row"
-            onClick={() => onChange(value.filter((_, rowIndex) => rowIndex !== index))}
-          >
-            <Trash2Icon />
-          </Button>
-        </div>
-      ))}
-      <Button type="button" size="sm" variant="outline" onClick={() => onChange([...value, { key: "", value: "" }])}>
-        <PlusIcon data-icon="inline-start" />
-        Add
       </Button>
     </div>
   )
