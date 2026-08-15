@@ -148,3 +148,23 @@ export async function publishAgent(
 
   return toAgentSession(result.agent, result.nextDraftVersion)
 }
+
+export async function autoSaveAgentSession(input: AgentSessionAgent) {
+  if (!input.id) return
+
+  const workspaceId = await getCurrentWorkspaceId()
+  const parsed = publishAgentSchema.parse(input)
+  if (!parsed.id) return
+
+  await prisma.agent.update({
+    where: {
+      id: parsed.id,
+      workspaceId,
+    },
+    data: {
+      name: parsed.name,
+      config: parsed.config as Prisma.InputJsonObject,
+      llmConfig: parsed.llmConfig as Prisma.InputJsonObject,
+    },
+  })
+}

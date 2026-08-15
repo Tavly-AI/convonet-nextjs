@@ -1,5 +1,6 @@
 "use client"
 
+import { autoSaveAgentSession } from "@/app/agents/actions"
 import type { GeneralTool } from "@/app/agents/_lib/functions/general-tools"
 import type { McpConfig } from "@/app/agents/_lib/mcp/mcp"
 
@@ -97,6 +98,7 @@ export function initializeAgentSession(agent: AgentSessionSource | null = null) 
 
 export function writeAgentSession(agent: AgentSessionAgent) {
     getStorage()?.setItem(SESSION_KEY, JSON.stringify(agent))
+    scheduleAgentSessionAutoSave(agent)
     return agent
 }
 
@@ -152,4 +154,16 @@ export function writeMcps(mcps: McpConfig[]) {
 
 function getStorage() {
     return typeof window === "undefined" ? null : window.sessionStorage
+}
+
+// =================================================================
+// ========================== AUTO SAVE ============================
+// =================================================================
+
+function scheduleAgentSessionAutoSave(agent: AgentSessionAgent) {
+    if (!agent.id) return
+
+    window.setTimeout(() => {
+        void autoSaveAgentSession(agent).catch(console.error)
+    }, 1000)
 }

@@ -1,7 +1,7 @@
 "use client"
 
 import type { FormEvent } from "react"
-import { useState, useTransition } from "react"
+import { useEffect, useState, useTransition } from "react"
 import { UploadCloudIcon } from "lucide-react"
 import { toast } from "sonner"
 
@@ -30,6 +30,10 @@ export function AgentSessionVersion() {
     const [versionTitle, setVersionTitle] = useState("")
     const [versionDescription, setVersionDescription] = useState("")
     const [draftVersion, setDraftVersion] = useState(getAgentSession()?.draftVersion ?? 0)
+
+    useEffect(() => {
+        setDraftVersion(getAgentSession()?.draftVersion ?? 0)
+    }, [versionTitle, publishDialogOpen])
 
     function openPublishDialog() {
         const session = getAgentSession()
