@@ -2,13 +2,18 @@
 
 import type {
   AgentSessionAgent,
-  AgentSessionSource,
 } from "@/app/agents/_lib/session-storage/agent-session"
+import {
+  getCurrentWorkspaceId,
+  toAgentSession,
+} from "@/app/agents/_lib/helper-actions"
+import type { AgentSessionResult } from "@/app/agents/_lib/helper-actions"
 import { Prisma } from "@/generated/prisma/client"
-import { getCurrentUserId } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
+
+export type { AgentSessionResult } from "@/app/agents/_lib/helper-actions"
 
 const publishAgentSchema = z.object({
   id: z.string().trim().min(1).nullable(),
@@ -22,6 +27,11 @@ const publishAgentSchema = z.object({
     })
     .catchall(z.json()),
   llmConfig: z.record(z.string(), z.json()),
+})
+
+const publishAgentVersionSchema = z.object({
+  title: z.string().trim().min(1, "Version title is required.").max(200),
+  description: z.string().trim().max(1000).optional(),
 })
 
 const createAgentSchema = z.object({
@@ -56,7 +66,7 @@ export async function createAgent(input: {
   return agent
 }
 
-export async function loadAgentSession(agentId: string): Promise<AgentSessionSource> {
+export async function loadAgentSession(agentId: string): Promise<AgentSessionResult> {
   const workspaceId = await getCurrentWorkspaceId()
   const id = z.string().trim().min(1).parse(agentId)
   const agent = await prisma.agent.findFirst({
@@ -65,80 +75,76 @@ export async function loadAgentSession(agentId: string): Promise<AgentSessionSou
 
   if (!agent) throw new Error("Agent not found in the current workspace.")
 
-  return {
-    id: agent.id,
-    workspaceId: agent.workspaceId,
-    name: agent.name,
-    config: toJsonRecord(agent.config),
-    llmConfig: toJsonRecord(agent.llmConfig),
-    createdAt: agent.createdAt.toISOString(),
-    updatedAt: agent.updatedAt.toISOString(),
-  }
+  const latestVersion = await prisma.agentVersion.aggregate({
+    where: { agentId: agent.id, workspaceId },
+    _max: { version: true },
+  })
+
+  return toAgentSession(agent, (latestVersion._max.version ?? -1) + 1)
 }
 
 export async function publishAgent(
-  input: AgentSessionAgent
-): Promise<AgentSessionAgent> {
+  input: AgentSessionAgent,
+  metadata: { title: string; description?: string }
+): Promise<AgentSessionResult> {
   const workspaceId = await getCurrentWorkspaceId()
 
   const parsed = publishAgentSchema.parse(input)
+  const parsedMetadata = publishAgentVersionSchema.parse(metadata)
   const data = {
     name: parsed.name,
     config: parsed.config as Prisma.InputJsonObject,
     llmConfig: parsed.llmConfig as Prisma.InputJsonObject,
   }
 
-  let agent
-  if (parsed.id) {
-    const existingAgent = await prisma.agent.findFirst({
-      where: { id: parsed.id, workspaceId },
-      select: { id: true },
-    })
-    if (!existingAgent) throw new Error("Agent not found in the current workspace.")
+  const result = await prisma.$transaction(async (tx) => {
+    const existingAgent = parsed.id
+      ? await tx.agent.findFirst({
+        where: { id: parsed.id, workspaceId },
+        select: { id: true },
+      })
+      : null
 
-    agent = await prisma.agent.update({
-      where: { id: existingAgent.id },
-      data,
+    if (parsed.id && !existingAgent) {
+      throw new Error("Agent not found in the current workspace.")
+    }
+
+    const agent = parsed.id
+      ? await tx.agent.update({
+        where: { id: parsed.id },
+        data,
+      })
+      : await tx.agent.create({
+        data: {
+          ...data,
+          workspaceId,
+        },
+      })
+
+    const latestVersion = await tx.agentVersion.aggregate({
+      where: { agentId: agent.id, workspaceId },
+      _max: { version: true },
     })
-  } else {
-    agent = await prisma.agent.create({
+    const versionNumber = (latestVersion._max.version ?? -1) + 1
+
+    await tx.agentVersion.create({
       data: {
-        ...data,
         workspaceId,
+        agentId: agent.id,
+        version: versionNumber,
+        title: parsedMetadata.title,
+        description: parsedMetadata.description || null,
+        ...data,
       },
     })
-  }
+
+    return {
+      agent,
+      nextDraftVersion: versionNumber + 1,
+    }
+  })
 
   revalidatePath("/dashboard/agents")
 
-  return {
-    id: agent.id,
-    workspaceId: agent.workspaceId,
-    name: agent.name,
-    config: parsed.config as AgentSessionAgent["config"],
-    llmConfig: parsed.llmConfig as AgentSessionAgent["llmConfig"],
-    createdAt: agent.createdAt.toISOString(),
-    updatedAt: agent.updatedAt.toISOString(),
-  }
-}
-
-// ===============================================================
-// ======================= WORKSPACE =============================
-// ===============================================================
-
-async function getCurrentWorkspaceId() {
-  const userId = await getCurrentUserId()
-  if (!userId) throw new Error("Unauthorized")
-
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { workspaceId: true },
-  })
-  if (!user?.workspaceId) throw new Error("A workspace is required to create an agent.")
-
-  return user.workspaceId
-}
-
-function toJsonRecord(value: Prisma.JsonValue): Record<string, unknown> {
-  return value && typeof value === "object" && !Array.isArray(value) ? value : {}
+  return toAgentSession(result.agent, result.nextDraftVersion)
 }

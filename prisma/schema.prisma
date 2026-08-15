@@ -24,19 +24,43 @@ model User {
 }
 
 model Workspace {
-  id     String  @id @default(cuid())
-  name   String
-  users  User[]
-  agents Agent[]
+  id            String         @id @default(cuid())
+  name          String
+  users         User[]
+  agents        Agent[]
+  agentVersions AgentVersion[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model Agent {
+  id                 String         @id @default(cuid())
+  workspaceId        String
+  workspace          Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  name               String
+  config             Json
+  llmConfig          Json
+  versions           AgentVersion[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([workspaceId])
+}
+
+model AgentVersion {
   id          String    @id @default(cuid())
   workspaceId String
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  agentId     String
+  agent       Agent     @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  
+  version     Int
+  title       String
+  description String?
   name        String
   config      Json
   llmConfig   Json
@@ -44,5 +68,7 @@ model Agent {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@unique([agentId, version])
   @@index([workspaceId])
+  @@index([agentId])
 }

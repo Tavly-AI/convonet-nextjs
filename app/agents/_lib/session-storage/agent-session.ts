@@ -20,6 +20,7 @@ export type AgentSessionAgent = {
     id: string | null
     workspaceId: string | null
     name: string
+    draftVersion: number
     config: AgentSessionConfig
     llmConfig: AgentSessionLlmConfig
     createdAt: string | null
@@ -31,11 +32,11 @@ export type AgentSessionSource = Omit<AgentSessionAgent, "config" | "llmConfig">
     llmConfig: Record<string, unknown>
 }
 
-
 const EMPTY_AGENT: AgentSessionAgent = {
     id: null,
     workspaceId: null,
     name: "Untitled Agent",
+    draftVersion: 1,
     config: {
         agentType: "single_prompt",
         voiceId: null,
