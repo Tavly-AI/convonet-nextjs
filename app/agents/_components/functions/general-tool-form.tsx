@@ -24,6 +24,7 @@ import type {
   TransferCallTool,
   TransferMode,
 } from "@/app/agents/_lib/functions/general-tools"
+import { Section } from "../speech-settings/speech-settings"
 
 export function GeneralToolForm({
   value,
@@ -577,22 +578,7 @@ function ParameterEditor({
   )
 }
 
-function Section({
-  title,
-  children,
-}: {
-  title: string
-  children: React.ReactNode
-}) {
-  return (
-    <section className="space-y-3 border-t pt-5">
-      <h3 className="font-medium">{title}</h3>
-      {children}
-    </section>
-  )
-}
-
-function Field({
+export function Field({
   label,
   children,
 }: {
@@ -628,7 +614,7 @@ function NumberField({
   )
 }
 
-function CheckRow({
+export function CheckRow({
   label,
   description,
   checked,

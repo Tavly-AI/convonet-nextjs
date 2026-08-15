@@ -24,6 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Slider } from "@/components/ui/slider"
+import { CheckRow, Field } from "../functions/general-tool-form"
 
 const DEFAULT_SETTINGS = {
   ambient_sound: "none",
@@ -257,7 +258,7 @@ function PronunciationEditor({
   )
 }
 
-function Section({
+export function Section({
   title,
   description,
   children,
@@ -279,43 +280,7 @@ function Section({
   )
 }
 
-function Field({
-  label,
-  children,
-}: {
-  label: string
-  children: React.ReactNode
-}) {
-  return (
-    <div className="space-y-2">
-      <Label>{label}</Label>
-      {children}
-    </div>
-  )
-}
-
-function CheckRow({
-  label,
-  checked,
-  onCheckedChange,
-}: {
-  label: string
-  checked: boolean
-  onCheckedChange: (checked: boolean) => void
-}) {
-  return (
-    <Label className="items-start rounded-lg border p-3 leading-normal font-normal">
-      <Checkbox
-        checked={checked}
-        onCheckedChange={(next) => onCheckedChange(Boolean(next))}
-        className="mt-0.5"
-      />
-      <span className="block font-medium">{label}</span>
-    </Label>
-  )
-}
-
-function SliderField({
+export function SliderField({
   label,
   value,
   min,

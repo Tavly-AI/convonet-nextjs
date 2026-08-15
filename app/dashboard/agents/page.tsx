@@ -1,8 +1,9 @@
-import { VOICES_DATA } from "@/app/agents/_data/voices"
 import { getCurrentUserId } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { redirect } from "next/navigation"
 import { AgentsList, type AgentListItem } from "./_components/agents-list"
+import { VOICES_UPDATED } from "@/app/agents/_data/voices-updated"
+import { VOICES_FAKE_DATA } from "@/app/agents/_data/voices-fake-data"
 
 export default async function Page() {
   const userId = await getCurrentUserId()
@@ -25,14 +26,14 @@ export default async function Page() {
   const items: AgentListItem[] = agents.map((agent) => {
     const config = agent.config as Record<string, unknown>
     const voiceId = config.voiceId ?? config.voice_id
-    const voice = VOICES_DATA.find(({ voice_id }) => voice_id === voiceId)
+    const voice = VOICES_UPDATED.find(({ voice_id }) => voice_id === voiceId)
 
     return {
       id: agent.id,
       name: agent.name,
       type: String(config.agentType ?? config.agent_type ?? "Single Prompt"),
       voice: voice
-        ? { name: voice.voice_name, avatarUrl: voice.avatar_url }
+        ? { name: voice.name, avatarUrl: VOICES_FAKE_DATA[0].avatar_url }
         : null,
       phone: String(config.phone ?? config.phoneNumber ?? "-"),
       updatedAt: new Intl.DateTimeFormat("en-US", {

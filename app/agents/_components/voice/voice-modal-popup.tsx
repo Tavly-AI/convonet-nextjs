@@ -36,7 +36,8 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { VOICES_DATA, type Voice } from "@/app/agents/_data/voices"
+import { VOICES_UPDATED, type Voice } from "../../_data/voices-updated"
+import { VOICES_FAKE_DATA } from "../../_data/voices-fake-data"
 
 export type VoiceModalPopupProps = {
   open: boolean
@@ -45,44 +46,43 @@ export type VoiceModalPopupProps = {
 }
 
 type GenderFilter = "all" | "female" | "male"
-type CustomProvider = Exclude<Voice["provider"], "platform">
+type Provider = Voice["provider"]
 
-const CUSTOM_PROVIDERS = [
-  { value: "minimax", label: "MiniMax" },
-  { value: "fish_audio", label: "Fish Audio" },
-  { value: "elevenlabs", label: "ElevenLabs" },
+const PROVIDERS = [
   { value: "cartesia", label: "Cartesia" },
-  { value: "openai", label: "OpenAI" },
-] satisfies { value: CustomProvider; label: string }[]
+  { value: "elevenlabs", label: "ElevenLabs" },
+] satisfies { value: Provider; label: string }[]
 
-const ACCENTS = [...new Set(VOICES_DATA.map((voice) => voice.accent))].sort()
+const ACCENTS = [
+  ...new Set(VOICES_UPDATED.map((voice) => voice.accent).filter((accent): accent is string => accent !== null)),
+].sort()
 
 export function VoiceModalPopup({
   open,
   onOpenChange,
   selectedVoiceId,
 }: VoiceModalPopupProps) {
-  const [provider, setProvider] = React.useState<CustomProvider>("minimax")
+  const [provider, setProvider] = React.useState<Provider>("cartesia")
   const [gender, setGender] = React.useState<GenderFilter>("all")
   const [accent, setAccent] = React.useState("all")
   const [search, setSearch] = React.useState("")
 
   const selectedVoice = React.useMemo(
-    () => VOICES_DATA.find((voice) => voice.voice_id === selectedVoiceId),
+    () => VOICES_UPDATED.find((voice) => voice.voice_id === selectedVoiceId),
     [selectedVoiceId]
   )
 
   const filteredVoices = React.useMemo(() => {
     const query = search.trim().toLowerCase()
 
-    return VOICES_DATA.filter((voice) => {
+    return VOICES_UPDATED.filter((voice) => {
       const matchesProvider = voice.provider === provider
       const matchesGender =
         gender === "all" || voice.gender.toLowerCase() === gender
       const matchesAccent = accent === "all" || voice.accent === accent
       const matchesSearch =
         !query ||
-        voice.voice_name.toLowerCase().includes(query) ||
+        voice.name.toLowerCase().includes(query) ||
         voice.voice_id.toLowerCase().includes(query)
 
       return matchesProvider && matchesGender && matchesAccent && matchesSearch
@@ -102,11 +102,11 @@ export function VoiceModalPopup({
         <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-4 sm:px-6">
           <Tabs
             value={provider}
-            onValueChange={(value) => setProvider(value as CustomProvider)}
+            onValueChange={(value) => setProvider(value as Provider)}
             className="gap-4"
           >
             <TabsList className="grid h-auto w-full grid-cols-2 sm:grid-cols-5">
-              {CUSTOM_PROVIDERS.map((item) => (
+              {PROVIDERS.map((item) => (
                 <TabsTrigger key={item.value} value={item.value}>
                   {item.label}
                 </TabsTrigger>
@@ -161,18 +161,14 @@ export function VoiceModalPopup({
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <VoiceAvatar voice={voice} />
-                            <span className="font-medium">{voice.voice_name}</span>
+                            <span className="font-medium">{voice.name}</span>
                           </div>
                         </TableCell>
                         <TableCell>
                           <div className="flex gap-1.5">
                             <Badge variant="secondary">{voice.accent}</Badge>
-                            <Badge variant="secondary">{voice.age}</Badge>
-                            <Badge variant="secondary">
-                              {voice.standard_voice_type === "retell"
-                                ? "Retell"
-                                : "Provider"}
-                            </Badge>
+                            <Badge variant="secondary">{voice.language}</Badge>
+                            <Badge variant="secondary">{voice.gender}</Badge>
                           </div>
                         </TableCell>
                         <TableCell className="font-mono text-muted-foreground">
@@ -192,7 +188,7 @@ export function VoiceModalPopup({
             {selectedVoice ? (
               <>
                 <VoiceAvatar voice={selectedVoice} />
-                <span className="truncate font-medium">{selectedVoice.voice_name}</span>
+                <span className="truncate font-medium">{selectedVoice.name}</span>
               </>
             ) : (
               <span className="text-sm text-muted-foreground">No voice selected</span>
@@ -287,7 +283,7 @@ function PreviewButton({ voice }: { voice: Voice }) {
       return
     }
 
-    const audio = new Audio(voice.preview_audio_url)
+    const audio = new Audio(voice.preview_url ?? VOICES_FAKE_DATA[0].preview_audio_url)
     audioRef.current = audio
     audio.onended = resetPreview
     audio.onerror = resetPreview
@@ -300,7 +296,7 @@ function PreviewButton({ voice }: { voice: Voice }) {
       type="button"
       variant="outline"
       size="icon"
-      aria-label={`${playing ? "Pause" : "Preview"} ${voice.voice_name}`}
+      aria-label={`${playing ? "Pause" : "Preview"} ${voice.name}`}
       onClick={togglePreview}
     >
       {playing ? <PauseIcon /> : <PlayIcon className="fill-current" />}
@@ -311,8 +307,11 @@ function PreviewButton({ voice }: { voice: Voice }) {
 function VoiceAvatar({ voice }: { voice: Voice }) {
   return (
     <Avatar size="lg" className="overflow-visible">
-      <AvatarImage src={voice.avatar_url} alt={voice.voice_name} />
-      <AvatarFallback>{voice.voice_name.slice(0, 1)}</AvatarFallback>
+      <AvatarImage
+        src={VOICES_FAKE_DATA[Math.floor(Math.random() * VOICES_FAKE_DATA.length)].avatar_url}
+        alt={voice.name}
+      />
+      <AvatarFallback>{voice.name.slice(0, 1)}</AvatarFallback>
       {voice.recommended && (
         <BadgeCheckIcon className="absolute -top-1 -right-1 size-4 fill-emerald-500 text-background" />
       )}
@@ -325,9 +324,9 @@ function VoiceCard({ voice }: { voice: Voice }) {
     <div className="flex min-w-0 items-center gap-3 rounded-xl border bg-card p-3">
       <VoiceAvatar voice={voice} />
       <div className="min-w-0 flex-1">
-        <p className="truncate font-medium">{voice.voice_name}</p>
+        <p className="truncate font-medium">{voice.name}</p>
         <p className="truncate text-sm text-muted-foreground">
-          {voice.accent} · {voice.age} · {voice.standard_voice_type ?? "preset"}
+          {voice.accent} · {voice.language} · {voice.gender}
         </p>
         <p className="truncate text-xs text-muted-foreground">
           ID: {voice.voice_id}

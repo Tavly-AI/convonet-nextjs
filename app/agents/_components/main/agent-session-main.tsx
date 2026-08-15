@@ -12,6 +12,7 @@ import { Card, CardHeader } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { AgentSessionTabSecondary } from "./agent-session-secondary-tab"
 import { AgentSessionVersion } from "./agent-session-version"
+import { VoiceModalPopup } from "../voice/voice-modal-popup"
 
 export function AgentSessionMain() {
     const searchParams = useSearchParams()
@@ -81,6 +82,8 @@ export function AgentSessionMain() {
                     </Tabs>
                 </Card>
             </TabsContent>
+
+            <VoiceModalPopup onOpenChange={() => { }} open selectedVoiceId={null} />
 
             <TabsContent value="simulation" className="min-h-0 flex-1 p-2">
                 <Card className="h-full min-h-96" />
