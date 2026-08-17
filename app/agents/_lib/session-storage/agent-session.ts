@@ -41,6 +41,86 @@ export type RealtimeTranscriptionSettings = {
     boosted_keywords: string[]
 }
 
+export type VoicemailAction =
+    | {
+        type: "prompt"
+        text: string
+    }
+    | {
+        type: "static_text"
+        text: string
+    }
+    | {
+        type: "hangup"
+    }
+    | {
+        type: "bridge_transfer"
+    }
+
+export type VoicemailOption = {
+    action: VoicemailAction
+    detection_prompt?: string | null
+} | null
+
+export type IvrOption = {
+    action: {
+        type: "hangup"
+    }
+    detection_prompt?: string | null
+} | null
+
+export type CallScreeningOption = {
+    agent_identity: string
+    call_purpose: string
+} | null
+
+export type UserDtmfOptions = {
+    digit_limit: number
+    termination_key: "#" | "*" | "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+    timeout_ms: number
+}
+
+export type CallSettings = {
+    voicemail_option: VoicemailOption
+    ivr_option: IvrOption
+    call_screening_option: CallScreeningOption
+    allow_user_dtmf: boolean
+
+    allow_dtmf_interruption: boolean
+    user_dtmf_options: UserDtmfOptions
+
+    end_call_after_silence_ms: number
+    max_call_duration_ms: number
+    ring_duration_ms: number
+}
+
+// =================================================================
+// ==================== CALL SETTINGS DEFAULT ======================
+// =================================================================
+
+export const DEFAULT_USER_DTMF_OPTIONS = {
+    digit_limit: 10,
+    termination_key: "#",
+    timeout_ms: 2500,
+} satisfies UserDtmfOptions
+
+export const DEFAULT_CALL_SETTINGS = {
+    voicemail_option: null,
+    ivr_option: null,
+    call_screening_option: null,
+    allow_user_dtmf: false,
+    allow_dtmf_interruption: false,
+    user_dtmf_options: DEFAULT_USER_DTMF_OPTIONS,
+    end_call_after_silence_ms: 600000,
+    max_call_duration_ms: 3600000,
+    ring_duration_ms: 30000,
+} satisfies CallSettings
+
+// =================================================================
+// ================ CALL SETTINGS DEFAULT END ======================
+// =================================================================
+
+
 export type AgentSessionConfig = Record<string, unknown> & {
     agentType: string
     voiceId: string | null
@@ -77,6 +157,7 @@ const EMPTY_AGENT: AgentSessionAgent = {
     name: "Untitled Agent",
     draftVersion: 1,
     config: {
+        ...DEFAULT_CALL_SETTINGS,
         agentType: "single_prompt",
         voiceId: null,
         language: "en-US",
@@ -204,6 +285,29 @@ export function getRealtimeTranscriptionSettings(): Partial<RealtimeTranscriptio
 export function writeRealtimeTranscriptionSettings(
     settings: Partial<RealtimeTranscriptionSettings>
 ) {
+    const agent = getAgentSession()
+    if (!agent) throw new Error("Agent session is not initialized.")
+
+    writeAgentSession({
+        ...agent,
+        config: {
+            ...agent.config,
+            ...settings,
+        },
+    })
+
+    return settings
+}
+
+// =================================================================
+// ========================== CALL SETTINGS =========================
+// =================================================================
+
+export function getCallSettings(): Partial<CallSettings> {
+    return (getAgentSession()?.config ?? {}) as Partial<CallSettings>
+}
+
+export function writeCallSettings(settings: Partial<CallSettings>) {
     const agent = getAgentSession()
     if (!agent) throw new Error("Agent session is not initialized.")
 

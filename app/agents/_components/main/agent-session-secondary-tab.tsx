@@ -16,6 +16,7 @@ import {
   WebhookIcon,
 } from "lucide-react"
 
+import { CallSettings } from "@/app/agents/_components/call/call-settings"
 import { GeneralToolsEditor } from "@/app/agents/_components/functions/general-tools-editor"
 import { McpTools } from "@/app/agents/_components/mcp/mcp-tools"
 import { RealtimeTranscriptionSettings } from "@/app/agents/_components/realtime/realtime-settings"
@@ -45,7 +46,7 @@ const SECONDARY_TABS = [
     icon: LanguagesIcon,
     content: RealtimeTranscriptionSettings,
   },
-  { id: "call", label: "Call Settings", icon: HeadphonesIcon },
+  { id: "call", label: "Call Settings", icon: HeadphonesIcon, content: CallSettings },
   {
     id: "post-call",
     label: "Post-Call Data Extraction",

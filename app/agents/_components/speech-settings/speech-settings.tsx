@@ -270,9 +270,9 @@ export function Section({
   return (
     <section className="space-y-3 border-t pt-5 first:border-t-0 first:pt-0">
       <div className="space-y-1">
-        <h3 className="font-medium">{title}</h3>
+        <h3 className="text-sm font-medium">{title}</h3>
         {description && (
-          <p className="text-sm text-muted-foreground">{description}</p>
+          <p className="text-xs text-muted-foreground">{description}</p>
         )}
       </div>
       {children}
