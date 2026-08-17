@@ -10,9 +10,9 @@ import {
 } from "@/app/agents/_lib/session-storage/agent-session"
 import { Card, CardHeader } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { AgentSessionPrimaryTab } from "./agent-session-primary-tab"
 import { AgentSessionTabSecondary } from "./agent-session-secondary-tab"
 import { AgentSessionVersion } from "./agent-session-version"
-import { VoiceModalPopup } from "../voice/voice-modal-popup"
 
 export function AgentSessionMain() {
     const searchParams = useSearchParams()
@@ -67,7 +67,7 @@ export function AgentSessionMain() {
                 value="create"
                 className="grid min-h-0 flex-1 gap-2 p-2 xl:grid-cols-[2fr_1fr_1fr]"
             >
-                <Card className="min-h-96" />
+                <AgentSessionPrimaryTab />
                 <AgentSessionTabSecondary />
                 <Card className="min-h-96 gap-0 py-0">
                     <Tabs defaultValue="audio" className="h-full gap-0">
@@ -82,9 +82,6 @@ export function AgentSessionMain() {
                     </Tabs>
                 </Card>
             </TabsContent>
-
-            <VoiceModalPopup onOpenChange={() => { }} open selectedVoiceId={null} />
-
             <TabsContent value="simulation" className="min-h-0 flex-1 p-2">
                 <Card className="h-full min-h-96" />
             </TabsContent>

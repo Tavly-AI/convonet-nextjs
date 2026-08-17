@@ -25,11 +25,13 @@ export type SpeechSettings = {
 export type AgentSessionConfig = Record<string, unknown> & {
     agentType: string
     voiceId: string | null
+    language: string
     phoneNumber: string | null
     generalTools: GeneralTool[]
 }
 
 export type AgentSessionLlmConfig = Record<string, unknown> & {
+    model: string
     mcps: McpConfig[]
 }
 
@@ -57,10 +59,12 @@ const EMPTY_AGENT: AgentSessionAgent = {
     config: {
         agentType: "single_prompt",
         voiceId: null,
+        language: "en-US",
         phoneNumber: null,
         generalTools: [],
     },
     llmConfig: {
+        model: "gpt-4.1",
         mcps: [],
     },
     createdAt: null,
@@ -205,4 +209,73 @@ function scheduleAgentSessionAutoSave(agent: AgentSessionAgent) {
     window.setTimeout(() => {
         void autoSaveAgentSession(agent).catch(console.error)
     }, 1000)
+}
+
+
+// =================================================================
+// ========================== VOICE TTS ============================
+// =================================================================
+
+export function getVoiceId() {
+    return getAgentSession()?.config.voiceId ?? null
+}
+
+export function writeVoiceId(voiceId: string) {
+    const agent = getAgentSession()
+    if (!agent) throw new Error("Agent session is not initialized.")
+
+    writeAgentSession({
+        ...agent,
+        config: {
+            ...agent.config,
+            voiceId,
+        },
+    })
+    return voiceId
+}
+
+// =================================================================
+// =========================== LANGUAGE =============================
+// =================================================================
+
+export function getLanguage() {
+    return getAgentSession()?.config.language ?? "en-US"
+}
+
+export function writeLanguage(language: string) {
+    const agent = getAgentSession()
+    if (!agent) throw new Error("Agent session is not initialized.")
+
+    writeAgentSession({
+        ...agent,
+        config: {
+            ...agent.config,
+            language,
+        },
+    })
+
+    return language
+}
+
+// =================================================================
+// ============================= MODEL ==============================
+// =================================================================
+
+export function getModel() {
+    return getAgentSession()?.llmConfig.model ?? "gpt-4.1"
+}
+
+export function writeModel(model: string) {
+    const agent = getAgentSession()
+    if (!agent) throw new Error("Agent session is not initialized.")
+
+    writeAgentSession({
+        ...agent,
+        llmConfig: {
+            ...agent.llmConfig,
+            model,
+        },
+    })
+
+    return model
 }

@@ -3,6 +3,7 @@
 import * as React from "react"
 import {
   BadgeCheckIcon,
+  Mic2Icon,
   PauseIcon,
   PlayIcon,
 } from "lucide-react"
@@ -18,6 +19,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import {
@@ -38,11 +40,11 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { VOICES_UPDATED, type Voice } from "../../_data/voices-updated"
 import { VOICES_FAKE_DATA } from "../../_data/voices-fake-data"
+import { getVoiceId, writeVoiceId } from "../../_lib/session-storage/agent-session"
 
 export type VoiceModalPopupProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
-  selectedVoiceId: Voice["voice_id"] | null
 }
 
 type GenderFilter = "all" | "female" | "male"
@@ -60,12 +62,13 @@ const ACCENTS = [
 export function VoiceModalPopup({
   open,
   onOpenChange,
-  selectedVoiceId,
 }: VoiceModalPopupProps) {
   const [provider, setProvider] = React.useState<Provider>("cartesia")
   const [gender, setGender] = React.useState<GenderFilter>("all")
   const [accent, setAccent] = React.useState("all")
   const [search, setSearch] = React.useState("")
+
+  const selectedVoiceId = getVoiceId()
 
   const selectedVoice = React.useMemo(
     () => VOICES_UPDATED.find((voice) => voice.voice_id === selectedVoiceId),
@@ -91,6 +94,30 @@ export function VoiceModalPopup({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogTrigger
+        render={
+          <Button
+            type="button"
+            variant="outline"
+            className="h-9 min-w-40 justify-start"
+          />
+        }
+      >
+        {selectedVoice ? (
+          <>
+            <VoiceAvatar voice={selectedVoice} size="sm" />
+            <span className="max-w-24 truncate">{selectedVoice.name}</span>
+            <span className="max-w-8 truncate font-mono text-xs text-muted-foreground">{selectedVoice.voice_id}</span>
+          </>
+        ) : (
+          <>
+            <Mic2Icon className="size-4 text-muted-foreground" />
+            Select voice
+          </>
+        )}
+      </DialogTrigger>
+
+
       <DialogContent className="flex h-[min(92svh,54rem)] max-w-[96rem] flex-col overflow-hidden p-0">
         <DialogHeader className="shrink-0 px-5 pt-5 sm:px-6 sm:pt-6">
           <DialogTitle className="text-xl sm:text-2xl">Select Voice</DialogTitle>
@@ -154,7 +181,7 @@ export function VoiceModalPopup({
                   </TableHeader>
                   <TableBody>
                     {filteredVoices.map((voice) => (
-                      <TableRow key={voice.voice_id}>
+                      <TableRow key={voice.voice_id} className="group">
                         <TableCell>
                           <PreviewButton voice={voice} />
                         </TableCell>
@@ -173,6 +200,16 @@ export function VoiceModalPopup({
                         </TableCell>
                         <TableCell className="font-mono text-muted-foreground">
                           {voice.voice_id}
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            type="button"
+                            size="sm"
+                            className="pointer-events-none opacity-0 transition-none group-hover:pointer-events-auto group-hover:opacity-100"
+                            onClick={() => { writeVoiceId(voice.voice_id) }}
+                          >
+                            Select
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -304,9 +341,9 @@ function PreviewButton({ voice }: { voice: Voice }) {
   )
 }
 
-function VoiceAvatar({ voice }: { voice: Voice }) {
+function VoiceAvatar({ voice, size = "lg" }: { voice: Voice, size?: "sm" | "lg" }) {
   return (
-    <Avatar size="lg" className="overflow-visible">
+    <Avatar size={size} className="overflow-visible">
       <AvatarImage
         src={VOICES_FAKE_DATA[Math.floor(Math.random() * VOICES_FAKE_DATA.length)].avatar_url}
         alt={voice.name}
