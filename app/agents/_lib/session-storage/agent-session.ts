@@ -115,12 +115,12 @@ export function initializeAgentSession(agent: AgentSessionSource | null = null) 
                 ? storedLlmConfig.mcps as McpConfig[]
                 : EMPTY_AGENT.llmConfig.mcps,
         },
-    })
+    }, false)
 }
 
-export function writeAgentSession(agent: AgentSessionAgent) {
+export function writeAgentSession(agent: AgentSessionAgent, autoSave = true) {
     getStorage()?.setItem(SESSION_KEY, JSON.stringify(agent))
-    scheduleAgentSessionAutoSave(agent)
+    if (autoSave) scheduleAgentSessionAutoSave(agent)
     return agent
 }
 

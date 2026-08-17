@@ -31,7 +31,7 @@ export default async function Page() {
     return {
       id: agent.id,
       name: agent.name,
-      type: String(config.agentType ?? config.agent_type ?? "Single Prompt"),
+      type: String(config.agentType),
       voice: voice
         ? { name: voice.name, avatarUrl: VOICES_FAKE_DATA[0].avatar_url }
         : null,

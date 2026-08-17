@@ -78,7 +78,7 @@ export function SpeechSettings() {
   const reminderSeconds = Math.round(settings.reminder_trigger_ms / 1000)
 
   return (
-    <div className="space-y-5 border-t px-1 py-4">
+    <div className="space-y-5 border-t px-5 py-4 bg-gray-400/10 rounded-3xl">
       <Section title="Background Sound" description="Add subtle background audio to make calls feel more natural.">
         <Field label="">
           <Select

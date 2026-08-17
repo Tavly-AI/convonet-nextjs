@@ -14,15 +14,15 @@ const PLACEHOLDER =
 export function GeneralPrompt() {
     const [prompt, setPrompt] = React.useState(getGeneralPrompt)
 
-    React.useEffect(() => {
-        const timeout = setTimeout(() => writeGeneralPrompt(prompt), 500)
-        return () => clearTimeout(timeout)
-    }, [prompt])
+    function changePrompt(value: string) {
+        setPrompt(value)
+        writeGeneralPrompt(value)
+    }
 
     return (
         <Textarea
             value={prompt}
-            onChange={event => setPrompt(event.target.value)}
+            onChange={event => changePrompt(event.target.value)}
             placeholder={PLACEHOLDER}
             className="min-h-[28rem] flex-1 resize-none border-muted-foreground/20 p-4 leading-6 shadow-none"
         />

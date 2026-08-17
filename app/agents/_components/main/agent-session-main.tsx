@@ -18,7 +18,7 @@ export function AgentSessionMain() {
     const searchParams = useSearchParams()
     const agentId = searchParams.get("agentId")
 
-    const [, startSessionLoad] = useTransition()
+    const [isSessionLoading, startSessionLoad] = useTransition()
 
     useEffect(() => {
         let cancelled = false
@@ -40,6 +40,9 @@ export function AgentSessionMain() {
             cancelled = true
         }
     }, [agentId])
+
+    // make sure the sessionStorage is corretly loaded
+    if (isSessionLoading) return null
 
     return (
         <Tabs
