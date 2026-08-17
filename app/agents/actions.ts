@@ -66,6 +66,18 @@ export async function createAgent(input: {
   return agent
 }
 
+export async function deleteAgent(agentId: string) {
+  const workspaceId = await getCurrentWorkspaceId()
+  const id = z.string().trim().min(1).parse(agentId)
+  const result = await prisma.agent.deleteMany({
+    where: { id, workspaceId },
+  })
+
+  if (!result.count) throw new Error("Agent not found in the current workspace.")
+
+  revalidatePath("/dashboard/agents")
+}
+
 export async function loadAgentSession(agentId: string): Promise<AgentSessionResult> {
   const workspaceId = await getCurrentWorkspaceId()
   const id = z.string().trim().min(1).parse(agentId)

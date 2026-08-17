@@ -11,7 +11,10 @@ import {
   EllipsisVerticalIcon,
   SearchIcon,
 } from "lucide-react"
-import { createAgent as createAgentAction } from "@/app/agents/actions"
+import {
+  createAgent as createAgentAction,
+  deleteAgent as deleteAgentAction,
+} from "@/app/agents/actions"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -57,6 +60,9 @@ export function AgentsList({ agents }: { agents: AgentListItem[] }) {
   const router = useRouter()
   const [isCreating, startCreating] = useTransition()
 
+  const [isDeleting, startDeleting] = useTransition()
+  const [deletingAgentId, setDeletingAgentId] = useState<string | null>(null)
+
   function createAgent() {
     startCreating(async () => {
       try {
@@ -71,6 +77,25 @@ export function AgentsList({ agents }: { agents: AgentListItem[] }) {
         toast.error(
           error instanceof Error ? error.message : "Failed to create agent."
         )
+      }
+    })
+  }
+
+  function deleteAgent(agent: AgentListItem) {
+    if (!window.confirm(`Delete ${agent.name}?`)) return
+
+    setDeletingAgentId(agent.id)
+    startDeleting(async () => {
+      try {
+        await deleteAgentAction(agent.id)
+        toast.success("Agent deleted.")
+        router.refresh()
+      } catch (error) {
+        toast.error(
+          error instanceof Error ? error.message : "Failed to delete agent."
+        )
+      } finally {
+        setDeletingAgentId(null)
       }
     })
   }
@@ -120,7 +145,12 @@ export function AgentsList({ agents }: { agents: AgentListItem[] }) {
           </TableHeader>
           <TableBody>
             {visibleAgents.map((agent) => (
-              <TableRow key={agent.id} onClick={() => { window.location.href = `/agents?agentId=${encodeURIComponent(agent.id)}` }}>
+              <TableRow
+                key={agent.id}
+                onClick={() =>
+                  router.push(`/agents?agentId=${encodeURIComponent(agent.id)}`)
+                }
+              >
                 <TableCell className="h-14 pl-4 font-medium">
                   <div className="flex max-w-64 items-center gap-3">
                     <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
@@ -152,7 +182,7 @@ export function AgentsList({ agents }: { agents: AgentListItem[] }) {
                 <TableCell className="text-muted-foreground">
                   {agent.updatedAt}
                 </TableCell>
-                <TableCell>
+                <TableCell onClick={(event) => event.stopPropagation()}>
                   <DropdownMenu>
                     <DropdownMenuTrigger
                       render={
@@ -168,6 +198,13 @@ export function AgentsList({ agents }: { agents: AgentListItem[] }) {
                         }
                       >
                         Export
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        variant="destructive"
+                        disabled={isDeleting && deletingAgentId === agent.id}
+                        onClick={() => deleteAgent(agent)}
+                      >
+                        Delete
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
