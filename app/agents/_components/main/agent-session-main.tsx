@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { AgentSessionPrimaryTab } from "./agent-session-primary-tab"
 import { AgentSessionTabSecondary } from "./agent-session-secondary-tab"
 import { AgentSessionVersion } from "./agent-session-version"
+import { AgentSessionName } from "./agent-session-name"
 
 export function AgentSessionMain() {
     const searchParams = useSearchParams()
@@ -50,7 +51,8 @@ export function AgentSessionMain() {
             className="min-h-[calc(100svh-var(--header-height))] flex-1 gap-0 bg-black/10"
         >
             <div className="grid shrink-0 grid-cols-[1fr_auto_1fr] items-center border-b bg-background px-2 py-2">
-                <span aria-hidden="true" />
+
+                <AgentSessionName />
 
                 <TabsList>
                     <TabsTrigger value="create" className="px-4">

@@ -304,3 +304,24 @@ export function writeGeneralPrompt(generalPrompt: string) {
 
     return generalPrompt
 }
+
+
+// =================================================================
+// =========================== AGENT NAME ===========================
+// =================================================================
+
+export function getAgentName() {
+    return getAgentSession()?.name ?? "Untitled Agent"
+}
+
+export function writeAgentName(name: string) {
+    const agent = getAgentSession()
+    if (!agent) throw new Error("Agent session is not initialized.")
+
+    writeAgentSession({
+        ...agent,
+        name,
+    })
+
+    return name
+}
