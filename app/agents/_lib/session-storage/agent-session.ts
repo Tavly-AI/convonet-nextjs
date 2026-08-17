@@ -22,6 +22,25 @@ export type SpeechSettings = {
     pronunciation_dictionary: PronunciationDictionaryEntry[]
 }
 
+export type DenoisingMode =
+    | "noise-cancellation"
+    | "noise-and-background-speech-cancellation"
+    | "no-denoise"
+
+export type SttMode = "fast" | "accurate" | "custom"
+
+export type CustomSttConfig = {
+    endpointing_ms?: number
+    provider?: string
+}
+
+export type RealtimeTranscriptionSettings = {
+    denoising_mode: DenoisingMode
+    stt_mode: SttMode
+    custom_stt_config: CustomSttConfig | null
+    boosted_keywords: string[]
+}
+
 export type AgentSessionConfig = Record<string, unknown> & {
     agentType: string
     voiceId: string | null
@@ -160,6 +179,31 @@ export function getSpeechSettings(): Partial<SpeechSettings> {
 }
 
 export function writeSpeechSettings(settings: Partial<SpeechSettings>) {
+    const agent = getAgentSession()
+    if (!agent) throw new Error("Agent session is not initialized.")
+
+    writeAgentSession({
+        ...agent,
+        config: {
+            ...agent.config,
+            ...settings,
+        },
+    })
+
+    return settings
+}
+
+// =================================================================
+// ================= REALTIME TRANSCRIPTION SETTINGS ================
+// =================================================================
+
+export function getRealtimeTranscriptionSettings(): Partial<RealtimeTranscriptionSettings> {
+    return (getAgentSession()?.config ?? {}) as Partial<RealtimeTranscriptionSettings>
+}
+
+export function writeRealtimeTranscriptionSettings(
+    settings: Partial<RealtimeTranscriptionSettings>
+) {
     const agent = getAgentSession()
     if (!agent) throw new Error("Agent session is not initialized.")
 

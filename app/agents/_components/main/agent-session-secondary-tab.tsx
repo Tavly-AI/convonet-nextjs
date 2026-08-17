@@ -18,6 +18,7 @@ import {
 
 import { GeneralToolsEditor } from "@/app/agents/_components/functions/general-tools-editor"
 import { McpTools } from "@/app/agents/_components/mcp/mcp-tools"
+import { RealtimeTranscriptionSettings } from "@/app/agents/_components/realtime/realtime-settings"
 import { SpeechSettings } from "@/app/agents/_components/speech-settings/speech-settings"
 import { Card } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
@@ -42,6 +43,7 @@ const SECONDARY_TABS = [
     id: "transcription",
     label: "Realtime Transcription Settings",
     icon: LanguagesIcon,
+    content: RealtimeTranscriptionSettings,
   },
   { id: "call", label: "Call Settings", icon: HeadphonesIcon },
   {
