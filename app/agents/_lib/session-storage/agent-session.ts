@@ -32,6 +32,7 @@ export type AgentSessionConfig = Record<string, unknown> & {
 
 export type AgentSessionLlmConfig = Record<string, unknown> & {
     model: string
+    generalPrompt: string
     mcps: McpConfig[]
 }
 
@@ -65,6 +66,7 @@ const EMPTY_AGENT: AgentSessionAgent = {
     },
     llmConfig: {
         model: "gpt-4.1",
+        generalPrompt: "",
         mcps: [],
     },
     createdAt: null,
@@ -278,4 +280,27 @@ export function writeModel(model: string) {
     })
 
     return model
+}
+
+// =================================================================
+// ========================= GENERAL PROMPT =========================
+// =================================================================
+
+export function getGeneralPrompt() {
+    return getAgentSession()?.llmConfig.generalPrompt ?? ""
+}
+
+export function writeGeneralPrompt(generalPrompt: string) {
+    const agent = getAgentSession()
+    if (!agent) throw new Error("Agent session is not initialized.")
+
+    writeAgentSession({
+        ...agent,
+        llmConfig: {
+            ...agent.llmConfig,
+            generalPrompt,
+        },
+    })
+
+    return generalPrompt
 }

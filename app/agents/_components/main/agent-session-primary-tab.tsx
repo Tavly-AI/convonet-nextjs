@@ -15,12 +15,10 @@ import { Textarea } from "@/components/ui/textarea"
 import { VoiceModalPopup } from "../voice/voice-modal-popup"
 import { LanguageSelect } from "./agent-session-language"
 import { ModelSelect } from "./agent-session-model"
+import { GeneralPrompt } from "./agent-session-prompt"
 
-const PROMPT_PLACEHOLDER =
-  "Describe the agent's role, tone, rules, and conversation flow..."
 
 export function AgentSessionPrimaryTab() {
-  const [prompt, setPrompt] = React.useState("")
 
   const [voiceOpen, setVoiceOpen] = React.useState(false)
 
@@ -55,12 +53,7 @@ export function AgentSessionPrimaryTab() {
         </div>
 
         <div className="flex min-h-0 flex-1 flex-col p-4">
-          <Textarea
-            value={prompt}
-            onChange={(event) => setPrompt(event.target.value)}
-            placeholder={PROMPT_PLACEHOLDER}
-            className="min-h-[28rem] flex-1 resize-none border-muted-foreground/20 p-4 leading-6 shadow-none"
-          />
+          <GeneralPrompt />
         </div>
       </div>
     </Card>
