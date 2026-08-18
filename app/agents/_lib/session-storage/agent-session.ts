@@ -41,6 +41,22 @@ export type RealtimeTranscriptionSettings = {
     boosted_keywords: string[]
 }
 
+export type WebhookEvent =
+    | "call_started"
+    | "call_ended"
+    | "call_analyzed"
+    | "transcript_updated"
+    | "transfer_started"
+    | "transfer_bridged"
+    | "transfer_cancelled"
+    | "transfer_ended"
+
+export type WebhookSettings = {
+    webhook_url: string | null
+    webhook_events: WebhookEvent[]
+    webhook_timeout_ms: number
+}
+
 export type VoicemailAction =
     | {
         type: "prompt"
@@ -151,6 +167,12 @@ export const DEFAULT_CALL_SETTINGS = {
     ring_duration_ms: 30000,
 } satisfies CallSettings
 
+export const DEFAULT_WEBHOOK_SETTINGS = {
+    webhook_url: null,
+    webhook_events: [],
+    webhook_timeout_ms: 10000,
+} satisfies WebhookSettings
+
 // =================================================================
 // ================ CALL SETTINGS DEFAULT END ======================
 // =================================================================
@@ -162,6 +184,9 @@ export type AgentSessionConfig = Record<string, unknown> & {
     language: string
     phoneNumber: string | null
     generalTools: GeneralTool[]
+    webhook_url: string | null
+    webhook_events: WebhookEvent[]
+    webhook_timeout_ms: number
     post_call_analysis_data: PostCallAnalysisData[]
     post_call_analysis_model: PostCallAnalysisModel
 }
@@ -195,6 +220,7 @@ const EMPTY_AGENT: AgentSessionAgent = {
     draftVersion: 1,
     config: {
         ...DEFAULT_CALL_SETTINGS,
+        ...DEFAULT_WEBHOOK_SETTINGS,
         ...DEFAULT_POST_CALL_ANALYSIS_SETTINGS,
         agentType: "single_prompt",
         voiceId: null,
@@ -252,6 +278,9 @@ export function initializeAgentSession(agent: AgentSessionSource | null = null) 
                 storedConfig.post_call_analysis_model === undefined
                     ? EMPTY_AGENT.config.post_call_analysis_model
                     : storedConfig.post_call_analysis_model as PostCallAnalysisModel,
+            webhook_events: Array.isArray(storedConfig.webhook_events)
+                ? storedConfig.webhook_events as WebhookEvent[]
+                : EMPTY_AGENT.config.webhook_events,
         },
         llmConfig: {
             ...EMPTY_AGENT.llmConfig,
@@ -330,6 +359,29 @@ export function getRealtimeTranscriptionSettings(): Partial<RealtimeTranscriptio
 export function writeRealtimeTranscriptionSettings(
     settings: Partial<RealtimeTranscriptionSettings>
 ) {
+    const agent = getAgentSession()
+    if (!agent) throw new Error("Agent session is not initialized.")
+
+    writeAgentSession({
+        ...agent,
+        config: {
+            ...agent.config,
+            ...settings,
+        },
+    })
+
+    return settings
+}
+
+// =================================================================
+// ======================= WEBHOOK SETTINGS ========================
+// =================================================================
+
+export function getWebhookSettings(): Partial<WebhookSettings> {
+    return (getAgentSession()?.config ?? {}) as Partial<WebhookSettings>
+}
+
+export function writeWebhookSettings(settings: Partial<WebhookSettings>) {
     const agent = getAgentSession()
     if (!agent) throw new Error("Agent session is not initialized.")
 

@@ -22,6 +22,7 @@ import { McpTools } from "@/app/agents/_components/mcp/mcp-tools"
 import { PostCallAnalysisData } from "@/app/agents/_components/post-call/post-call-analysis-data"
 import { RealtimeTranscriptionSettings } from "@/app/agents/_components/realtime/realtime-settings"
 import { SpeechSettings } from "@/app/agents/_components/speech-settings/speech-settings"
+import { WebhookSettings } from "@/app/agents/_components/webhook-settings/webhook-settings"
 import { Card } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 
@@ -59,7 +60,12 @@ const SECONDARY_TABS = [
     label: "Security & Fallback Settings",
     icon: ShieldCheckIcon,
   },
-  { id: "webhook", label: "Webhook Settings", icon: WebhookIcon },
+  {
+    id: "webhook",
+    label: "Webhook Settings",
+    icon: WebhookIcon,
+    content: WebhookSettings,
+  },
   { id: "mcps", label: "MCPs", icon: PaperclipIcon, content: McpTools },
 ] as const satisfies readonly SecondaryTab[]
 
