@@ -21,6 +21,7 @@ import { Field } from "../functions/general-tool-form"
 import { Section } from "../speech-settings/speech-settings"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Separator } from "@/components/ui/separator"
+import { COMPANY_NAME } from "@/lib/constants"
 
 const WEBHOOK_EVENTS: { value: WebhookEvent; label: string; description: string }[] = [
   {
@@ -97,7 +98,7 @@ export function WebhookSettings() {
     <div className="space-y-8 border-t px-5 py-6 bg-gray-400/10 rounded-3xl">
       <Section
         title="Agent Level Webhook URL"
-        description="Webhook URL to receive events from Retell."
+        description={`Webhook URL to receive events from ${COMPANY_NAME}.`}
       >
         <div className="grid gap-3">
           <Field label="">
@@ -125,9 +126,7 @@ export function WebhookSettings() {
             </div>
           </Field>
           <a
-            href="https://docs.retellai.com/api-references/get-agent#response-webhook-url-one-of-0"
-            target="_blank"
-            rel="noreferrer"
+            href="#"
             className="inline-flex w-fit items-center gap-1 text-xs text-muted-foreground underline-offset-4 hover:underline"
           >
             Learn more

@@ -152,7 +152,7 @@ export function RealtimeTranscriptionSettings() {
                 .filter(Boolean),
             })
           }}
-          placeholder="Split by comma. Example: Retell, Walmart"
+          placeholder="Split by comma. Example: Apple, Walmart"
         />
       </Section>
     </div>

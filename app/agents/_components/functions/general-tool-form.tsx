@@ -25,6 +25,7 @@ import type {
   TransferMode,
 } from "@/app/agents/_lib/functions/general-tools"
 import { Section } from "../speech-settings/speech-settings"
+import { COMPANY_NAME } from "@/lib/constants"
 
 export function GeneralToolForm({
   value,
@@ -178,7 +179,7 @@ function TransferCallForm({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="agent">Retell agent&apos;s number</SelectItem>
+                  <SelectItem value="agent">${COMPANY_NAME} agent&apos;s number</SelectItem>
                   <SelectItem value="user">User&apos;s number</SelectItem>
                 </SelectContent>
               </Select>

@@ -48,6 +48,7 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
+import { COMPANY_NAME } from "@/lib/constants"
 
 const MODELS = [
     "gpt-4.1",
@@ -224,7 +225,7 @@ export function PostCallAnalysisData() {
                             {editingIndex === null ? "Add" : "Edit"} {draft && getFieldOption(draft).label}
                         </DialogTitle>
                         <DialogDescription>
-                            Configure the field Retell should extract after the call.
+                            Configure the field {COMPANY_NAME} should extract after the call.
                         </DialogDescription>
                     </DialogHeader>
 

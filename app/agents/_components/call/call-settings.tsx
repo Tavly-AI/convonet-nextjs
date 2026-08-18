@@ -150,7 +150,7 @@ export function CallSettings() {
                 <TextField
                   label="Agent identity"
                   value={settings.call_screening_option.agent_identity}
-                  placeholder="e.g. Retell AI scheduling team"
+                  placeholder="e.g. ABC AI scheduling team"
                   onChange={(agent_identity) =>
                     updateSettings({
                       call_screening_option: {

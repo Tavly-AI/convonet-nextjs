@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { COMPANY_NAME } from "@/lib/constants"
 
 type McpDraft = Omit<McpConfig, "headers" | "query_params"> & {
   headers: KeyValue[]
@@ -137,7 +138,7 @@ export function McpTools() {
               <DialogHeader className="shrink-0 border-b px-6 py-5">
                 <DialogTitle>{editingIndex === null ? "Add MCP" : "Edit MCP"}</DialogTitle>
                 <DialogDescription>
-                  Configure the remote MCP server connection used by Retell.
+                  Configure the remote MCP server connection used by {COMPANY_NAME}.
                 </DialogDescription>
               </DialogHeader>
 
