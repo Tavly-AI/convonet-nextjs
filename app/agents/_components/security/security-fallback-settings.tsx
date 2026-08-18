@@ -187,7 +187,7 @@ export function SecurityFallbackSettings() {
                             <SelectTrigger className="w-full bg-background">
                                 <SelectValue />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="min-w-[280px]">
                                 {DATA_STORAGE_OPTIONS.map((option) => (
                                     <SelectItem key={option.value} value={option.value}>
                                         {option.label}
@@ -271,7 +271,7 @@ export function SecurityFallbackSettings() {
             >
                 <div className="space-y-5">
                     <div className="space-y-3">
-                        <Label className="text-sm leading-normal">Agent output</Label>
+                        <Label className="text-sm text-muted-foreground leading-normal">output guardrails</Label>
                         <OptionGrid
                             options={OUTPUT_TOPICS}
                             values={settings.guardrail_config.output_topics}
@@ -280,7 +280,7 @@ export function SecurityFallbackSettings() {
                     </div>
 
                     <div className="space-y-3">
-                        <Label className="text-sm leading-normal">User input</Label>
+                        <Label className="text-sm text-muted-foreground leading-normal">input guardrail</Label>
                         <OptionGrid
                             options={INPUT_TOPICS}
                             values={settings.guardrail_config.input_topics}

@@ -21,10 +21,25 @@ export function OptionGrid<TValue extends string>({
   values: TValue[]
   onToggle: (value: TValue, checked: boolean) => void
 }) {
+  const inputKey = React.useMemo(
+    () =>
+      options
+        .map((option) => `${option.value}:${option.label}:${option.description}`)
+        .join("|"),
+    [options]
+  )
+  const [expandedState, setExpandedState] = React.useState(() => ({
+    key: inputKey,
+    expanded: false,
+  }))
+  const expanded = expandedState.key === inputKey ? expandedState.expanded : false
+  const visibleOptions = expanded ? options : []
+
   return (
-    <div className="overflow-hidden rounded-lg border bg-background">
-      {options.map((option, index) => {
+    <div key={inputKey} className="overflow-hidden rounded-lg border bg-background">
+      {visibleOptions.map((option, index) => {
         const checked = values.includes(option.value)
+        const showSeparator = index < visibleOptions.length - 1
 
         return (
           <React.Fragment key={option.value}>
@@ -45,11 +60,42 @@ export function OptionGrid<TValue extends string>({
                 </span>
               </div>
             </button>
-            {index < options.length - 1 && <Separator />}
+            {showSeparator && <Separator />}
           </React.Fragment>
         )
       })}
+      {expanded && options.length > 0 && <Separator />}
+      {options.length > 0 && (
+        <OptionGridToggle
+          expanded={expanded}
+          onToggle={() =>
+            setExpandedState((currentState) => ({
+              key: inputKey,
+              expanded: currentState.key === inputKey ? !currentState.expanded : true,
+            }))
+          }
+        />
+      )}
     </div>
+  )
+}
+
+function OptionGridToggle({
+  expanded,
+  onToggle,
+}: {
+  expanded: boolean
+  onToggle: () => void
+}) {
+  return (
+    <button
+      type="button"
+      aria-expanded={expanded}
+      onClick={onToggle}
+      className="flex w-full items-center justify-center px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+    >
+      {expanded ? "Show less" : "Show all"}
+    </button>
   )
 }
 

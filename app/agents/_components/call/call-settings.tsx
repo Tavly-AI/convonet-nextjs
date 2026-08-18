@@ -432,8 +432,7 @@ function SwitchToggle({
       pressed={pressed}
       onPressedChange={onPressedChange}
       aria-label={label}
-      className="h-5 w-8 justify-start rounded-full border bg-muted p-0.5 hover:bg-muted aria-pressed:justify-end aria-pressed:bg-slate-700 aria-pressed:border-0"
-    >
+      className="h-5 w-8 justify-start rounded-full border bg-muted p-0.5 hover:bg-muted aria-pressed:justify-end aria-pressed:border-primary aria-pressed:bg-primary"    >
       <span className="size-4 rounded-full bg-background shadow-sm" />
     </Toggle>
   )
