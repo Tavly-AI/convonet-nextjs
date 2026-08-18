@@ -57,6 +57,80 @@ export type WebhookSettings = {
     webhook_timeout_ms: number
 }
 
+// =================================================================
+// ================== SECURITY DEFAULT & TYPES =====================
+// =================================================================
+
+
+export type DataStorageSetting =
+    | "everything"
+    | "everything_except_pii"
+    | "basic_attributes_only"
+
+export type PiiCategory =
+    | "person_name"
+    | "address"
+    | "email"
+    | "phone_number"
+    | "ssn"
+    | "passport"
+    | "driver_license"
+    | "credit_card"
+    | "bank_account"
+    | "password"
+    | "pin"
+    | "medical_id"
+    | "date_of_birth"
+    | "customer_account_number"
+
+export type GuardrailOutputTopic =
+    | "harassment"
+    | "self_harm"
+    | "sexual_exploitation"
+    | "violence"
+    | "defense_and_national_security"
+    | "illicit_and_harmful_activity"
+    | "gambling"
+    | "regulated_professional_advice"
+    | "child_safety_and_exploitation"
+
+export type GuardrailInputTopic = "platform_integrity_jailbreaking"
+
+export type SecurityFallbackSettings = {
+    data_storage_setting: DataStorageSetting
+    data_storage_retention_days: number | null
+    opt_in_signed_url: boolean
+    signed_url_expiration_ms: number | null
+    pii_config: {
+        mode: "post_call"
+        categories: PiiCategory[]
+    }
+    guardrail_config: {
+        output_topics: GuardrailOutputTopic[]
+        input_topics: GuardrailInputTopic[]
+    }
+}
+
+export const DEFAULT_SECURITY_FALLBACK_SETTINGS = {
+    data_storage_setting: "everything",
+    data_storage_retention_days: null,
+    opt_in_signed_url: false,
+    signed_url_expiration_ms: 86400000,
+    pii_config: {
+        mode: "post_call",
+        categories: [],
+    },
+    guardrail_config: {
+        output_topics: [],
+        input_topics: [],
+    },
+} satisfies SecurityFallbackSettings
+
+// =================================================================
+// ================ SECURITY DEFAULT & TYPES END ===================
+// =================================================================
+
+
 export type VoicemailAction =
     | {
         type: "prompt"
@@ -187,6 +261,12 @@ export type AgentSessionConfig = Record<string, unknown> & {
     webhook_url: string | null
     webhook_events: WebhookEvent[]
     webhook_timeout_ms: number
+    data_storage_setting: DataStorageSetting
+    data_storage_retention_days: number | null
+    opt_in_signed_url: boolean
+    signed_url_expiration_ms: number | null
+    pii_config: SecurityFallbackSettings["pii_config"]
+    guardrail_config: SecurityFallbackSettings["guardrail_config"]
     post_call_analysis_data: PostCallAnalysisData[]
     post_call_analysis_model: PostCallAnalysisModel
 }
@@ -221,6 +301,7 @@ const EMPTY_AGENT: AgentSessionAgent = {
     config: {
         ...DEFAULT_CALL_SETTINGS,
         ...DEFAULT_WEBHOOK_SETTINGS,
+        ...DEFAULT_SECURITY_FALLBACK_SETTINGS,
         ...DEFAULT_POST_CALL_ANALYSIS_SETTINGS,
         agentType: "single_prompt",
         voiceId: null,
@@ -281,6 +362,27 @@ export function initializeAgentSession(agent: AgentSessionSource | null = null) 
             webhook_events: Array.isArray(storedConfig.webhook_events)
                 ? storedConfig.webhook_events as WebhookEvent[]
                 : EMPTY_AGENT.config.webhook_events,
+            pii_config: {
+                ...EMPTY_AGENT.config.pii_config,
+                ...(typeof storedConfig.pii_config === "object" && storedConfig.pii_config
+                    ? storedConfig.pii_config
+                    : {}),
+                categories: Array.isArray((storedConfig.pii_config as { categories?: unknown } | undefined)?.categories)
+                    ? (storedConfig.pii_config as { categories: PiiCategory[] }).categories
+                    : EMPTY_AGENT.config.pii_config.categories,
+            },
+            guardrail_config: {
+                ...EMPTY_AGENT.config.guardrail_config,
+                ...(typeof storedConfig.guardrail_config === "object" && storedConfig.guardrail_config
+                    ? storedConfig.guardrail_config
+                    : {}),
+                output_topics: Array.isArray((storedConfig.guardrail_config as { output_topics?: unknown } | undefined)?.output_topics)
+                    ? (storedConfig.guardrail_config as { output_topics: GuardrailOutputTopic[] }).output_topics
+                    : EMPTY_AGENT.config.guardrail_config.output_topics,
+                input_topics: Array.isArray((storedConfig.guardrail_config as { input_topics?: unknown } | undefined)?.input_topics)
+                    ? (storedConfig.guardrail_config as { input_topics: GuardrailInputTopic[] }).input_topics
+                    : EMPTY_AGENT.config.guardrail_config.input_topics,
+            },
         },
         llmConfig: {
             ...EMPTY_AGENT.llmConfig,
@@ -382,6 +484,29 @@ export function getWebhookSettings(): Partial<WebhookSettings> {
 }
 
 export function writeWebhookSettings(settings: Partial<WebhookSettings>) {
+    const agent = getAgentSession()
+    if (!agent) throw new Error("Agent session is not initialized.")
+
+    writeAgentSession({
+        ...agent,
+        config: {
+            ...agent.config,
+            ...settings,
+        },
+    })
+
+    return settings
+}
+
+// =================================================================
+// ================= SECURITY & FALLBACK SETTINGS ==================
+// =================================================================
+
+export function getSecurityFallbackSettings(): Partial<SecurityFallbackSettings> {
+    return (getAgentSession()?.config ?? {}) as Partial<SecurityFallbackSettings>
+}
+
+export function writeSecurityFallbackSettings(settings: Partial<SecurityFallbackSettings>) {
     const agent = getAgentSession()
     if (!agent) throw new Error("Agent session is not initialized.")
 

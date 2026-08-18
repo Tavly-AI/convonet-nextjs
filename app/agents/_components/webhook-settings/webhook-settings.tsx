@@ -12,6 +12,7 @@ import {
   getWebhookSettings,
   writeWebhookSettings,
 } from "@/app/agents/_lib/session-storage/agent-session"
+import { OptionGrid } from "@/app/agents/_components/shared/option-grid"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -19,8 +20,6 @@ import { Label } from "@/components/ui/label"
 import { Slider } from "@/components/ui/slider"
 import { Field } from "../functions/general-tool-form"
 import { Section } from "../speech-settings/speech-settings"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Separator } from "@/components/ui/separator"
 import { COMPANY_NAME } from "@/lib/constants"
 
 const WEBHOOK_EVENTS: { value: WebhookEvent; label: string; description: string }[] = [
@@ -153,56 +152,12 @@ export function WebhookSettings() {
         title="Webhook Events"
         description="Choose which events this webhook should receive."
       >
-        <WebhookEvents
-          events={settings.webhook_events}
+        <OptionGrid
+          options={WEBHOOK_EVENTS}
+          values={settings.webhook_events}
           onToggle={toggleEvent}
         />
       </Section>
-    </div>
-  )
-}
-
-
-function WebhookEvents({
-  events,
-  onToggle,
-}: {
-  events: WebhookEvent[]
-  onToggle: (event: WebhookEvent, checked: boolean) => void
-}) {
-  return (
-    <div className="overflow-hidden rounded-lg border bg-background">
-      {WEBHOOK_EVENTS.map((event, index) => {
-        const checked = events.includes(event.value)
-
-        return (
-          <React.Fragment key={event.value}>
-            <button
-              type="button"
-              onClick={() => onToggle(event.value, !checked)}
-              className="flex w-full items-start gap-3 p-4 text-left transition-colors hover:bg-muted/50"
-            >
-              <Checkbox
-                checked={checked}
-                tabIndex={-1}
-                className="pointer-events-none mt-0.5"
-              />
-
-              <div className="grid flex-1 gap-1">
-                <span className="text-sm font-medium">
-                  {event.label}
-                </span>
-
-                <span className="text-xs leading-relaxed text-muted-foreground">
-                  {event.description}
-                </span>
-              </div>
-            </button>
-
-            {index < WEBHOOK_EVENTS.length - 1 && <Separator />}
-          </React.Fragment>
-        )
-      })}
     </div>
   )
 }

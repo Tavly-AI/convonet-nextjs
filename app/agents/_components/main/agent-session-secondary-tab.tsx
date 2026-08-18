@@ -21,6 +21,7 @@ import { GeneralToolsEditor } from "@/app/agents/_components/functions/general-t
 import { McpTools } from "@/app/agents/_components/mcp/mcp-tools"
 import { PostCallAnalysisData } from "@/app/agents/_components/post-call/post-call-analysis-data"
 import { RealtimeTranscriptionSettings } from "@/app/agents/_components/realtime/realtime-settings"
+import { SecurityFallbackSettings } from "@/app/agents/_components/security/security-fallback-settings"
 import { SpeechSettings } from "@/app/agents/_components/speech-settings/speech-settings"
 import { WebhookSettings } from "@/app/agents/_components/webhook-settings/webhook-settings"
 import { Card } from "@/components/ui/card"
@@ -59,6 +60,7 @@ const SECONDARY_TABS = [
     id: "security",
     label: "Security & Fallback Settings",
     icon: ShieldCheckIcon,
+    content: SecurityFallbackSettings,
   },
   {
     id: "webhook",
