@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma"
+import { WorkspaceRole } from "@/lib/enums/roles"
 import { OAuth2Client } from "google-auth-library"
 import jwt from "jsonwebtoken"
 import { cookies } from "next/headers"
@@ -27,6 +28,12 @@ export async function POST(request: Request) {
             create: {
                 sub: googleUser.sub,
                 email: googleUser.email,
+
+                // add default workspace onCreate
+                role: WorkspaceRole.ADMIN,
+                workspace: {
+                    create: { name: "My Workspace" },
+                },
             },
         })
 
