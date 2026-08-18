@@ -19,6 +19,7 @@ import {
 import { CallSettings } from "@/app/agents/_components/call/call-settings"
 import { GeneralToolsEditor } from "@/app/agents/_components/functions/general-tools-editor"
 import { McpTools } from "@/app/agents/_components/mcp/mcp-tools"
+import { PostCallAnalysisData } from "@/app/agents/_components/post-call/post-call-analysis-data"
 import { RealtimeTranscriptionSettings } from "@/app/agents/_components/realtime/realtime-settings"
 import { SpeechSettings } from "@/app/agents/_components/speech-settings/speech-settings"
 import { Card } from "@/components/ui/card"
@@ -51,6 +52,7 @@ const SECONDARY_TABS = [
     id: "post-call",
     label: "Post-Call Data Extraction",
     icon: ChartNoAxesCombinedIcon,
+    content: PostCallAnalysisData,
   },
   {
     id: "security",

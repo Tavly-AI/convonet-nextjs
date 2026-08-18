@@ -95,6 +95,41 @@ export type CallSettings = {
 }
 
 // =================================================================
+// ================= POST CALL DEFAULT & TYPES =====================
+// =================================================================
+
+
+export type PostCallAnalysisModel =
+    | "gpt-4.1"
+    | "gpt-4.1-mini"
+    | "gpt-4.1-nano"
+    | "gpt-5"
+    | "gpt-5-mini"
+    | "gpt-5-nano"
+
+export type PostCallAnalysisData = {
+    type: "string" | "number" | "boolean" | "enum" | "system-presets"
+    name: string
+    description: string
+    examples?: string[]
+    choices?: string[]
+    required?: boolean
+    conditional_prompt?: string
+}
+
+export type PostCallAnalysisSettings = {
+    post_call_analysis_data: PostCallAnalysisData[]
+    post_call_analysis_model: PostCallAnalysisModel
+}
+
+export const DEFAULT_POST_CALL_ANALYSIS_SETTINGS = {
+    post_call_analysis_data: [],
+    post_call_analysis_model: "gpt-4.1",
+} satisfies PostCallAnalysisSettings
+
+
+
+// =================================================================
 // ==================== CALL SETTINGS DEFAULT ======================
 // =================================================================
 
@@ -127,6 +162,8 @@ export type AgentSessionConfig = Record<string, unknown> & {
     language: string
     phoneNumber: string | null
     generalTools: GeneralTool[]
+    post_call_analysis_data: PostCallAnalysisData[]
+    post_call_analysis_model: PostCallAnalysisModel
 }
 
 export type AgentSessionLlmConfig = Record<string, unknown> & {
@@ -158,6 +195,7 @@ const EMPTY_AGENT: AgentSessionAgent = {
     draftVersion: 1,
     config: {
         ...DEFAULT_CALL_SETTINGS,
+        ...DEFAULT_POST_CALL_ANALYSIS_SETTINGS,
         agentType: "single_prompt",
         voiceId: null,
         language: "en-US",
@@ -207,6 +245,13 @@ export function initializeAgentSession(agent: AgentSessionSource | null = null) 
             generalTools: Array.isArray(storedConfig.generalTools)
                 ? storedConfig.generalTools as GeneralTool[]
                 : EMPTY_AGENT.config.generalTools,
+            post_call_analysis_data: Array.isArray(storedConfig.post_call_analysis_data)
+                ? storedConfig.post_call_analysis_data as PostCallAnalysisData[]
+                : EMPTY_AGENT.config.post_call_analysis_data,
+            post_call_analysis_model:
+                storedConfig.post_call_analysis_model === undefined
+                    ? EMPTY_AGENT.config.post_call_analysis_model
+                    : storedConfig.post_call_analysis_model as PostCallAnalysisModel,
         },
         llmConfig: {
             ...EMPTY_AGENT.llmConfig,
@@ -308,6 +353,29 @@ export function getCallSettings(): Partial<CallSettings> {
 }
 
 export function writeCallSettings(settings: Partial<CallSettings>) {
+    const agent = getAgentSession()
+    if (!agent) throw new Error("Agent session is not initialized.")
+
+    writeAgentSession({
+        ...agent,
+        config: {
+            ...agent.config,
+            ...settings,
+        },
+    })
+
+    return settings
+}
+
+// =================================================================
+// ===================== POST CALL ANALYSIS ========================
+// =================================================================
+
+export function getPostCallAnalysisSettings(): Partial<PostCallAnalysisSettings> {
+    return (getAgentSession()?.config ?? {}) as Partial<PostCallAnalysisSettings>
+}
+
+export function writePostCallAnalysisSettings(settings: Partial<PostCallAnalysisSettings>) {
     const agent = getAgentSession()
     if (!agent) throw new Error("Agent session is not initialized.")
 
