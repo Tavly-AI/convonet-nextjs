@@ -189,13 +189,7 @@ export type CallSettings = {
 // =================================================================
 
 
-export type PostCallAnalysisModel =
-    | "gpt-4.1"
-    | "gpt-4.1-mini"
-    | "gpt-4.1-nano"
-    | "gpt-5"
-    | "gpt-5-mini"
-    | "gpt-5-nano"
+export type PostCallAnalysisModel = string
 
 export type PostCallAnalysisData = {
     type: "string" | "number" | "boolean" | "enum" | "system-presets"

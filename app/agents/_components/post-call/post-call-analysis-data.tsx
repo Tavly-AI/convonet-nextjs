@@ -12,9 +12,9 @@ import {
 } from "lucide-react"
 
 import { Field } from "@/app/agents/_components/functions/general-tool-form"
+import { LLMModelDropdown } from "@/app/agents/_components/main/agent-session-model"
 import type {
     PostCallAnalysisData as PostCallAnalysisField,
-    PostCallAnalysisModel,
     PostCallAnalysisSettings,
 } from "@/app/agents/_lib/session-storage/agent-session"
 import {
@@ -49,15 +49,6 @@ import {
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { COMPANY_NAME } from "@/lib/constants"
-
-const MODELS = [
-    "gpt-4.1",
-    "gpt-4.1-mini",
-    "gpt-4.1-nano",
-    "gpt-5",
-    "gpt-5-mini",
-    "gpt-5-nano",
-] as const satisfies readonly PostCallAnalysisModel[]
 
 const FIELD_TYPES = [
     { type: "string" as const, label: "Text", icon: FileTextIcon },
@@ -97,10 +88,8 @@ export function PostCallAnalysisData() {
             post_call_analysis_data: Array.isArray(storedSettings.post_call_analysis_data)
                 ? storedSettings.post_call_analysis_data
                 : DEFAULT_POST_CALL_ANALYSIS_SETTINGS.post_call_analysis_data,
-            post_call_analysis_model: MODELS.includes(
-                storedSettings.post_call_analysis_model as PostCallAnalysisModel
-            )
-                ? storedSettings.post_call_analysis_model as PostCallAnalysisModel
+            post_call_analysis_model: typeof storedSettings.post_call_analysis_model === "string"
+                ? storedSettings.post_call_analysis_model
                 : DEFAULT_POST_CALL_ANALYSIS_SETTINGS.post_call_analysis_model,
         }
     })
@@ -204,9 +193,9 @@ export function PostCallAnalysisData() {
             )}
 
             <div className="flex items-center gap-2">
-                <AnalysisModelDropdown
+                <LLMModelDropdown
                     value={settings.post_call_analysis_model}
-                    onChange={(post_call_analysis_model) =>
+                    onValueChange={(post_call_analysis_model) =>
                         updateSettings({ post_call_analysis_model })
                     }
                 />
@@ -270,29 +259,6 @@ export function PostCallAnalysisData() {
 
 
 // MISC CODE
-
-function AnalysisModelDropdown({
-    value,
-    onChange,
-}: {
-    value: PostCallAnalysisModel
-    onChange: (value: PostCallAnalysisModel) => void
-}) {
-    return (
-        <DropdownMenu>
-            <DropdownMenuTrigger render={<Button size="sm" variant="outline" />}>
-                Model: {value}
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-44">
-                {MODELS.map((model) => (
-                    <DropdownMenuItem key={model} onClick={() => onChange(model)}>
-                        {model}
-                    </DropdownMenuItem>
-                ))}
-            </DropdownMenuContent>
-        </DropdownMenu>
-    )
-}
 
 function AddAnalysisDropdown({
     fields,

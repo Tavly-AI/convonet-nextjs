@@ -14,7 +14,7 @@ import { Card } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
 import { VoiceModalPopup } from "../voice/voice-modal-popup"
 import { LanguageSelect } from "./agent-session-language"
-import { ModelSelect } from "./agent-session-model"
+import { LLMModelSelect } from "./agent-session-model"
 import { GeneralPrompt } from "./agent-session-prompt"
 
 
@@ -34,7 +34,7 @@ export function AgentSessionPrimaryTab() {
 
         <div className="flex flex-wrap items-center gap-2 px-4 py-3">
 
-          <ModelSelect />
+          <LLMModelSelect />
 
           <VoiceModalPopup open={voiceOpen} onOpenChange={open => setVoiceOpen(open)} />
 
