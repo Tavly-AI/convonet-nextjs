@@ -41,6 +41,8 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { VOICES_UPDATED, type Voice } from "../../_data/voices-updated"
 import { VOICES_FAKE_DATA } from "../../_data/voices-fake-data"
 import { getVoiceId, writeVoiceId } from "../../_lib/session-storage/agent-session"
+import { CustomVoiceModal } from "./custom-voice-modal"
+import { getWorkspaceVoices, type WorkspaceVoice } from "./voices-actions"
 
 export type VoiceModalPopupProps = {
   open: boolean
@@ -68,29 +70,47 @@ export function VoiceModalPopup({
   const [accent, setAccent] = React.useState("all")
   const [search, setSearch] = React.useState("")
 
-  const selectedVoiceId = getVoiceId()
+  // ================================================================
+  // ==================== NORMAL VOICE LOGIC ========================
+  // ================================================================
 
-  const selectedVoice = React.useMemo(
-    () => VOICES_UPDATED.find((voice) => voice.voice_id === selectedVoiceId),
-    [selectedVoiceId]
-  )
+  const [selectedVoiceId, setSelectedVoiceId] = React.useState(() => getVoiceId())
+  const selectedVoice = VOICES_UPDATED.find((voice) => voice.voice_id === selectedVoiceId)
 
   const filteredVoices = React.useMemo(() => {
     const query = search.trim().toLowerCase()
 
     return VOICES_UPDATED.filter((voice) => {
       const matchesProvider = voice.provider === provider
-      const matchesGender =
-        gender === "all" || voice.gender.toLowerCase() === gender
+      const matchesGender = gender === "all" || voice.gender.toLowerCase() === gender
       const matchesAccent = accent === "all" || voice.accent === accent
-      const matchesSearch =
-        !query ||
-        voice.name.toLowerCase().includes(query) ||
-        voice.voice_id.toLowerCase().includes(query)
-
+      const matchesSearch = !query || voice.name.toLowerCase().includes(query) || voice.voice_id.toLowerCase().includes(query)
       return matchesProvider && matchesGender && matchesAccent && matchesSearch
-    })
+    }).slice(0, 50)
   }, [accent, gender, provider, search])
+
+
+  // ================================================================
+  // ==================== CUSTOM VOICE LOGIC ========================
+  // ================================================================
+
+  const [customVoices, setCustomVoices] = React.useState<WorkspaceVoice[]>([])
+
+  const selectedCustomVoice = React.useMemo(
+    () => customVoices.find((voice) => voice.voice_id === selectedVoiceId),
+    [customVoices, selectedVoiceId]
+  )
+  React.useEffect(() => {
+    getWorkspaceVoices().then(setCustomVoices)
+  }, [selectedVoice])
+
+
+  // hack: cause parent rerender whenever we do writeVoiceId in any child component
+  React.useEffect(() => {
+    const update = () => setSelectedVoiceId(getVoiceId())
+    window.addEventListener("voice-changed", update)
+    return () => window.removeEventListener("voice-changed", update)
+  }, [])
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -107,7 +127,17 @@ export function VoiceModalPopup({
           <>
             <VoiceAvatar voice={selectedVoice} size="sm" />
             <span className="max-w-24 truncate">{selectedVoice.name}</span>
-            <span className="max-w-8 truncate font-mono text-xs text-muted-foreground">{selectedVoice.voice_id}</span>
+            <span className="max-w-8 truncate font-mono text-xs text-muted-foreground">
+              {selectedVoice.voice_id}
+            </span>
+          </>
+        ) : selectedCustomVoice ? (
+          <>
+            <Mic2Icon className="size-4 text-muted-foreground" />
+            <span className="max-w-24 truncate">{selectedCustomVoice.name}</span>
+            <span className="max-w-8 truncate font-mono text-xs text-muted-foreground">
+              {selectedCustomVoice.voice_id}
+            </span>
           </>
         ) : (
           <>
@@ -141,7 +171,15 @@ export function VoiceModalPopup({
             </TabsList>
           </Tabs>
 
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[15rem_15rem_minmax(16rem,1fr)]">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <CustomVoiceModal
+              provider={provider}
+              onVoiceAdded={(voice) => {
+                writeVoiceId(voice.voice_id)
+                window.dispatchEvent(new Event("voice-changed"))
+              }} />
+
+
             <VoiceFilters
               gender={gender}
               onGenderChange={setGender}
@@ -151,6 +189,8 @@ export function VoiceModalPopup({
               onSearchChange={setSearch}
             />
           </div>
+
+          <CustomVoices voices={customVoices} provider={provider} />
 
           {filteredVoices.length === 0 ? (
             emptyState()
@@ -206,9 +246,13 @@ export function VoiceModalPopup({
                             type="button"
                             size="sm"
                             className="pointer-events-none opacity-0 transition-none group-hover:pointer-events-auto group-hover:opacity-100"
-                            onClick={() => { writeVoiceId(voice.voice_id) }}
+                            onClick={() => {
+                              writeVoiceId(voice.voice_id);
+                              window.dispatchEvent(new Event("voice-changed"))
+                            }}
                           >
-                            Select
+                            {selectedVoiceId === voice.voice_id ? "Selected" : "Select"
+                            }
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -239,7 +283,114 @@ export function VoiceModalPopup({
           </Button>
         </DialogFooter>
       </DialogContent>
-    </Dialog>
+    </Dialog >
+  )
+}
+
+// CUSOTM VOICE LOGIC
+
+function CustomVoices({
+  voices,
+  provider,
+}: {
+  voices: WorkspaceVoice[]
+  provider: Provider
+}) {
+  const filteredVoices = voices.filter(
+    (voice) => voice.provider === provider
+  )
+
+  if (filteredVoices.length === 0) return null
+
+  return (
+    <section className="space-y-2">
+      <h2 className="font-medium">Custom Voices</h2>
+
+      <div className="grid auto-cols-[minmax(18rem,1fr)] grid-flow-col gap-3 overflow-x-auto pb-1 xl:auto-cols-[minmax(20rem,calc((100%-2.25rem)/4))]">
+        {filteredVoices.map((voice) => (
+          <CustomVoiceCard
+            key={voice.voice_id}
+            voice={voice}
+          />
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function CustomVoiceCard({ voice }: { voice: WorkspaceVoice }) {
+  const [playing, setPlaying] = React.useState(false)
+  const audioRef = React.useRef<HTMLAudioElement | null>(null)
+
+  function resetPreview() {
+    audioRef.current = null
+    setPlaying(false)
+  }
+
+  function togglePreview() {
+    if (!voice.preview_url) return
+
+    if (audioRef.current) {
+      audioRef.current.pause()
+      resetPreview()
+      return
+    }
+
+    const previewUrl =
+      voice.provider === "cartesia"
+        ? `/api/search-voice/cartesia-play-voice?url=${encodeURIComponent(voice.preview_url)}`
+        : voice.preview_url
+
+    const audio = new Audio(previewUrl)
+
+    audioRef.current = audio
+    audio.onended = resetPreview
+    audio.onerror = resetPreview
+
+    setPlaying(true)
+
+    void audio.play().catch(resetPreview)
+  }
+
+  return (
+    <div className="flex min-w-0 items-center gap-3 rounded-xl border bg-card p-3">
+      <div className="min-w-0 flex-1">
+        <p className="truncate font-medium">
+          {voice.name}
+        </p>
+
+        <p className="truncate text-xs text-muted-foreground">
+          ID: {voice.voice_id}
+        </p>
+      </div>
+
+      {voice.preview_url && (
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          onClick={togglePreview}
+          aria-label={`${playing ? "Pause" : "Preview"} ${voice.name}`}
+        >
+          {playing ? (
+            <PauseIcon />
+          ) : (
+            <PlayIcon className="fill-current" />
+          )}
+        </Button>
+      )}
+
+      <Button
+        type="button"
+        size="sm"
+        onClick={() => {
+          writeVoiceId(voice.voice_id);
+          window.dispatchEvent(new Event("voice-changed"))
+        }}
+      >
+        {getVoiceId() === voice.voice_id ? "Selected" : "Select"}
+      </Button>
+    </div >
   )
 }
 

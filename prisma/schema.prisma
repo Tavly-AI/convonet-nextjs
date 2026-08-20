@@ -26,6 +26,7 @@ model User {
 model Workspace {
   id            String         @id @default(cuid())
   name          String
+  customVoices  Json?
   users         User[]
   agents        Agent[]
   agentVersions AgentVersion[]

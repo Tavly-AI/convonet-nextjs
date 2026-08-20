@@ -4,6 +4,7 @@ import { redirect } from "next/navigation"
 import { AgentsList, type AgentListItem } from "./_components/agents-list"
 import { VOICES_UPDATED } from "@/app/agents/_data/voices-updated"
 import { VOICES_FAKE_DATA } from "@/app/agents/_data/voices-fake-data"
+import type { WorkspaceVoice } from "@/app/agents/_components/voice/voices-actions"
 
 export default async function Page() {
   const userId = await getCurrentUserId()
@@ -23,18 +24,48 @@ export default async function Page() {
     })
     : []
 
+
+  // ============================================================
+  // ================ CUSTOM VOICES LOGIC =======================
+  // ============================================================
+
+  const hasCustomVoice = agents.some((agent) => {
+    const config = agent.config as Record<string, unknown>
+    const voiceId = config.voiceId ?? config.voice_id
+
+    return voiceId && !VOICES_UPDATED.some((voice) => voice.voice_id === voiceId)
+  })
+
+  const customVoices = hasCustomVoice && user.workspaceId
+    ? await prisma.workspace.findUnique({
+      where: { id: user.workspaceId },
+      select: { customVoices: true },
+    }).then((workspace) => Array.isArray(workspace?.customVoices) ? workspace.customVoices as WorkspaceVoice[] : [])
+    : []
+
+  // ============================================================
+  // ============== CUSTOM VOICES LOGIC END =====================
+  // ============================================================
+
+
   const items: AgentListItem[] = agents.map((agent) => {
     const config = agent.config as Record<string, unknown>
     const voiceId = config.voiceId ?? config.voice_id
-    const voice = VOICES_UPDATED.find(({ voice_id }) => voice_id === voiceId)
+
+    // select values for both normal and custom voice
+    // whatever exists we will go with that
+    const normalvoice = VOICES_UPDATED.find(({ voice_id }) => voice_id === voiceId)
+    const customVoice = !normalvoice ? customVoices.find((item) => typeof item === "object" && item !== null && "voice_id" in item && item.voice_id === voiceId) : null
 
     return {
       id: agent.id,
       name: agent.name,
       type: String(config.agentType),
-      voice: voice
-        ? { name: voice.name, avatarUrl: VOICES_FAKE_DATA[0].avatar_url }
-        : null,
+      voice: normalvoice
+        ? { name: normalvoice.name, avatarUrl: VOICES_FAKE_DATA[0].avatar_url }
+        : customVoice && "name" in customVoice
+          ? { name: String(customVoice.name), avatarUrl: "" }
+          : null,
       phone: String(config.phone ?? config.phoneNumber ?? "-"),
       updatedAt: new Intl.DateTimeFormat("en-US", {
         year: "numeric",
