@@ -1,0 +1,292 @@
+import {
+    BotIcon,
+    BracesIcon,
+    BriefcaseMedicalIcon,
+    Building2Icon,
+    CalendarCheckIcon,
+    CircleDollarSignIcon,
+    ClockIcon,
+    FileTextIcon,
+    GitBranchIcon,
+    HeadphonesIcon,
+    LanguagesIcon,
+    LandmarkIcon,
+    MegaphoneIcon,
+    PillIcon,
+    PhoneCallIcon,
+    PhoneForwardedIcon,
+    ScaleIcon,
+    PlusIcon,
+    SparklesIcon,
+    TruckIcon,
+    UserCheckIcon,
+    UsersIcon,
+    WorkflowIcon,
+    type LucideIcon,
+} from "lucide-react"
+
+
+type AgentTemplate = {
+    id: string
+    name: string
+    description: string
+    category: Exclude<TemplateCategory, "All"> | "Starter"
+    icons: LucideIcon[]
+    badge?: string
+    muted?: boolean
+}
+
+export const TEMPLATE_TABS = [
+    "All",
+    "Receptionist",
+    "Outbound Sales & Reactivation",
+    "Appointment Booking",
+    "Lead Qualification",
+    "Customer Support & After-Hours",
+    "Back-Office Task Automation",
+    "Debt Collection",
+    "IVR & DTMF Automation",
+    "Real-Time Translation",
+] as const
+
+type TemplateCategory = (typeof TEMPLATE_TABS)[number]
+
+
+export const TEMPLATES_LIST: AgentTemplate[] = [
+    {
+        id: "scratch",
+        name: "Build from scratch",
+        description: "Start with a blank agent",
+        category: "Starter",
+        icons: [PlusIcon],
+        muted: true,
+    },
+    {
+        id: "prompt",
+        name: "Generate from prompt",
+        description: "Describe it, AI builds your agent",
+        category: "Starter",
+        icons: [SparklesIcon],
+        badge: "Suggested",
+        muted: true,
+    },
+    {
+        id: "insurance",
+        name: "Insurance Verification Caller",
+        description: "Call to verify insurance details and coverage information.",
+        category: "Back-Office Task Automation",
+        icons: [BotIcon, BracesIcon],
+    },
+    {
+        id: "ivr-navigation-payment-bot",
+        name: "IVR Navigation Payment Bot",
+        description: "Navigate IVR menus and process payment information.",
+        category: "IVR & DTMF Automation",
+        icons: [BotIcon, PhoneForwardedIcon],
+    },
+    {
+        id: "documents",
+        name: "Document Request Caller",
+        description: "Call to request and follow up on required documents.",
+        category: "Back-Office Task Automation",
+        icons: [FileTextIcon, PhoneCallIcon],
+    },
+    {
+        id: "outreach-dialer",
+        name: "Outreach Dialer",
+        description: "Outbound call for customer outreach and engagement.",
+        category: "Outbound Sales & Reactivation",
+        icons: [MegaphoneIcon, PhoneCallIcon, GitBranchIcon],
+    },
+    {
+        id: "basic-lead-qualification",
+        name: "Basic Lead Qualification",
+        description: "Ask qualifying questions to assess lead potential.",
+        category: "Lead Qualification",
+        icons: [UserCheckIcon, BracesIcon],
+    },
+    {
+        id: "mortgage-inbound-follow-up",
+        name: "Mortgage Inbound Form Follow-Up",
+        description: "Follow up on mortgage form submissions and next steps.",
+        category: "Lead Qualification",
+        icons: [LandmarkIcon, PhoneCallIcon],
+    },
+    {
+        id: "live-call-translator",
+        name: "Live Call Translator",
+        description: "Real-time translation during live calls.",
+        category: "Real-Time Translation",
+        icons: [LanguagesIcon, PhoneCallIcon],
+    },
+    {
+        id: "delivery-status-caller",
+        name: "Delivery Status Caller",
+        description: "Call to check and relay delivery status updates.",
+        category: "Back-Office Task Automation",
+        icons: [TruckIcon, PhoneCallIcon],
+    },
+    {
+        id: "multi-department-router",
+        name: "Multi-Department Router",
+        description: "Route calls to the appropriate department.",
+        category: "Receptionist",
+        icons: [Building2Icon, GitBranchIcon],
+    },
+    {
+        id: "rider-appointment-booking",
+        name: "Rider Appointment Booking",
+        description: "Book and manage rider appointments.",
+        category: "Appointment Booking",
+        icons: [CalendarCheckIcon, PhoneCallIcon],
+    },
+    {
+        id: "lead-reactivation",
+        name: "Lead Reactivation Campaign",
+        description: "Re-engage cold or dormant leads with a personalized outreach call.",
+        category: "Outbound Sales & Reactivation",
+        icons: [UsersIcon, PhoneCallIcon],
+    },
+    {
+        id: "event-webinar-reminder",
+        name: "Event / Webinar Reminder",
+        description: "Remind registrants about an upcoming event or webinar.",
+        category: "Outbound Sales & Reactivation",
+        icons: [ClockIcon, MegaphoneIcon],
+    },
+    {
+        id: "b2b-demo-qualification",
+        name: "B2B Demo Qualification",
+        description: "Qualify inbound demo requests and route high-intent leads.",
+        category: "Lead Qualification",
+        icons: [Building2Icon, UserCheckIcon],
+    },
+    {
+        id: "high-intent-lead-screener",
+        name: "High-Intent Lead Screener",
+        description: "Screen and prioritize high-intent leads from inbound inquiries.",
+        category: "Lead Qualification",
+        icons: [UserCheckIcon, GitBranchIcon],
+    },
+    {
+        id: "legal-intake-screener",
+        name: "Legal Intake Screener",
+        description: "Intake new client calls and screen for case fit.",
+        category: "Lead Qualification",
+        icons: [ScaleIcon, UserCheckIcon],
+    },
+    {
+        id: "payment-collection",
+        name: "Payment Collection Agent",
+        description: "Reach out to collect overdue payments professionally.",
+        category: "Debt Collection",
+        icons: [CircleDollarSignIcon, PhoneCallIcon],
+    },
+    {
+        id: "provider-office-follow-up",
+        name: "Provider Office Follow-Up",
+        description: "Follow up with provider offices on patient-related requests.",
+        category: "Back-Office Task Automation",
+        icons: [BriefcaseMedicalIcon, PhoneCallIcon],
+    },
+    {
+        id: "pharmacy-refill",
+        name: "Pharmacy Refill Caller",
+        description: "Call pharmacies to request or confirm prescription refills.",
+        category: "Back-Office Task Automation",
+        icons: [PillIcon, PhoneCallIcon],
+    },
+    {
+        id: "payment-reminder",
+        name: "Payment Reminder Caller",
+        description: "Remind customers of upcoming or overdue payments.",
+        category: "Debt Collection",
+        icons: [CircleDollarSignIcon, ClockIcon],
+    },
+    {
+        id: "reminder-no-show-reducer",
+        name: "Reminder & No-Show Reducer",
+        description: "Confirm upcoming appointments and reduce no-shows.",
+        category: "Appointment Booking",
+        icons: [CalendarCheckIcon, ClockIcon],
+    },
+    {
+        id: "medical-receptionist",
+        name: "Medical Receptionist",
+        description: "Handle incoming patient calls like a front-desk receptionist.",
+        category: "Receptionist",
+        icons: [BriefcaseMedicalIcon, HeadphonesIcon],
+    },
+    {
+        id: "after-hours-law-receptionist",
+        name: "After-Hours Law Firm Receptionist",
+        description: "Receive calls for a law firm in multiple languages, 24/7.",
+        category: "Receptionist",
+        icons: [ScaleIcon, LanguagesIcon],
+    },
+    {
+        id: "ivr-appointment-scheduling",
+        name: "IVR Appointment Scheduling Agent",
+        description: "Book service appointments for customers.",
+        category: "IVR & DTMF Automation",
+        icons: [PhoneForwardedIcon, CalendarCheckIcon],
+    },
+    {
+        id: "win-back-campaign",
+        name: "Win-Back Campaign",
+        description: "Win back churned customers through targeted outreach.",
+        category: "Outbound Sales & Reactivation",
+        icons: [UsersIcon, MegaphoneIcon],
+    },
+    {
+        id: "faq-voice-agent",
+        name: "FAQ Voice Agent",
+        description: "Answer common customer questions over the phone.",
+        category: "Customer Support & After-Hours",
+        icons: [HeadphonesIcon, BotIcon],
+    },
+    {
+        id: "support-triage",
+        name: "Support Triage Bot",
+        description: "Triage inbound support requests and route to the right team.",
+        category: "Customer Support & After-Hours",
+        icons: [HeadphonesIcon, GitBranchIcon],
+    },
+    {
+        id: "after-hours-support-guard",
+        name: "After-Hours Support Guard",
+        description: "Handle customer inquiries outside of business hours.",
+        category: "Customer Support & After-Hours",
+        icons: [ClockIcon, HeadphonesIcon],
+    },
+    {
+        id: "ivr-navigation",
+        name: "IVR Navigation Bot",
+        description: "Navigate IVR menus on behalf of the user.",
+        category: "IVR & DTMF Automation",
+        icons: [PhoneForwardedIcon, GitBranchIcon],
+    },
+
+    // added more in end
+    {
+        id: "multilingual-agent",
+        name: "Multilingual Agent",
+        description: "Provide customer support in multiple languages.",
+        category: "Customer Support & After-Hours",
+        icons: [LanguagesIcon, HeadphonesIcon],
+    },
+    {
+        id: "order-status-checker",
+        name: "Order / Status Checker",
+        description: "Check and provide order status information.",
+        category: "Back-Office Task Automation",
+        icons: [TruckIcon, PhoneCallIcon],
+    },
+    {
+        id: "service-appointment-booking",
+        name: "Service Appointment Booking",
+        description: "Book service appointments for customers.",
+        category: "Appointment Booking",
+        icons: [CalendarCheckIcon, PhoneCallIcon],
+    },
+]

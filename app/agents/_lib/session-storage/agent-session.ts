@@ -3,6 +3,7 @@
 import { autoSaveAgentSession } from "@/app/agents/actions"
 import type { GeneralTool } from "@/app/agents/_lib/functions/general-tools"
 import type { McpConfig } from "@/app/agents/_lib/mcp/mcp"
+import { getAgentTemplates } from "../../_data/templates-data-list"
 
 const SESSION_KEY = "agent-session"
 
@@ -275,6 +276,7 @@ export type AgentSessionAgent = {
     id: string | null
     workspaceId: string | null
     name: string
+    channel: "voice" | "chat"
     draftVersion: number
     config: AgentSessionConfig
     llmConfig: AgentSessionLlmConfig
@@ -290,6 +292,7 @@ export type AgentSessionSource = Omit<AgentSessionAgent, "config" | "llmConfig">
 const EMPTY_AGENT: AgentSessionAgent = {
     id: null,
     workspaceId: null,
+    channel: "voice",
     name: "Untitled Agent",
     draftVersion: 1,
     config: {
@@ -386,6 +389,30 @@ export function initializeAgentSession(agent: AgentSessionSource | null = null) 
                 : EMPTY_AGENT.llmConfig.mcps,
         },
     }, false)
+}
+
+export function initializeAgentFromTemplate({ agentId, channel, template, agentType }: { agentId: string, channel: string, template: string, agentType: string }) {
+    const templates = getAgentTemplates()
+
+    if (!(template in templates)) { return initializeAgentSession() }
+
+    const templateData = templates[template as keyof typeof templates]
+
+    return initializeAgentSession({
+        ...EMPTY_AGENT,
+        id: agentId,
+        channel: channel === "chat" ? "chat" : "voice",
+        name: templateData.name,
+        config: {
+            ...EMPTY_AGENT.config,
+            ...templateData.config,
+            agentType,
+        },
+        llmConfig: {
+            ...EMPTY_AGENT.llmConfig,
+            ...templateData.llmConfig,
+        },
+    })
 }
 
 export function writeAgentSession(agent: AgentSessionAgent, autoSave = true) {

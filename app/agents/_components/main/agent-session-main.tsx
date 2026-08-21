@@ -6,6 +6,7 @@ import { toast } from "sonner"
 
 import { loadAgentSession } from "@/app/agents/actions"
 import {
+    initializeAgentFromTemplate,
     initializeAgentSession,
 } from "@/app/agents/_lib/session-storage/agent-session"
 import { Card, CardHeader } from "@/components/ui/card"
@@ -17,7 +18,11 @@ import { AgentSessionName } from "./agent-session-name"
 
 export function AgentSessionMain() {
     const searchParams = useSearchParams()
+
     const agentId = searchParams.get("agentId")
+    const channel = searchParams.get("channel")
+    const template = searchParams.get("template")
+    const agentType = searchParams.get("agentType")
 
     const [isSessionLoading, startSessionLoad] = useTransition()
 
@@ -26,6 +31,13 @@ export function AgentSessionMain() {
 
         startSessionLoad(async () => {
             try {
+                // create agent from template
+                if (channel && agentId && template && agentType) {
+                    initializeAgentFromTemplate({ agentId, channel, template, agentType })
+                    return
+                }
+
+                // create blank or modify existing agent
                 const agent = agentId ? await loadAgentSession(agentId) : null
 
                 if (cancelled) return
@@ -41,6 +53,7 @@ export function AgentSessionMain() {
             cancelled = true
         }
     }, [agentId])
+
 
     // make sure the sessionStorage is corretly loaded
     if (isSessionLoading) return null

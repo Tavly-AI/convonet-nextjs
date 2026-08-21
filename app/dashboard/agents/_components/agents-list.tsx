@@ -33,6 +33,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { CreateAgentModal, type CreateAgentOptions } from "./create-agent-modal"
 
 export type AgentListItem = {
   id: string
@@ -63,7 +64,7 @@ export function AgentsList({ agents }: { agents: AgentListItem[] }) {
   const [isDeleting, startDeleting] = useTransition()
   const [deletingAgentId, setDeletingAgentId] = useState<string | null>(null)
 
-  function createAgent() {
+  function createAgent({ channel, agentType, template }: CreateAgentOptions) {
     startCreating(async () => {
       try {
         const agent = await createAgentAction({
@@ -72,7 +73,8 @@ export function AgentsList({ agents }: { agents: AgentListItem[] }) {
           llmConfig: {},
         })
 
-        router.push(`/agents?agentId=${encodeURIComponent(agent.id)}`)
+        const params = new URLSearchParams({ agentId: agent.id, channel, agentType, template, })
+        router.push(`/agents?${params.toString()}`)
       } catch (error) {
         toast.error(
           error instanceof Error ? error.message : "Failed to create agent."
@@ -123,9 +125,7 @@ export function AgentsList({ agents }: { agents: AgentListItem[] }) {
               aria-label="Search agents"
             />
           </div>
-          <Button type="button" disabled={isCreating} onClick={createAgent}>
-            {isCreating ? "Creating..." : "Create an Agent"}
-          </Button>
+          <CreateAgentModal onCreate={createAgent} />
         </div>
       </div>
 
