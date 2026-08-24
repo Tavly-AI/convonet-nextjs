@@ -4,10 +4,15 @@ import * as React from "react"
 import {
   ArrowRightLeftIcon,
   BracesIcon,
+  CalendarCheckIcon,
+  CalendarDaysIcon,
+  HashIcon,
   MoreHorizontalIcon,
+  PhoneForwardedIcon,
   PhoneOffIcon,
   PlusIcon,
   Trash2Icon,
+  XCircleIcon,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -27,9 +32,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import type {
+  BookAppointmentCalTool,
+  BridgeTransferTool,
+  CancelTransferTool,
+  CheckAvailabilityCalTool,
   CustomFunctionTool,
   EndCallTool,
   GeneralTool,
+  PressDigitTool,
   TransferCallTool,
 } from "@/app/agents/_lib/functions/general-tools"
 import {
@@ -50,6 +60,36 @@ const TOOL_OPTIONS = [
     label: "Call Transfer",
     description: "Route the caller to a person or external number.",
     icon: ArrowRightLeftIcon,
+  },
+  {
+    type: "check_availability_cal" as const,
+    label: "Check Availability",
+    description: "Check Cal.com availability for an event type.",
+    icon: CalendarDaysIcon,
+  },
+  {
+    type: "book_appointment_cal" as const,
+    label: "Book Appointment",
+    description: "Book a Cal.com appointment for an event type.",
+    icon: CalendarCheckIcon,
+  },
+  {
+    type: "press_digit" as const,
+    label: "Press Digit",
+    description: "Send DTMF digits while navigating an IVR.",
+    icon: HashIcon,
+  },
+  {
+    type: "bridge_transfer" as const,
+    label: "Bridge Transfer",
+    description: "Bridge an agentic warm transfer to the target.",
+    icon: PhoneForwardedIcon,
+  },
+  {
+    type: "cancel_transfer" as const,
+    label: "Cancel Transfer",
+    description: "Cancel an agentic warm transfer and return to the main agent.",
+    icon: XCircleIcon,
   },
   {
     type: "custom" as const,
@@ -240,6 +280,9 @@ function createTool(type: GeneralTool["type"]): GeneralTool {
       type,
       name: "end_call",
       description: "End the call when the conversation is complete.",
+      speak_during_execution: false,
+      execution_message_type: "prompt",
+      execution_message_description: "",
     } satisfies EndCallTool
   }
 
@@ -273,6 +316,59 @@ function createTool(type: GeneralTool["type"]): GeneralTool {
     } satisfies TransferCallTool
   }
 
+  if (type === "check_availability_cal") {
+    return {
+      type,
+      name: "check_availability",
+      description: "Check available appointment times.",
+      cal_api_key: "",
+      event_type_id: "",
+      timezone: "",
+    } satisfies CheckAvailabilityCalTool
+  }
+
+  if (type === "book_appointment_cal") {
+    return {
+      type,
+      name: "book_appointment",
+      description: "Book the appointment after the user confirms a time.",
+      cal_api_key: "",
+      event_type_id: "",
+      timezone: "",
+    } satisfies BookAppointmentCalTool
+  }
+
+  if (type === "press_digit") {
+    return {
+      type,
+      name: "press_digit",
+      description: "Press a digit to navigate an IVR menu.",
+      delay_ms: 1000,
+    } satisfies PressDigitTool
+  }
+
+  if (type === "bridge_transfer") {
+    return {
+      type,
+      name: "bridge_transfer",
+      description: "Bridge the original caller to the transfer target.",
+      speak_during_execution: false,
+      execution_message_type: "prompt",
+      execution_message_description: "",
+    } satisfies BridgeTransferTool
+  }
+
+  if (type === "cancel_transfer") {
+    return {
+      type,
+      name: "cancel_transfer",
+      description: "Cancel the transfer and return the caller to the main agent.",
+      speak_during_execution: false,
+      execution_message_type: "prompt",
+      execution_message_description: "",
+    } satisfies CancelTransferTool
+  }
+
   return {
     type,
     name: "custom_function",
@@ -295,10 +391,19 @@ function createTool(type: GeneralTool["type"]): GeneralTool {
 }
 
 function validateTool(tool: GeneralTool, tools: GeneralTool[], editingIndex: number | null) {
-  if (!/^[A-Za-z_]+$/.test(tool.name)) return "Name can contain only letters and underscores."
+  if (!/^[A-Za-z0-9_-]{1,64}$/.test(tool.name)) {
+    return "Name can contain only letters, numbers, underscores, and dashes, with a maximum length of 64."
+  }
   if (!tool.description.trim()) return "Description is required."
   if (tools.some((item, index) => index !== editingIndex && item.name === tool.name)) {
     return "Function names must be unique."
+  }
+  if (tool.type === "check_availability_cal" || tool.type === "book_appointment_cal") {
+    if (!tool.cal_api_key.trim()) return "Cal.com API key is required."
+    if (String(tool.event_type_id).trim() === "") return "Cal.com event type ID is required."
+  }
+  if (tool.type === "press_digit" && (tool.delay_ms < 0 || tool.delay_ms > 5000)) {
+    return "Press digit delay must be between 0 and 5000 ms."
   }
   if (tool.type === "transfer_call" && !tool.transfer_destination.number.trim()) {
     return "Transfer destination is required."
@@ -321,6 +426,29 @@ function validateTool(tool: GeneralTool, tools: GeneralTool[], editingIndex: num
 }
 
 function normalizeTool(tool: GeneralTool): GeneralTool {
+  if (
+    tool.type === "end_call" ||
+    tool.type === "bridge_transfer" ||
+    tool.type === "cancel_transfer"
+  ) {
+    return {
+      ...tool,
+      speak_during_execution: tool.speak_during_execution ?? false,
+      execution_message_type: tool.execution_message_type ?? "prompt",
+      execution_message_description: tool.execution_message_description ?? "",
+    }
+  }
+
+  if (tool.type === "check_availability_cal" || tool.type === "book_appointment_cal") {
+    const eventTypeId = String(tool.event_type_id).trim()
+
+    return {
+      ...tool,
+      event_type_id: /^\d+$/.test(eventTypeId) ? Number(eventTypeId) : eventTypeId,
+      timezone: tool.timezone.trim(),
+    }
+  }
+
   if (tool.type !== "custom") return tool
 
   if (tool.parameter_mode === "json") {

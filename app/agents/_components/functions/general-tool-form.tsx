@@ -18,9 +18,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { KeyValueEditor } from "@/app/agents/_components/shared/key-value-editor"
 import type {
+  BookAppointmentCalTool,
+  BridgeTransferTool,
+  CancelTransferTool,
+  CheckAvailabilityCalTool,
   CustomFunctionTool,
+  EndCallTool,
+  ExecutionMessageFields,
   FunctionParameter,
   GeneralTool,
+  PressDigitTool,
   TransferCallTool,
   TransferMode,
 } from "@/app/agents/_lib/functions/general-tools"
@@ -55,11 +62,163 @@ export function GeneralToolForm({
         </div>
       </div>
 
+      {value.type === "end_call" && (
+        <EndCallForm value={value} onChange={onChange} />
+      )}
       {value.type === "transfer_call" && (
         <TransferCallForm value={value} onChange={onChange} />
       )}
+      {(value.type === "check_availability_cal" || value.type === "book_appointment_cal") && (
+        <CalComToolForm value={value} onChange={onChange} />
+      )}
+      {value.type === "press_digit" && (
+        <PressDigitForm value={value} onChange={onChange} />
+      )}
+      {(value.type === "bridge_transfer" || value.type === "cancel_transfer") && (
+        <TransferDecisionForm value={value} onChange={onChange} />
+      )}
       {value.type === "custom" && (
         <CustomFunctionForm value={value} onChange={onChange} />
+      )}
+    </div>
+  )
+}
+
+function EndCallForm({
+  value,
+  onChange,
+}: {
+  value: EndCallTool
+  onChange: (value: EndCallTool) => void
+}) {
+  return (
+    <Section title="Conversation behavior">
+      <ExecutionMessageForm value={value} onChange={onChange} />
+    </Section>
+  )
+}
+
+function CalComToolForm({
+  value,
+  onChange,
+}: {
+  value: CheckAvailabilityCalTool | BookAppointmentCalTool
+  onChange: (value: CheckAvailabilityCalTool | BookAppointmentCalTool) => void
+}) {
+  return (
+    <Section title="Cal.com">
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="API key">
+          <Input
+            value={value.cal_api_key}
+            onChange={(event) => onChange({ ...value, cal_api_key: event.target.value })}
+            placeholder="cal_live_xxxxxxxxxxxx"
+          />
+        </Field>
+        <Field label="Event type ID">
+          <Input
+            value={String(value.event_type_id)}
+            onChange={(event) => onChange({ ...value, event_type_id: event.target.value })}
+            placeholder="60444 or {{event_type_id}}"
+          />
+        </Field>
+        <div className="sm:col-span-2">
+          <Field label="Timezone">
+            <Input
+              value={value.timezone}
+              onChange={(event) => onChange({ ...value, timezone: event.target.value })}
+              placeholder="America/Los_Angeles or {{timezone}}"
+            />
+          </Field>
+        </div>
+      </div>
+    </Section>
+  )
+}
+
+function PressDigitForm({
+  value,
+  onChange,
+}: {
+  value: PressDigitTool
+  onChange: (value: PressDigitTool) => void
+}) {
+  return (
+    <Section title="Digit timing">
+      <NumberField
+        label="Delay before pressing (ms)"
+        value={value.delay_ms}
+        min={0}
+        max={5000}
+        onChange={(delay_ms) => onChange({ ...value, delay_ms })}
+      />
+    </Section>
+  )
+}
+
+function TransferDecisionForm({
+  value,
+  onChange,
+}: {
+  value: BridgeTransferTool | CancelTransferTool
+  onChange: (value: BridgeTransferTool | CancelTransferTool) => void
+}) {
+  return (
+    <Section title="Conversation behavior">
+      <ExecutionMessageForm value={value} onChange={onChange} />
+    </Section>
+  )
+}
+
+function ExecutionMessageForm<T extends ExecutionMessageFields>({
+  value,
+  onChange,
+}: {
+  value: T
+  onChange: (value: T) => void
+}) {
+  return (
+    <div className="space-y-4">
+      <CheckRow
+        label="Talk while running"
+        description="Say something when this tool is called."
+        checked={value.speak_during_execution ?? false}
+        onCheckedChange={(speak_during_execution) =>
+          onChange({ ...value, speak_during_execution })
+        }
+      />
+      {value.speak_during_execution && (
+        <div className="grid gap-4 rounded-lg border bg-muted/20 p-4 sm:grid-cols-[10rem_1fr]">
+          <Field label="Message type">
+            <Select
+              value={value.execution_message_type ?? "prompt"}
+              onValueChange={(execution_message_type) =>
+                onChange({
+                  ...value,
+                  execution_message_type: execution_message_type as ExecutionMessageFields["execution_message_type"],
+                })
+              }
+            >
+              <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="prompt">Prompt</SelectItem>
+                <SelectItem value="static_text">Static sentence</SelectItem>
+              </SelectContent>
+            </Select>
+          </Field>
+          <Field label="Message">
+            <Textarea
+              value={value.execution_message_description ?? ""}
+              onChange={(event) =>
+                onChange({
+                  ...value,
+                  execution_message_description: event.target.value,
+                })
+              }
+              placeholder="Let me connect you now."
+            />
+          </Field>
+        </div>
       )}
     </div>
   )
@@ -597,17 +756,22 @@ export function Field({
 function NumberField({
   label,
   value,
+  min = 0,
+  max,
   onChange,
 }: {
   label: string
   value: number
+  min?: number
+  max?: number
   onChange: (value: number) => void
 }) {
   return (
     <Field label={label}>
       <Input
         type="number"
-        min={0}
+        min={min}
+        max={max}
         value={value}
         onChange={(event) => onChange(Number(event.target.value))}
       />

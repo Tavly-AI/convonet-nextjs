@@ -7,6 +7,14 @@ export type EndCallTool = {
   type: "end_call"
   name: string
   description: string
+} & ExecutionMessageFields
+
+export type ExecutionMessageType = "prompt" | "static_text"
+
+export type ExecutionMessageFields = {
+  speak_during_execution?: boolean
+  execution_message_type?: ExecutionMessageType
+  execution_message_description?: string
 }
 
 export type TransferMode = "cold_transfer" | "warm_transfer" | "agentic_warm_transfer"
@@ -70,4 +78,49 @@ export type CustomFunctionTool = {
   max_retry: number
 }
 
-export type GeneralTool = EndCallTool | TransferCallTool | CustomFunctionTool
+export type CheckAvailabilityCalTool = {
+  type: "check_availability_cal"
+  name: string
+  description: string
+  cal_api_key: string
+  event_type_id: number | string
+  timezone: string
+}
+
+export type BookAppointmentCalTool = {
+  type: "book_appointment_cal"
+  name: string
+  description: string
+  cal_api_key: string
+  event_type_id: number | string
+  timezone: string
+}
+
+export type PressDigitTool = {
+  type: "press_digit"
+  name: string
+  description: string
+  delay_ms: number
+}
+
+export type BridgeTransferTool = {
+  type: "bridge_transfer"
+  name: string
+  description: string
+} & ExecutionMessageFields
+
+export type CancelTransferTool = {
+  type: "cancel_transfer"
+  name: string
+  description: string
+} & ExecutionMessageFields
+
+export type GeneralTool =
+  | EndCallTool
+  | TransferCallTool
+  | CustomFunctionTool
+  | CheckAvailabilityCalTool
+  | BookAppointmentCalTool
+  | PressDigitTool
+  | BridgeTransferTool
+  | CancelTransferTool
