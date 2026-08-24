@@ -10,6 +10,7 @@ import {
   ChevronDownIcon,
   HeadphonesIcon,
   LanguagesIcon,
+  MessageSquareTextIcon,
   PaperclipIcon,
   ShieldCheckIcon,
   SpeechIcon,
@@ -17,6 +18,7 @@ import {
 } from "lucide-react"
 
 import { CallSettings } from "@/app/agents/_components/call/call-settings"
+import { ChatSettings } from "@/app/agents/_components/chat-settings/chat-settings"
 import { GeneralToolsEditor } from "@/app/agents/_components/functions/general-tools-editor"
 import { McpTools } from "@/app/agents/_components/mcp/mcp-tools"
 import { PostCallAnalysisData } from "@/app/agents/_components/post-call/post-call-analysis-data"
@@ -26,6 +28,7 @@ import { SpeechSettings } from "@/app/agents/_components/speech-settings/speech-
 import { WebhookSettings } from "@/app/agents/_components/webhook-settings/webhook-settings"
 import { Card } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
+import { useSearchParams } from "next/navigation"
 
 type SecondaryTab = {
   id: string
@@ -42,6 +45,9 @@ const SECONDARY_TABS = [
     content: GeneralToolsEditor,
   },
   { id: "knowledge-base", label: "Knowledge Base", icon: BookOpenIcon },
+
+  { id: "chat-settings", label: "Chat Settings", icon: MessageSquareTextIcon, content: ChatSettings },
+
   { id: "speech", label: "Speech Settings", icon: SpeechIcon, content: SpeechSettings },
   {
     id: "transcription",
@@ -76,10 +82,14 @@ type SecondaryTabId = (typeof SECONDARY_TABS)[number]["id"]
 export function AgentSessionTabSecondary() {
   const [openTab, setOpenTab] = React.useState<SecondaryTabId | null>(null)
 
+  const searchParams = useSearchParams()
+  const channel = searchParams.get("channel")
+
+
   return (
     <Card className="min-h-96 gap-0 py-0">
       <div className="divide-y px-4">
-        {SECONDARY_TABS.map((tab) => {
+        {SECONDARY_TABS.filter((tab) => filterTabs(tab, channel)).map((tab) => {
           const { id, label, icon: Icon } = tab
           const Content = "content" in tab ? tab.content : null
           const open = openTab === id
@@ -108,4 +118,21 @@ export function AgentSessionTabSecondary() {
       </div>
     </Card>
   )
+}
+
+
+// MISC
+
+function filterTabs(tab: SecondaryTab, channel: string | null) {
+  if (channel === null) return;
+
+  if (channel === "voice") {
+    return tab.id !== "chat-settings"
+  }
+
+  if (channel === "chat") {
+    return !["speech", "transcription", "call"].includes(tab.id)
+  }
+
+  return true
 }

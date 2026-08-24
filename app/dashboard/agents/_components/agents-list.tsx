@@ -6,13 +6,15 @@ import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import {
   BotIcon,
+  ChevronDownIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   EllipsisVerticalIcon,
+  MessageSquareIcon,
+  PhoneIcon,
   SearchIcon,
 } from "lucide-react"
 import {
-  createAgent as createAgentAction,
   deleteAgent as deleteAgentAction,
 } from "@/app/agents/actions"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -34,11 +36,14 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { CreateAgentModal, type CreateAgentOptions } from "./create-agent-modal"
+import { CreateChatAgentModal } from "./create-chat-agent-modal"
+import type { AgentChannel } from "@/lib/constants"
 
 export type AgentListItem = {
   id: string
   name: string
   type: string
+  channel: AgentChannel
   voice: { name: string; avatarUrl: string } | null
   phone: string
   updatedAt: string
@@ -49,39 +54,14 @@ const pageSize = 10
 export function AgentsList({ agents }: { agents: AgentListItem[] }) {
   const [query, setQuery] = useState("")
   const [page, setPage] = useState(1)
-  const filteredAgents = agents.filter((agent) =>
-    agent.name.toLowerCase().includes(query.toLowerCase())
-  )
+  const filteredAgents = agents.filter((agent) => agent.name.toLowerCase().includes(query.toLowerCase()))
   const pageCount = Math.max(1, Math.ceil(filteredAgents.length / pageSize))
-  const visibleAgents = filteredAgents.slice(
-    (page - 1) * pageSize,
-    page * pageSize
-  )
+  const visibleAgents = filteredAgents.slice((page - 1) * pageSize, page * pageSize)
 
   const router = useRouter()
-  const [isCreating, startCreating] = useTransition()
 
   const [isDeleting, startDeleting] = useTransition()
   const [deletingAgentId, setDeletingAgentId] = useState<string | null>(null)
-
-  function createAgent({ channel, agentType, template }: CreateAgentOptions) {
-    startCreating(async () => {
-      try {
-        const agent = await createAgentAction({
-          name: "Untitled Agent",
-          config: {},
-          llmConfig: {},
-        })
-
-        const params = new URLSearchParams({ agentId: agent.id, channel, agentType, template, })
-        router.push(`/agents?${params.toString()}`)
-      } catch (error) {
-        toast.error(
-          error instanceof Error ? error.message : "Failed to create agent."
-        )
-      }
-    })
-  }
 
   function deleteAgent(agent: AgentListItem) {
     if (!window.confirm(`Delete ${agent.name}?`)) return
@@ -125,8 +105,8 @@ export function AgentsList({ agents }: { agents: AgentListItem[] }) {
               aria-label="Search agents"
             />
           </div>
-          <CreateAgentModal onCreate={createAgent} />
         </div>
+        <CreateAgentDropdown />
       </div>
 
       <div className="min-h-0 overflow-hidden rounded-xl border">
@@ -148,7 +128,7 @@ export function AgentsList({ agents }: { agents: AgentListItem[] }) {
               <TableRow
                 key={agent.id}
                 onClick={() =>
-                  router.push(`/agents?agentId=${encodeURIComponent(agent.id)}`)
+                  router.push(`/agents?agentId=${encodeURIComponent(agent.id)}&channel=${agent.channel}`)
                 }
               >
                 <TableCell className="h-14 pl-4 font-medium">
@@ -260,5 +240,67 @@ export function AgentsList({ agents }: { agents: AgentListItem[] }) {
         </div>
       )}
     </section>
+  )
+}
+
+
+// SELECT CHANNEL DROPDOWN
+
+export function CreateAgentDropdown() {
+  const [channel, setChannel] = useState<AgentChannel>("voice")
+  const [open, setOpen] = useState(false)
+
+  function openCreateAgent(selectedChannel: AgentChannel) {
+    setChannel(selectedChannel)
+    setOpen(true)
+  }
+
+  return (
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          render={
+            <Button className="gap-2">
+              Create an Agent
+              <ChevronDownIcon className="size-4" />
+            </Button>
+          }
+        />
+
+        <DropdownMenuContent align="end" className="w-44 p-1 shadow-indigo-500/50">
+          <DropdownMenuItem
+            className="gap-2 py-2 px-2"
+            onClick={() => openCreateAgent("voice")}
+          >
+            <span className="relative flex size-6 items-center justify-center">
+              <BotIcon className="size-4 text-muted-foreground" />
+              <PhoneIcon className="absolute -right-1 -bottom-1 size-3 text-emerald-500" />
+            </span>
+
+            <span className="text-sm">Voice Agent</span>
+          </DropdownMenuItem>
+
+          <DropdownMenuItem
+            className="gap-3 py-3"
+            onClick={() => openCreateAgent("chat")}
+          >
+            <span className="relative flex size-6 items-center justify-center">
+              <BotIcon className="size-4 text-muted-foreground" />
+              <MessageSquareIcon className="absolute -right-1 -bottom-1 size-3 text-blue-500" />
+            </span>
+
+            <span className="text-sm">Chat Agent</span>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      {channel === "voice" ? (
+        <CreateAgentModal open={open} onOpenChange={setOpen}
+        />
+      ) : (
+        <CreateChatAgentModal open={open} onOpenChange={setOpen} />
+      )
+      }
+    </>
   )
 }

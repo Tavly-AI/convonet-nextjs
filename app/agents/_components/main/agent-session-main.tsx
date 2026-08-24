@@ -8,6 +8,7 @@ import { loadAgentSession } from "@/app/agents/actions"
 import {
     initializeAgentFromTemplate,
     initializeAgentSession,
+    initializeChatAgentSession,
 } from "@/app/agents/_lib/session-storage/agent-session"
 import { Card, CardHeader } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -31,16 +32,24 @@ export function AgentSessionMain() {
 
         startSessionLoad(async () => {
             try {
-                // create agent from template
-                if (channel && agentId && template && agentType) {
-                    initializeAgentFromTemplate({ agentId, channel, template, agentType })
-                    return
-                }
+                if (cancelled) return
 
                 // create blank or modify existing agent
                 const agent = agentId ? await loadAgentSession(agentId) : null
 
-                if (cancelled) return
+                // create chat agent
+                if (channel === "chat" && agentId && agentType) {
+                    initializeChatAgentSession(agent)
+                    return
+                }
+
+                // create voice agent from template
+                if (channel === "voice" && agentId && template && agentType && template !== "scratch") {
+                    initializeAgentFromTemplate({ agentId, channel, template, agentType })
+                    return
+                }
+
+                // create voice agent from scratch
                 initializeAgentSession(agent)
             } catch (error) {
                 if (cancelled) return

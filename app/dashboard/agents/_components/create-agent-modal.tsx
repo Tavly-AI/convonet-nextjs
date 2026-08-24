@@ -14,42 +14,51 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
 import { TEMPLATE_TABS, TEMPLATES_LIST } from "../_data/templates-list"
+import { useRouter } from "next/navigation"
+import { toast } from "sonner"
+import { createAgent as createAgentAction, } from "@/app/agents/actions"
+import { AGENT_CHANNELS, type AgentChannel } from "@/lib/constants"
 
 export type CreateAgentOptions = {
-  channel: "voice" | "chat"
+  channel: AgentChannel
   agentType: string
   template: string
 }
 
 export type CreateAgentModalProps = {
-  onCreate?: (options: CreateAgentOptions) => void
+  open: boolean
+  onOpenChange: (open: boolean) => void
 }
 
 type TemplateCategory = (typeof TEMPLATE_TABS)[number]
 
-export function CreateAgentModal({ onCreate }: CreateAgentModalProps) {
-  const [open, setOpen] = useState(false)
+export function CreateAgentModal({ open, onOpenChange }: CreateAgentModalProps) {
+  const router = useRouter()
+
   const [agentType, setAgentType] = useState("single_prompt")
   const [selectedTemplate, setSelectedTemplate] = useState("scratch")
   const [activeTemplateTab, setActiveTemplateTab] = useState<TemplateCategory>("All")
 
   const visibleTemplates = TEMPLATES_LIST.filter((template) => activeTemplateTab === "All" || template.category === activeTemplateTab)
 
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger
-        render={
-          <Button type="button">
-            Create an Agent
-          </Button>
-        }
-      />
+  async function createAgent() {
+    try {
+      const agent = await createAgentAction({ name: "Untitled Agent", channel: AGENT_CHANNELS.VOICE, config: {}, llmConfig: {} })
 
+      const params = new URLSearchParams({ agentId: agent.id, channel: AGENT_CHANNELS.VOICE, agentType, template: selectedTemplate, })
+
+      router.push(`/agents?${params.toString()}`)
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to create agent.")
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="flex h-[750px] max-h-[88svh] max-w-4xl flex-col overflow-hidden p-0">
         <DialogHeader className="shrink-0 border-b px-6 py-5">
           <DialogTitle>Create agent</DialogTitle>
@@ -197,20 +206,11 @@ export function CreateAgentModal({ onCreate }: CreateAgentModalProps) {
         </div>
 
         <DialogFooter className="shrink-0 border-t px-6 py-4">
-          <Button
-            type="button"
-            onClick={() =>
-              onCreate?.({
-                channel: "voice",
-                agentType,
-                template: selectedTemplate,
-              })
-            }
-          >
+          <Button type="button" onClick={() => { createAgent() }}>
             Create agent
           </Button>
         </DialogFooter>
       </DialogContent>
-    </Dialog>
+    </Dialog >
   )
 }

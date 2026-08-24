@@ -58,6 +58,19 @@ export type WebhookSettings = {
     webhook_timeout_ms: number
 }
 
+
+// =================================================================
+// ===================== CHAT DEFAULT & TYPES ======================
+// =================================================================
+
+export type ChatSettings = {
+    auto_close_message: string | null
+}
+
+export const DEFAULT_CHAT_SETTINGS = {
+    auto_close_message: "Thank you for chatting. The conversation has ended.",
+} satisfies ChatSettings
+
 // =================================================================
 // ================== SECURITY DEFAULT & TYPES =====================
 // =================================================================
@@ -264,6 +277,8 @@ export type AgentSessionConfig = Record<string, unknown> & {
     guardrail_config: SecurityFallbackSettings["guardrail_config"]
     post_call_analysis_data: PostCallAnalysisData[]
     post_call_analysis_model: PostCallAnalysisModel
+
+    auto_close_message?: string | null
 }
 
 export type AgentSessionLlmConfig = Record<string, unknown> & {
@@ -300,11 +315,40 @@ const EMPTY_AGENT: AgentSessionAgent = {
         ...DEFAULT_WEBHOOK_SETTINGS,
         ...DEFAULT_SECURITY_FALLBACK_SETTINGS,
         ...DEFAULT_POST_CALL_ANALYSIS_SETTINGS,
+
         agentType: "single_prompt",
         voiceId: null,
         language: "en-US",
         phoneNumber: null,
         generalTools: [],
+    },
+    llmConfig: {
+        model: "gpt-4.1",
+        generalPrompt: "",
+        mcps: [],
+    },
+    createdAt: null,
+    updatedAt: null,
+}
+
+const EMPTY_CHAT_AGENT: AgentSessionAgent = {
+    id: null,
+    workspaceId: null,
+    channel: "chat",
+    name: "Untitled Agent",
+    draftVersion: 1,
+    config: {
+        ...DEFAULT_CHAT_SETTINGS,
+        ...DEFAULT_WEBHOOK_SETTINGS,
+        ...DEFAULT_SECURITY_FALLBACK_SETTINGS,
+        ...DEFAULT_POST_CALL_ANALYSIS_SETTINGS,
+
+        agentType: "single_prompt",
+        voiceId: null,
+        language: "en-US",
+        phoneNumber: null,
+        generalTools: [],
+
     },
     llmConfig: {
         model: "gpt-4.1",
@@ -391,13 +435,87 @@ export function initializeAgentSession(agent: AgentSessionSource | null = null) 
     }, false)
 }
 
+export function initializeChatAgentSession(
+    agent: AgentSessionSource | null = null
+) {
+    const storage = getStorage()
+    const storedConfig = agent?.config ?? {}
+    const storedLlmConfig = agent?.llmConfig ?? {}
+
+    storage?.removeItem("agent-session:fresh")
+    storage?.removeItem("agent-session:stale")
+
+    return writeAgentSession({
+        ...EMPTY_CHAT_AGENT,
+        ...agent,
+        channel: "chat",
+        config: {
+            ...EMPTY_CHAT_AGENT.config,
+            ...storedConfig,
+
+            generalTools: Array.isArray(storedConfig.generalTools)
+                ? storedConfig.generalTools as GeneralTool[]
+                : EMPTY_CHAT_AGENT.config.generalTools,
+
+            webhook_events: Array.isArray(storedConfig.webhook_events)
+                ? storedConfig.webhook_events as WebhookEvent[]
+                : EMPTY_CHAT_AGENT.config.webhook_events,
+
+            pii_config: {
+                ...EMPTY_CHAT_AGENT.config.pii_config,
+                ...(typeof storedConfig.pii_config === "object" && storedConfig.pii_config
+                    ? storedConfig.pii_config
+                    : {}),
+                categories: Array.isArray(
+                    (storedConfig.pii_config as { categories?: unknown } | undefined)?.categories
+                )
+                    ? (storedConfig.pii_config as { categories: PiiCategory[] }).categories
+                    : EMPTY_CHAT_AGENT.config.pii_config.categories,
+            },
+
+            guardrail_config: {
+                ...EMPTY_CHAT_AGENT.config.guardrail_config,
+                ...(typeof storedConfig.guardrail_config === "object" && storedConfig.guardrail_config
+                    ? storedConfig.guardrail_config
+                    : {}),
+                output_topics: Array.isArray(
+                    (storedConfig.guardrail_config as { output_topics?: unknown } | undefined)?.output_topics
+                )
+                    ? (storedConfig.guardrail_config as { output_topics: GuardrailOutputTopic[] }).output_topics
+                    : EMPTY_CHAT_AGENT.config.guardrail_config.output_topics,
+
+                input_topics: Array.isArray(
+                    (storedConfig.guardrail_config as { input_topics?: unknown } | undefined)?.input_topics
+                )
+                    ? (storedConfig.guardrail_config as { input_topics: GuardrailInputTopic[] }).input_topics
+                    : EMPTY_CHAT_AGENT.config.guardrail_config.input_topics,
+            },
+        },
+
+        llmConfig: {
+            ...EMPTY_CHAT_AGENT.llmConfig,
+            ...storedLlmConfig,
+
+            mcps: Array.isArray(storedLlmConfig.mcps)
+                ? storedLlmConfig.mcps as McpConfig[]
+                : EMPTY_CHAT_AGENT.llmConfig.mcps,
+        },
+    }, false)
+}
+
 export function initializeAgentFromTemplate({ agentId, channel, template, agentType }: { agentId: string, channel: string, template: string, agentType: string }) {
     const templates = getAgentTemplates()
+
+
+    // ==================================================================
+    // =================== INIT VOICE AGENT =============================
+    // ==================================================================
 
     if (!(template in templates)) { return initializeAgentSession() }
 
     const templateData = templates[template as keyof typeof templates]
 
+    // this only runs for voice-agents and there are no template-param in chat-agent
     return initializeAgentSession({
         ...EMPTY_AGENT,
         id: agentId,
@@ -505,6 +623,29 @@ export function getWebhookSettings(): Partial<WebhookSettings> {
 }
 
 export function writeWebhookSettings(settings: Partial<WebhookSettings>) {
+    const agent = getAgentSession()
+    if (!agent) throw new Error("Agent session is not initialized.")
+
+    writeAgentSession({
+        ...agent,
+        config: {
+            ...agent.config,
+            ...settings,
+        },
+    })
+
+    return settings
+}
+
+// =================================================================
+// ========================= CHAT SETTINGS =========================
+// =================================================================
+
+export function getChatSettings(): Partial<ChatSettings> {
+    return (getAgentSession()?.config ?? {}) as Partial<ChatSettings>
+}
+
+export function writeChatSettings(settings: Partial<ChatSettings>) {
     const agent = getAgentSession()
     if (!agent) throw new Error("Agent session is not initialized.")
 

@@ -37,6 +37,7 @@ const publishAgentVersionSchema = z.object({
 const createAgentSchema = z.object({
   name: z.string().trim().min(1, "Agent name is required.").max(200),
   config: z.record(z.string(), z.json()),
+  channel: z.enum(["voice", "chat"]),
   llmConfig: z.record(z.string(), z.json()),
 })
 
@@ -48,6 +49,7 @@ const createAgentSchema = z.object({
 export async function createAgent(input: {
   name: string
   config: Record<string, unknown>
+  channel: "voice" | "chat"
   llmConfig: Record<string, unknown>
 }) {
   const workspaceId = await getCurrentWorkspaceId()
@@ -56,6 +58,7 @@ export async function createAgent(input: {
     data: {
       workspaceId,
       name: parsed.name,
+      channel: parsed.channel,
       config: parsed.config as Prisma.InputJsonObject,
       llmConfig: parsed.llmConfig as Prisma.InputJsonObject,
     },

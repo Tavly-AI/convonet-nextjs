@@ -41,6 +41,7 @@ model Agent {
   workspace          Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   name               String
+  channel            String         @default("voice")
   config             Json
   llmConfig          Json
   versions           AgentVersion[]

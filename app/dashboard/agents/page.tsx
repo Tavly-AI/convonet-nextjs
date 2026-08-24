@@ -5,6 +5,7 @@ import { AgentsList, type AgentListItem } from "./_components/agents-list"
 import { VOICES_UPDATED } from "@/app/agents/_data/voices-updated"
 import { VOICES_FAKE_DATA } from "@/app/agents/_data/voices-fake-data"
 import type { WorkspaceVoice } from "@/app/agents/_components/voice/voices-actions"
+import type { AgentChannel } from "@/lib/constants"
 
 export default async function Page() {
   const userId = await getCurrentUserId()
@@ -61,6 +62,7 @@ export default async function Page() {
       id: agent.id,
       name: agent.name,
       type: String(config.agentType),
+      channel: agent.channel as AgentChannel,
       voice: normalvoice
         ? { name: normalvoice.name, avatarUrl: VOICES_FAKE_DATA[0].avatar_url }
         : customVoice && "name" in customVoice
