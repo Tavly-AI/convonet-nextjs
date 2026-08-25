@@ -32,6 +32,7 @@ import type {
   GeneralTool,
   KeyValue,
   PressDigitTool,
+  SendSMSTool,
 } from "@/app/agents/_lib/functions/general-tools"
 import { Section } from "../speech-settings/speech-settings"
 import { TransferCallForm } from "./transfer-call-tool-form"
@@ -87,6 +88,9 @@ export function GeneralToolForm({
       )}
       {value.type === "extract_dynamic_variable" && (
         <ExtractDynamicVariableForm value={value} onChange={onChange} />
+      )}
+      {value.type === "send_sms" && (
+        <SendSMSForm value={value} onChange={onChange} />
       )}
     </div>
   )
@@ -649,6 +653,131 @@ function ExtractDynamicVariableForm({
         </Button>
       </div>
     </Section>
+  )
+}
+
+function SendSMSForm({
+  value,
+  onChange,
+}: {
+  value: SendSMSTool
+  onChange: (value: SendSMSTool) => void
+}) {
+  const content = value.sms_content
+
+  return (
+    <>
+      <Section title="SMS content">
+        <Tabs
+          value={content.type}
+          onValueChange={(type) => {
+            if (type === "inferred") {
+              onChange({
+                ...value,
+                sms_content: {
+                  type,
+                  prompt: "Write a concise SMS that summarizes the information the caller requested.",
+                },
+              })
+              return
+            }
+
+            if (type === "template") {
+              onChange({
+                ...value,
+                sms_content: {
+                  type,
+                  template: "info_collection",
+                },
+              })
+              return
+            }
+
+            onChange({
+              ...value,
+              sms_content: {
+                type: "predefined",
+                content: "",
+              },
+            })
+          }}
+        >
+          <TabsList>
+            <TabsTrigger value="predefined">Static</TabsTrigger>
+            <TabsTrigger value="inferred">Prompt</TabsTrigger>
+            <TabsTrigger value="template">Template</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="predefined" className="pt-4">
+            {content.type === "predefined" && (
+              <Field label="Message">
+                <Textarea
+                  value={content.content}
+                  onChange={(event) =>
+                    onChange({
+                      ...value,
+                      sms_content: {
+                        type: "predefined",
+                        content: event.target.value,
+                      },
+                    })
+                  }
+                  placeholder="Hi {{customer_name}}, here is the information we discussed."
+                />
+              </Field>
+            )}
+          </TabsContent>
+
+          <TabsContent value="inferred" className="pt-4">
+            {content.type === "inferred" && (
+              <Field label="Prompt">
+                <Textarea
+                  value={content.prompt}
+                  onChange={(event) =>
+                    onChange({
+                      ...value,
+                      sms_content: {
+                        type: "inferred",
+                        prompt: event.target.value,
+                      },
+                    })
+                  }
+                  placeholder="Use the conversation to write a concise SMS with the requested details."
+                />
+              </Field>
+            )}
+          </TabsContent>
+
+          <TabsContent value="template" className="pt-4">
+            {content.type === "template" && (
+              <Field label="Template">
+                <Select
+                  value={content.template}
+                  onValueChange={() =>
+                    onChange({
+                      ...value,
+                      sms_content: {
+                        type: "template",
+                        template: "info_collection",
+                      },
+                    })
+                  }
+                >
+                  <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="info_collection">Info collection</SelectItem>
+                  </SelectContent>
+                </Select>
+              </Field>
+            )}
+          </TabsContent>
+        </Tabs>
+      </Section>
+
+      <Section title="Conversation behavior">
+        <ExecutionMessageForm value={value} onChange={onChange} />
+      </Section>
+    </>
   )
 }
 

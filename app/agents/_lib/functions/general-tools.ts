@@ -159,6 +159,27 @@ export type ExtractDynamicVariableTool = {
   // enable typing sound is missing
 }
 
+export type SmsContent =
+  | {
+    type: "predefined"
+    content: string
+  }
+  | {
+    type: "inferred"
+    prompt: string
+  }
+  | {
+    type: "template"
+    template: "info_collection"
+  }
+
+export type SendSMSTool = {
+  type: "send_sms"
+  name: string
+  description: string
+  sms_content: SmsContent
+} & ExecutionMessageFields
+
 export type CheckAvailabilityCalTool = {
   type: "check_availability_cal"
   name: string
@@ -202,6 +223,7 @@ export type GeneralTool =
   | CustomFunctionTool
   | CodeTool
   | ExtractDynamicVariableTool
+  | SendSMSTool
   | CheckAvailabilityCalTool
   | BookAppointmentCalTool
   | PressDigitTool

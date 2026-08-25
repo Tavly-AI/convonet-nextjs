@@ -9,6 +9,7 @@ import {
   Code2Icon,
   FileInputIcon,
   HashIcon,
+  MessageSquareTextIcon,
   MoreHorizontalIcon,
   PhoneForwardedIcon,
   PhoneOffIcon,
@@ -46,6 +47,7 @@ import type {
   FunctionParameter,
   GeneralTool,
   PressDigitTool,
+  SendSMSTool,
   TransferCallTool,
   TransferHoldMusic,
 } from "@/app/agents/_lib/functions/general-tools"
@@ -109,6 +111,12 @@ const TOOL_OPTIONS = [
     label: "Extract Dynamic Variable",
     description: "Extract values from the conversation into dynamic variables.",
     icon: FileInputIcon,
+  },
+  {
+    type: "send_sms" as const,
+    label: "Send SMS",
+    description: "Send an SMS message during the phone call.",
+    icon: MessageSquareTextIcon,
   },
   {
     type: "custom" as const,
@@ -420,6 +428,21 @@ return {
     } satisfies ExtractDynamicVariableTool
   }
 
+  if (type === "send_sms") {
+    return {
+      type,
+      name: "send_sms",
+      description: "Send a helpful SMS to the caller during the conversation.",
+      sms_content: {
+        type: "predefined",
+        content: "Hi {{customer_name}}, here is the information we discussed.",
+      },
+      speak_during_execution: true,
+      execution_message_type: "prompt",
+      execution_message_description: "Tell the caller you are sending the SMS now.",
+    } satisfies SendSMSTool
+  }
+
   return {
     type,
     name: "custom_function",
@@ -522,6 +545,14 @@ function validateTool(tool: GeneralTool, tools: GeneralTool[], editingIndex: num
       }
     }
   }
+  if (tool.type === "send_sms") {
+    if (tool.sms_content.type === "predefined" && !tool.sms_content.content.trim()) {
+      return "SMS content is required."
+    }
+    if (tool.sms_content.type === "inferred" && !tool.sms_content.prompt.trim()) {
+      return "SMS content prompt is required."
+    }
+  }
   return ""
 }
 
@@ -558,9 +589,41 @@ function normalizeTool(tool: GeneralTool): GeneralTool {
   if (tool.type === "extract_dynamic_variable") {
     return normalizeExtractDynamicVariableTool(tool)
   }
+  if (tool.type === "send_sms") return normalizeSendSMSTool(tool)
   if (tool.type !== "custom") return tool
 
   return normalizeCustomTool(tool)
+}
+
+function normalizeSendSMSTool(tool: SendSMSTool): SendSMSTool {
+  return {
+    ...tool,
+    sms_content: normalizeSmsContent(tool.sms_content),
+    speak_during_execution: tool.speak_during_execution ?? true,
+    execution_message_type: tool.execution_message_type ?? "prompt",
+    execution_message_description: tool.execution_message_description ?? "",
+  }
+}
+
+function normalizeSmsContent(content: SendSMSTool["sms_content"]): SendSMSTool["sms_content"] {
+  if (content.type === "inferred") {
+    return {
+      type: "inferred",
+      prompt: content.prompt.trim(),
+    }
+  }
+
+  if (content.type === "template") {
+    return {
+      type: "template",
+      template: "info_collection",
+    }
+  }
+
+  return {
+    type: "predefined",
+    content: content.content.trim(),
+  }
 }
 
 function normalizeExtractDynamicVariableTool(
@@ -672,10 +735,29 @@ function coerceToolForEdit(tool: GeneralTool): GeneralTool {
   if (tool.type === "extract_dynamic_variable") {
     return coerceExtractDynamicVariableTool(tool)
   }
+  if (tool.type === "send_sms") return coerceSendSMSTool(tool)
   if (tool.type === "custom") return coerceCustomTool(tool)
   if (tool.type !== "transfer_call") return tool
 
   return coerceTransferCallTool(tool)
+}
+
+function coerceSendSMSTool(tool: SendSMSTool): SendSMSTool {
+  const content = tool.sms_content as Record<string, unknown> | undefined
+  const smsContent =
+    content?.type === "inferred"
+      ? { type: "inferred" as const, prompt: String(content.prompt ?? "") }
+      : content?.type === "template"
+        ? { type: "template" as const, template: "info_collection" as const }
+        : { type: "predefined" as const, content: String(content?.content ?? "") }
+
+  return {
+    ...tool,
+    sms_content: smsContent,
+    speak_during_execution: tool.speak_during_execution ?? true,
+    execution_message_type: tool.execution_message_type ?? "prompt",
+    execution_message_description: tool.execution_message_description ?? "",
+  }
 }
 
 function coerceExtractDynamicVariableTool(
