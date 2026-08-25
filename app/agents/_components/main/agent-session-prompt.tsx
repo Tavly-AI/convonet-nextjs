@@ -19,6 +19,14 @@ export function GeneralPrompt() {
         writeGeneralPrompt(value)
     }
 
+    // hack: force agent-session.ts file to make a writeAgentSession() onLoad
+    React.useEffect(() => {
+        const timeout = setTimeout(() => {
+            writeGeneralPrompt(prompt)
+        }, 1000)
+        return () => clearTimeout(timeout)
+    }, [])
+
     return (
         <Textarea
             value={prompt}
