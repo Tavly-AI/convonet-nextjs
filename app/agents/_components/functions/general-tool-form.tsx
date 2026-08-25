@@ -22,6 +22,7 @@ import type {
   BridgeTransferTool,
   CancelTransferTool,
   CheckAvailabilityCalTool,
+  CodeTool,
   CustomFunctionTool,
   EndCallTool,
   ExecutionMessageFields,
@@ -78,6 +79,9 @@ export function GeneralToolForm({
       )}
       {value.type === "custom" && (
         <CustomFunctionForm value={value} onChange={onChange} />
+      )}
+      {value.type === "code" && (
+        <CodeToolForm value={value} onChange={onChange} />
       )}
     </div>
   )
@@ -400,6 +404,107 @@ function CustomFunctionForm({
               </SelectContent>
             </Select>
           </Field>
+        </div>
+      </Section>
+    </>
+  )
+}
+
+function CodeToolForm({
+  value,
+  onChange,
+}: {
+  value: CodeTool
+  onChange: (value: CodeTool) => void
+}) {
+  return (
+    <>
+      <Section title="JavaScript">
+        <Field label="Code">
+          <Textarea
+            className="min-h-80 font-mono text-xs"
+            value={value.code}
+            onChange={(event) => onChange({ ...value, code: event.target.value })}
+            placeholder={`const amount = Number(dv.order_total);
+
+if (!Number.isFinite(amount)) {
+  return { ok: false, error: "Missing order_total" };
+}
+
+return { ok: true, formatted_total: "$" + amount.toFixed(2) };`}
+            spellCheck={false}
+          />
+        </Field>
+      </Section>
+
+      <Section title="Store response fields as variables">
+        <KeyValueEditor
+          value={keyValueFromRecord(value.response_variables)}
+          onChange={(response_variables) =>
+            onChange({ ...value, response_variables })
+          }
+          keyPlaceholder="dynamic_variable_name"
+          valuePlaceholder="result.path"
+        />
+      </Section>
+
+      <Section title="Conversation behavior">
+        <div className="space-y-4">
+          <NumberField
+            label="Timeout (ms)"
+            value={value.timeout_ms ?? 30000}
+            min={5000}
+            max={60000}
+            onChange={(timeout_ms) => onChange({ ...value, timeout_ms })}
+          />
+          <CheckRow
+            label="Typing sound"
+            description="Play a typing sound while the code is running."
+            checked={value.enable_typing_sound ?? false}
+            onCheckedChange={(enable_typing_sound) => onChange({ ...value, enable_typing_sound })}
+          />
+          <CheckRow
+            label="Talk while waiting"
+            description="Say something while the code is running."
+            checked={value.speak_during_execution ?? false}
+            onCheckedChange={(speak_during_execution) => onChange({ ...value, speak_during_execution })}
+          />
+          {value.speak_during_execution && (
+            <div className="grid gap-4 rounded-lg border bg-muted/20 p-4 sm:grid-cols-[10rem_1fr]">
+              <Field label="Message type">
+                <Select
+                  value={value.execution_message_type ?? "prompt"}
+                  onValueChange={(execution_message_type) =>
+                    onChange({ ...value, execution_message_type: execution_message_type as CodeTool["execution_message_type"] })
+                  }
+                >
+                  <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="prompt">Prompt</SelectItem>
+                    <SelectItem value="static_text">Static sentence</SelectItem>
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field label="Message">
+                <Textarea
+                  value={value.execution_message_description ?? ""}
+                  onChange={(event) =>
+                    onChange({
+                      ...value,
+                      execution_message_description: event.target.value,
+                    })
+                  }
+                  placeholder="Let me calculate that for you."
+                />
+              </Field>
+            </div>
+          )}
+          <CheckRow
+            label="Talk after action completed"
+            description="Continue speaking immediately after the code returns."
+            checked={value.speak_after_execution ?? true}
+            onCheckedChange={(speak_after_execution) => onChange({ ...value, speak_after_execution })}
+          />
         </div>
       </Section>
     </>

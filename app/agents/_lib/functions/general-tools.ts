@@ -130,6 +130,17 @@ export type CustomFunctionTool = {
   parameter_fields?: FunctionParameter[] //extra
 } & ExecutionMessageFields
 
+export type CodeTool = {
+  type: "code"
+  name: string
+  description: string
+  code: string
+  enable_typing_sound?: boolean
+  response_variables?: Record<string, string> | KeyValue[]
+  speak_after_execution?: boolean
+  timeout_ms?: number
+} & ExecutionMessageFields
+
 export type CheckAvailabilityCalTool = {
   type: "check_availability_cal"
   name: string
@@ -171,6 +182,7 @@ export type GeneralTool =
   | EndCallTool
   | TransferCallTool
   | CustomFunctionTool
+  | CodeTool
   | CheckAvailabilityCalTool
   | BookAppointmentCalTool
   | PressDigitTool

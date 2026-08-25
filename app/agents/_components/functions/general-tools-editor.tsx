@@ -6,6 +6,7 @@ import {
   BracesIcon,
   CalendarCheckIcon,
   CalendarDaysIcon,
+  Code2Icon,
   HashIcon,
   MoreHorizontalIcon,
   PhoneForwardedIcon,
@@ -36,6 +37,7 @@ import type {
   BridgeTransferTool,
   CancelTransferTool,
   CheckAvailabilityCalTool,
+  CodeTool,
   CustomFunctionTool,
   EndCallTool,
   FunctionParameter,
@@ -92,6 +94,12 @@ const TOOL_OPTIONS = [
     label: "Cancel Transfer",
     description: "Cancel an agentic warm transfer and return to the main agent.",
     icon: XCircleIcon,
+  },
+  {
+    type: "code" as const,
+    label: "Code",
+    description: "Run JavaScript in Retell's sandbox during the conversation.",
+    icon: Code2Icon,
   },
   {
     type: "custom" as const,
@@ -365,6 +373,27 @@ function createTool(type: GeneralTool["type"]): GeneralTool {
     } satisfies CancelTransferTool
   }
 
+  if (type === "code") {
+    return {
+      type,
+      name: "code_tool",
+      description: "Run lightweight JavaScript using dynamic variables and metadata.",
+      code: `const customerName = dv.customer_name ?? "there";
+
+return {
+  ok: true,
+  message: "Hello " + customerName
+};`,
+      timeout_ms: 30000,
+      response_variables: {},
+      enable_typing_sound: false,
+      speak_during_execution: false,
+      execution_message_type: "prompt",
+      execution_message_description: "",
+      speak_after_execution: true,
+    } satisfies CodeTool
+  }
+
   return {
     type,
     name: "custom_function",
@@ -448,6 +477,13 @@ function validateTool(tool: GeneralTool, tools: GeneralTool[], editingIndex: num
       return "Parameter schema must contain valid JSON."
     }
   }
+  if (tool.type === "code" && !tool.code.trim()) return "Code is required."
+  if (tool.type === "code" && tool.code.length > 20000) {
+    return "Code must be 20,000 characters or fewer."
+  }
+  if (tool.type === "code" && tool.timeout_ms !== undefined && (tool.timeout_ms < 5000 || tool.timeout_ms > 60000)) {
+    return "Code tool timeout must be between 5000 and 60000 ms."
+  }
   return ""
 }
 
@@ -480,9 +516,23 @@ function normalizeTool(tool: GeneralTool): GeneralTool {
     }
   }
 
+  if (tool.type === "code") return normalizeCodeTool(tool)
   if (tool.type !== "custom") return tool
 
   return normalizeCustomTool(tool)
+}
+
+function normalizeCodeTool(tool: CodeTool): CodeTool {
+  return {
+    ...tool,
+    timeout_ms: tool.timeout_ms ?? 30000,
+    response_variables: coerceKeyValueRecord(tool.response_variables),
+    enable_typing_sound: tool.enable_typing_sound ?? false,
+    speak_during_execution: tool.speak_during_execution ?? false,
+    execution_message_type: tool.execution_message_type ?? "prompt",
+    execution_message_description: tool.execution_message_description ?? "",
+    speak_after_execution: tool.speak_after_execution ?? true,
+  }
 }
 
 function normalizeCustomTool(tool: CustomFunctionTool): CustomFunctionTool {
@@ -550,10 +600,24 @@ function stripCustomToolEditorFields(tool: CustomFunctionTool): CustomFunctionTo
 // ===================================================================
 
 function coerceToolForEdit(tool: GeneralTool): GeneralTool {
+  if (tool.type === "code") return coerceCodeTool(tool)
   if (tool.type === "custom") return coerceCustomTool(tool)
   if (tool.type !== "transfer_call") return tool
 
   return coerceTransferCallTool(tool)
+}
+
+function coerceCodeTool(tool: CodeTool): CodeTool {
+  return {
+    ...tool,
+    timeout_ms: tool.timeout_ms ?? 30000,
+    response_variables: coerceKeyValueRecord(tool.response_variables),
+    enable_typing_sound: tool.enable_typing_sound ?? false,
+    speak_during_execution: tool.speak_during_execution ?? false,
+    execution_message_type: tool.execution_message_type ?? "prompt",
+    execution_message_description: tool.execution_message_description ?? "",
+    speak_after_execution: tool.speak_after_execution ?? true,
+  }
 }
 
 function coerceCustomTool(tool: CustomFunctionTool): CustomFunctionTool {
