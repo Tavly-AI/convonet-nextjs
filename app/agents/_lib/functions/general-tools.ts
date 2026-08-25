@@ -19,33 +19,84 @@ export type ExecutionMessageFields = {
 
 export type TransferMode = "cold_transfer" | "warm_transfer" | "agentic_warm_transfer"
 
+export type TransferDestination =
+  | {
+      type: "predefined"
+      number: string
+      extension?: string
+    }
+  | {
+      type: "inferred"
+      prompt: string
+    }
+
+export type TransferHoldMusic =
+  | "none"
+  | "relaxing_sound"
+  | "uplifting_beats"
+  | "ringtone"
+  | "custom"
+
+export type TransferHandoffOption =
+  | {
+      type: "prompt"
+      prompt: string
+    }
+  | {
+      type: "static_message"
+      message: string
+    }
+
+export type TransferOption =
+  | {
+      type: "cold_transfer"
+      cold_transfer_mode?: "sip_refer" | "sip_invite"
+      show_transferee_as_caller?: boolean
+      transfer_ring_duration_ms?: number
+    }
+  | {
+      type: "warm_transfer"
+      agent_detection_timeout_ms?: number
+      custom_on_hold_music_asset_id?: string
+      enable_bridge_audio_cue?: boolean
+      ivr_option?: {
+        type?: "prompt"
+        prompt?: string
+      }
+      on_hold_music?: TransferHoldMusic
+      opt_out_human_detection?: boolean
+      private_handoff_option?: TransferHandoffOption | null
+      public_handoff_option?: TransferHandoffOption | null
+      show_transferee_as_caller?: boolean
+      transfer_ring_duration_ms?: number
+    }
+  | {
+      type: "agentic_warm_transfer"
+      agentic_transfer_config: {
+        action_on_timeout?: "cancel_transfer" | "bridge_transfer"
+        transfer_agent?: {
+          agent_id: string
+          agent_version: string | number
+        }
+        transfer_timeout_ms?: number
+      }
+      custom_on_hold_music_asset_id?: string
+      enable_bridge_audio_cue?: boolean
+      on_hold_music?: TransferHoldMusic
+      public_handoff_option?: TransferHandoffOption | null
+      show_transferee_as_caller?: boolean
+      transfer_ring_duration_ms?: number
+    }
+
 export type TransferCallTool = {
   type: "transfer_call"
   name: string
   description: string
-  transfer_destination: {
-    type: "predefined" | "dynamic"
-    number: string
-    ignore_e164_validation: boolean
-    extension: string
-  }
-  transfer_option: {
-    type: TransferMode
-    show_transferee_as_caller: boolean
-    sip_transfer_method: "invite" | "refer"
-    ring_duration_ms: number
-    on_hold_music: "ringtone" | "none"
-    navigate_ivr: boolean
-    has_internal_queue: boolean
-    wait_for_answer_ms: number
-    whisper_message: string
-    three_way_ringtone: boolean
-    three_way_message: string
-    transfer_agent_id: string
-    action_on_timeout: "cancel_transfer" | "bridge_transfer"
-  }
-  custom_sip_headers: KeyValue[]
-}
+  transfer_destination: TransferDestination
+  transfer_option: TransferOption
+  custom_sip_headers?: Record<string, string>
+  ignore_e164_validation?: boolean
+} & ExecutionMessageFields
 
 export type FunctionParameter = {
   name: string
