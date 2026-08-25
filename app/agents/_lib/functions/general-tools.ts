@@ -141,6 +141,24 @@ export type CodeTool = {
   timeout_ms?: number
 } & ExecutionMessageFields
 
+export type ExtractDynamicVariable = {
+  type: "string" | "number" | "boolean" | "enum"
+  name: string
+  description: string
+  examples?: string[]
+  choices?: string[]
+  required?: boolean
+  conditional_prompt?: string
+}
+
+export type ExtractDynamicVariableTool = {
+  type: "extract_dynamic_variable"
+  name: string
+  description: string
+  variables: ExtractDynamicVariable[]
+  // enable typing sound is missing
+}
+
 export type CheckAvailabilityCalTool = {
   type: "check_availability_cal"
   name: string
@@ -183,6 +201,7 @@ export type GeneralTool =
   | TransferCallTool
   | CustomFunctionTool
   | CodeTool
+  | ExtractDynamicVariableTool
   | CheckAvailabilityCalTool
   | BookAppointmentCalTool
   | PressDigitTool

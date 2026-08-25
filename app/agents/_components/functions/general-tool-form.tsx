@@ -26,6 +26,8 @@ import type {
   CustomFunctionTool,
   EndCallTool,
   ExecutionMessageFields,
+  ExtractDynamicVariable,
+  ExtractDynamicVariableTool,
   FunctionParameter,
   GeneralTool,
   KeyValue,
@@ -82,6 +84,9 @@ export function GeneralToolForm({
       )}
       {value.type === "code" && (
         <CodeToolForm value={value} onChange={onChange} />
+      )}
+      {value.type === "extract_dynamic_variable" && (
+        <ExtractDynamicVariableForm value={value} onChange={onChange} />
       )}
     </div>
   )
@@ -511,9 +516,152 @@ return { ok: true, formatted_total: "$" + amount.toFixed(2) };`}
   )
 }
 
+function ExtractDynamicVariableForm({
+  value,
+  onChange,
+}: {
+  value: ExtractDynamicVariableTool
+  onChange: (value: ExtractDynamicVariableTool) => void
+}) {
+  function updateVariable(index: number, patch: Partial<ExtractDynamicVariable>) {
+    onChange({
+      ...value,
+      variables: value.variables.map((variable, variableIndex) =>
+        variableIndex === index ? { ...variable, ...patch } : variable
+      ),
+    })
+  }
+
+  return (
+    <Section title="Variables">
+      <div className="space-y-3">
+        {value.variables.map((variable, index) => (
+          <div key={index} className="space-y-3 rounded-lg border p-3">
+            <div className="grid gap-3 sm:grid-cols-[1fr_9rem_auto]">
+              <Input
+                value={variable.name}
+                onChange={(event) => updateVariable(index, { name: event.target.value })}
+                placeholder="variable_name"
+              />
+              <Select
+                value={variable.type}
+                onValueChange={(type) =>
+                  updateVariable(index, {
+                    type: type as ExtractDynamicVariable["type"],
+                    ...(type !== "enum" && { choices: [] }),
+                  })
+                }
+              >
+                <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="string">Text</SelectItem>
+                  <SelectItem value="number">Number</SelectItem>
+                  <SelectItem value="boolean">Boolean</SelectItem>
+                  <SelectItem value="enum">Enum</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                aria-label="Remove variable"
+                onClick={() =>
+                  onChange({
+                    ...value,
+                    variables: value.variables.filter((_, variableIndex) => variableIndex !== index),
+                  })
+                }
+              >
+                <Trash2Icon />
+              </Button>
+            </div>
+
+            <Field label="Description">
+              <Input
+                value={variable.description}
+                onChange={(event) => updateVariable(index, { description: event.target.value })}
+                placeholder="What value should be extracted from the user's response?"
+              />
+            </Field>
+
+            {variable.type === "enum" && (
+              <Field label="Enum choices">
+                <Input
+                  value={(variable.choices ?? []).join(", ")}
+                  onChange={(event) =>
+                    updateVariable(index, { choices: splitCommaList(event.target.value) })
+                  }
+                  placeholder="new, existing, unsure"
+                />
+              </Field>
+            )}
+
+            <Field label="Examples">
+              <Input
+                value={(variable.examples ?? []).join(", ")}
+                onChange={(event) =>
+                  updateVariable(index, { examples: splitCommaList(event.target.value) })
+                }
+                placeholder="John Smith, Jane Doe"
+              />
+            </Field>
+
+            <Field label="Conditional prompt">
+              <Textarea
+                value={variable.conditional_prompt ?? ""}
+                onChange={(event) =>
+                  updateVariable(index, { conditional_prompt: event.target.value })
+                }
+                placeholder="Only extract this when the user explicitly provides it."
+              />
+            </Field>
+
+            <CheckRow
+              label="Required"
+              checked={variable.required ?? false}
+              onCheckedChange={(required) => updateVariable(index, { required })}
+            />
+          </div>
+        ))}
+
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          onClick={() =>
+            onChange({
+              ...value,
+              variables: [
+                ...value.variables,
+                {
+                  type: "string",
+                  name: "",
+                  description: "",
+                  examples: [],
+                  required: false,
+                },
+              ],
+            })
+          }
+        >
+          <PlusIcon data-icon="inline-start" />
+          Add variable
+        </Button>
+      </div>
+    </Section>
+  )
+}
+
 function keyValueFromRecord(value: Record<string, string> | KeyValue[] | undefined) {
   if (Array.isArray(value)) return value
   return Object.entries(value ?? {}).map(([key, itemValue]) => ({ key, value: itemValue }))
+}
+
+function splitCommaList(value: string) {
+  return value
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean)
 }
 
 function ParameterEditor({

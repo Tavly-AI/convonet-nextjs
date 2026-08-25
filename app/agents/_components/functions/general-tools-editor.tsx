@@ -7,6 +7,7 @@ import {
   CalendarCheckIcon,
   CalendarDaysIcon,
   Code2Icon,
+  FileInputIcon,
   HashIcon,
   MoreHorizontalIcon,
   PhoneForwardedIcon,
@@ -40,6 +41,8 @@ import type {
   CodeTool,
   CustomFunctionTool,
   EndCallTool,
+  ExtractDynamicVariable,
+  ExtractDynamicVariableTool,
   FunctionParameter,
   GeneralTool,
   PressDigitTool,
@@ -100,6 +103,12 @@ const TOOL_OPTIONS = [
     label: "Code",
     description: "Run JavaScript in Retell's sandbox during the conversation.",
     icon: Code2Icon,
+  },
+  {
+    type: "extract_dynamic_variable" as const,
+    label: "Extract Dynamic Variable",
+    description: "Extract values from the conversation into dynamic variables.",
+    icon: FileInputIcon,
   },
   {
     type: "custom" as const,
@@ -394,6 +403,23 @@ return {
     } satisfies CodeTool
   }
 
+  if (type === "extract_dynamic_variable") {
+    return {
+      type,
+      name: "extract_user_details",
+      description: "Extract user details when the caller provides them.",
+      variables: [
+        {
+          type: "string",
+          name: "customer_name",
+          description: "The caller's full name.",
+          examples: [],
+          required: false,
+        },
+      ],
+    } satisfies ExtractDynamicVariableTool
+  }
+
   return {
     type,
     name: "custom_function",
@@ -484,6 +510,18 @@ function validateTool(tool: GeneralTool, tools: GeneralTool[], editingIndex: num
   if (tool.type === "code" && tool.timeout_ms !== undefined && (tool.timeout_ms < 5000 || tool.timeout_ms > 60000)) {
     return "Code tool timeout must be between 5000 and 60000 ms."
   }
+  if (tool.type === "extract_dynamic_variable") {
+    if (tool.variables.length === 0) return "Add at least one variable to extract."
+    for (const variable of tool.variables) {
+      if (!/^[A-Za-z0-9_-]{1,64}$/.test(variable.name)) {
+        return "Variable names can contain only letters, numbers, underscores, and dashes, with a maximum length of 64."
+      }
+      if (!variable.description.trim()) return "Every variable needs a description."
+      if (variable.type === "enum" && (variable.choices ?? []).length === 0) {
+        return "Enum variables need at least one choice."
+      }
+    }
+  }
   return ""
 }
 
@@ -517,9 +555,39 @@ function normalizeTool(tool: GeneralTool): GeneralTool {
   }
 
   if (tool.type === "code") return normalizeCodeTool(tool)
+  if (tool.type === "extract_dynamic_variable") {
+    return normalizeExtractDynamicVariableTool(tool)
+  }
   if (tool.type !== "custom") return tool
 
   return normalizeCustomTool(tool)
+}
+
+function normalizeExtractDynamicVariableTool(
+  tool: ExtractDynamicVariableTool
+): ExtractDynamicVariableTool {
+  return {
+    ...tool,
+    variables: tool.variables.map(normalizeExtractDynamicVariable),
+  }
+}
+
+function normalizeExtractDynamicVariable(variable: ExtractDynamicVariable): ExtractDynamicVariable {
+  return {
+    type: variable.type,
+    name: variable.name.trim(),
+    description: variable.description.trim(),
+    ...(variable.required !== undefined && { required: variable.required }),
+    ...(variable.examples && variable.examples.length > 0 && {
+      examples: variable.examples.map((example) => example.trim()).filter(Boolean),
+    }),
+    ...(variable.type === "enum" && {
+      choices: (variable.choices ?? []).map((choice) => choice.trim()).filter(Boolean),
+    }),
+    ...(variable.conditional_prompt?.trim() && {
+      conditional_prompt: variable.conditional_prompt.trim(),
+    }),
+  }
 }
 
 function normalizeCodeTool(tool: CodeTool): CodeTool {
@@ -601,10 +669,28 @@ function stripCustomToolEditorFields(tool: CustomFunctionTool): CustomFunctionTo
 
 function coerceToolForEdit(tool: GeneralTool): GeneralTool {
   if (tool.type === "code") return coerceCodeTool(tool)
+  if (tool.type === "extract_dynamic_variable") {
+    return coerceExtractDynamicVariableTool(tool)
+  }
   if (tool.type === "custom") return coerceCustomTool(tool)
   if (tool.type !== "transfer_call") return tool
 
   return coerceTransferCallTool(tool)
+}
+
+function coerceExtractDynamicVariableTool(
+  tool: ExtractDynamicVariableTool
+): ExtractDynamicVariableTool {
+  return {
+    ...tool,
+    variables: tool.variables.map((variable) => ({
+      ...variable,
+      examples: variable.examples ?? [],
+      choices: variable.choices ?? [],
+      required: variable.required ?? false,
+      conditional_prompt: variable.conditional_prompt ?? "",
+    })),
+  }
 }
 
 function coerceCodeTool(tool: CodeTool): CodeTool {
