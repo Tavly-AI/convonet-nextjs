@@ -18,6 +18,7 @@ export type { AgentSessionResult } from "@/app/agents/_lib/helper-actions"
 const publishAgentSchema = z.object({
   id: z.string().trim().min(1).nullable(),
   name: z.string().trim().min(1, "Agent name is required.").max(200),
+  channel: z.enum(["voice", "chat"]).default("voice"),
   config: z
     .object({
       agentType: z.string().trim().min(1),
@@ -108,6 +109,7 @@ export async function publishAgent(
   const parsedMetadata = publishAgentVersionSchema.parse(metadata)
   const data = {
     name: parsed.name,
+    channel: parsed.channel,
     config: parsed.config as Prisma.InputJsonObject,
     llmConfig: parsed.llmConfig as Prisma.InputJsonObject,
   }
@@ -178,6 +180,7 @@ export async function autoSaveAgentSession(input: AgentSessionAgent) {
     },
     data: {
       name: parsed.name,
+      channel: parsed.channel,
       config: parsed.config as Prisma.InputJsonObject,
       llmConfig: parsed.llmConfig as Prisma.InputJsonObject,
     },

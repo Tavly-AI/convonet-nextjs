@@ -64,6 +64,7 @@ model AgentVersion {
   title       String
   description String?
   name        String
+  channel     String    @default("voice")
   config      Json
   llmConfig   Json
 

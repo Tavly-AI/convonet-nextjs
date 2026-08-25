@@ -1,4 +1,7 @@
-import type { AgentSessionSource } from "@/app/agents/_lib/session-storage/agent-session"
+import type {
+  AgentSessionAgent,
+  AgentSessionSource,
+} from "@/app/agents/_lib/session-storage/agent-session"
 import { Prisma } from "@/generated/prisma/client"
 import { getCurrentUserId } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
@@ -24,6 +27,7 @@ export function toAgentSession(agent: {
   id: string
   workspaceId: string
   name: string
+  channel: string
   config: Prisma.JsonValue
   llmConfig: Prisma.JsonValue
   createdAt: Date
@@ -33,12 +37,17 @@ export function toAgentSession(agent: {
     id: agent.id,
     workspaceId: agent.workspaceId,
     name: agent.name,
+    channel: toAgentChannel(agent.channel),
     config: toJsonRecord(agent.config),
     llmConfig: toJsonRecord(agent.llmConfig),
     draftVersion,
     createdAt: agent.createdAt.toISOString(),
     updatedAt: agent.updatedAt.toISOString(),
   }
+}
+
+function toAgentChannel(channel: string): AgentSessionAgent["channel"] {
+  return channel === "chat" ? "chat" : "voice"
 }
 
 function toJsonRecord(value: Prisma.JsonValue): Record<string, unknown> {
