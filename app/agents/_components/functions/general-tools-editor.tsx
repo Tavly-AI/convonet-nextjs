@@ -38,6 +38,7 @@ import type {
   CheckAvailabilityCalTool,
   CustomFunctionTool,
   EndCallTool,
+  FunctionParameter,
   GeneralTool,
   PressDigitTool,
   TransferCallTool,
@@ -371,15 +372,18 @@ function createTool(type: GeneralTool["type"]): GeneralTool {
     method: "POST",
     url: "",
     timeout_ms: 120000,
-    headers: [],
-    query_params: [],
+    headers: {},
+    query_params: {},
     parameters: { type: "object", properties: {} },
     parameters_json: JSON.stringify({ type: "object", properties: {} }, null, 2),
-    parameter_mode: "form",
+    parameter_type: "form",
     parameter_fields: [],
-    args_only: false,
-    response_variables: [],
-    speak_during_execution: { enabled: false, type: "prompt", text: "" },
+    args_at_root: false,
+    response_variables: {},
+    enable_typing_sound: false,
+    speak_during_execution: false,
+    execution_message_type: "prompt",
+    execution_message_description: "",
     speak_after_execution: true,
     max_retry: 0,
   } satisfies CustomFunctionTool
@@ -428,9 +432,15 @@ function validateTool(tool: GeneralTool, tools: GeneralTool[], editingIndex: num
     }
   }
   if (tool.type === "custom" && !tool.url.trim()) return "API endpoint is required."
-  if (tool.type === "custom" && tool.parameter_mode === "json") {
+  if (tool.type === "custom" && tool.timeout_ms !== undefined && (tool.timeout_ms < 1000 || tool.timeout_ms > 600000)) {
+    return "Custom function timeout must be between 1000 and 600000 ms."
+  }
+  if (tool.type === "custom" && tool.max_retry !== undefined && (tool.max_retry < 0 || tool.max_retry > 5)) {
+    return "Maximum retries must be between 0 and 5."
+  }
+  if (tool.type === "custom" && (tool.parameter_type ?? "form") === "json") {
     try {
-      const schema = JSON.parse(tool.parameters_json)
+      const schema = JSON.parse(tool.parameters_json ?? "")
       if (!schema || Array.isArray(schema) || schema.type !== "object") {
         return 'Parameter schema must be a JSON object with type "object".'
       }
@@ -472,15 +482,26 @@ function normalizeTool(tool: GeneralTool): GeneralTool {
 
   if (tool.type !== "custom") return tool
 
-  if (tool.parameter_mode === "json") {
-    return { ...tool, parameters: JSON.parse(tool.parameters_json) }
+  return normalizeCustomTool(tool)
+}
+
+function normalizeCustomTool(tool: CustomFunctionTool): CustomFunctionTool {
+  if ((tool.parameter_type ?? "form") === "json") {
+    const parameters = JSON.parse(tool.parameters_json ?? "{}")
+
+    return stripCustomToolEditorFields({
+      ...tool,
+      parameters,
+      parameter_type: "json",
+    })
   }
 
-  const required = tool.parameter_fields
+  const parameterFields = tool.parameter_fields ?? []
+  const required = parameterFields
     .filter((parameter) => parameter.required && parameter.name)
     .map((parameter) => parameter.name)
   const properties = Object.fromEntries(
-    tool.parameter_fields
+    parameterFields
       .filter((parameter) => parameter.name)
       .map((parameter) => [
         parameter.name,
@@ -491,24 +512,112 @@ function normalizeTool(tool: GeneralTool): GeneralTool {
       ])
   )
 
-  return {
+  return stripCustomToolEditorFields({
     ...tool,
+    parameter_type: "form",
     parameters: {
       type: "object",
       properties,
       ...(required.length > 0 && { required }),
     },
+  })
+}
+
+function stripCustomToolEditorFields(tool: CustomFunctionTool): CustomFunctionTool {
+  const retellTool = { ...tool }
+  delete retellTool.parameters_json
+  delete retellTool.parameter_fields
+
+  return {
+    ...retellTool,
+    method: retellTool.method ?? "POST",
+    timeout_ms: retellTool.timeout_ms ?? 120000,
+    headers: coerceKeyValueRecord(retellTool.headers),
+    query_params: coerceKeyValueRecord(retellTool.query_params),
+    response_variables: coerceKeyValueRecord(retellTool.response_variables),
+    args_at_root: retellTool.args_at_root ?? false,
+    enable_typing_sound: retellTool.enable_typing_sound ?? false,
+    speak_during_execution: retellTool.speak_during_execution ?? false,
+    execution_message_type: retellTool.execution_message_type ?? "prompt",
+    execution_message_description: retellTool.execution_message_description ?? "",
+    speak_after_execution: retellTool.speak_after_execution ?? true,
+    max_retry: retellTool.max_retry ?? 0,
   }
 }
 
 // ===================================================================
-// ===================== TRANSFER CALL TOOL LOGIC ====================
+// ======================= EDIT COERCION LOGIC =======================
 // ===================================================================
 
 function coerceToolForEdit(tool: GeneralTool): GeneralTool {
+  if (tool.type === "custom") return coerceCustomTool(tool)
   if (tool.type !== "transfer_call") return tool
 
   return coerceTransferCallTool(tool)
+}
+
+function coerceCustomTool(tool: CustomFunctionTool): CustomFunctionTool {
+  const legacySpeak = tool.speak_during_execution as unknown as Record<string, unknown> | boolean | undefined
+  const speakDuringExecution =
+    typeof legacySpeak === "object" && legacySpeak !== null
+      ? Boolean(legacySpeak.enabled)
+      : Boolean(legacySpeak)
+
+  const executionMessageType =
+    typeof legacySpeak === "object" && legacySpeak?.type === "static"
+      ? "static_text"
+      : tool.execution_message_type ?? "prompt"
+
+  const executionMessageDescription =
+    typeof legacySpeak === "object"
+      ? String(legacySpeak.text ?? "")
+      : tool.execution_message_description ?? ""
+
+  const parameters = tool.parameters ?? { type: "object", properties: {} }
+  const legacyParameterMode = (tool as CustomFunctionTool & { parameter_mode?: "form" | "json" }).parameter_mode
+
+  return {
+    ...tool,
+    method: tool.method ?? "POST",
+    timeout_ms: tool.timeout_ms ?? 120000,
+    headers: coerceKeyValueRecord(tool.headers),
+    query_params: coerceKeyValueRecord(tool.query_params),
+    response_variables: coerceKeyValueRecord(tool.response_variables),
+    parameters,
+    parameters_json: tool.parameters_json ?? JSON.stringify(parameters, null, 2),
+    parameter_type: tool.parameter_type ?? legacyParameterMode ?? (tool.parameters_json ? "json" : "form"),
+    parameter_fields: tool.parameter_fields ?? parameterFieldsFromSchema(parameters),
+    args_at_root: tool.args_at_root ?? Boolean((tool as CustomFunctionTool & { args_only?: boolean }).args_only),
+    enable_typing_sound: tool.enable_typing_sound ?? false,
+    speak_during_execution: speakDuringExecution,
+    execution_message_type: executionMessageType,
+    execution_message_description: executionMessageDescription,
+    speak_after_execution: tool.speak_after_execution ?? true,
+    max_retry: tool.max_retry ?? 0,
+  }
+}
+
+function parameterFieldsFromSchema(parameters: CustomFunctionTool["parameters"]): CustomFunctionTool["parameter_fields"] {
+  if (!parameters || !parameters.properties || typeof parameters.properties !== "object") return []
+
+  const required = new Set(parameters.required ?? [])
+
+  return Object.entries(parameters.properties as Record<string, Record<string, unknown>>).map(([name, schema]) => ({
+    name,
+    type: isFunctionParameterType(schema.type) ? schema.type : "string",
+    description: typeof schema.description === "string" ? schema.description : "",
+    required: required.has(name),
+  }))
+}
+
+function isFunctionParameterType(value: unknown): value is FunctionParameter["type"] {
+  return (
+    value === "string" ||
+    value === "number" ||
+    value === "boolean" ||
+    value === "object" ||
+    value === "array"
+  )
 }
 
 function coerceTransferCallTool(tool: TransferCallTool): TransferCallTool {
@@ -673,9 +782,7 @@ function normalizeTransferCallTool(tool: TransferCallTool): TransferCallTool {
           prompt: transferDestination.prompt.trim(),
         },
     transfer_option: normalizeTransferOption(transferOption),
-    custom_sip_headers: Object.fromEntries(
-      Object.entries(tool.custom_sip_headers ?? {}).filter(([key]) => key.trim())
-    ),
+    custom_sip_headers: coerceKeyValueRecord(tool.custom_sip_headers),
   }
 }
 

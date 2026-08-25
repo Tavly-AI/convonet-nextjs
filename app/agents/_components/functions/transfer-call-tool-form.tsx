@@ -207,7 +207,7 @@ export function TransferCallForm({
         <KeyValueEditor
           value={sipHeaders}
           onChange={(custom_sip_headers) =>
-            onChange({ ...value, custom_sip_headers: recordFromKeyValue(custom_sip_headers) })
+            onChange({ ...value, custom_sip_headers })
           }
           keyPlaceholder="X-Department"
           valuePlaceholder="billing"
@@ -538,14 +538,6 @@ function ExecutionMessageForm<T extends ExecutionMessageFields>({
 function keyValueFromRecord(value: Record<string, string> | KeyValue[] | undefined) {
   if (Array.isArray(value)) return value
   return Object.entries(value ?? {}).map(([key, itemValue]) => ({ key, value: itemValue }))
-}
-
-function recordFromKeyValue(value: KeyValue[]) {
-  return Object.fromEntries(
-    value
-      .map(({ key, value: itemValue }) => [key.trim(), itemValue] as const)
-      .filter(([key]) => key)
-  )
 }
 
 function Field({

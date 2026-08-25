@@ -27,6 +27,7 @@ import type {
   ExecutionMessageFields,
   FunctionParameter,
   GeneralTool,
+  KeyValue,
   PressDigitTool,
 } from "@/app/agents/_lib/functions/general-tools"
 import { Section } from "../speech-settings/speech-settings"
@@ -229,7 +230,9 @@ function CustomFunctionForm({
   value: CustomFunctionTool
   onChange: (value: CustomFunctionTool) => void
 }) {
-  const supportsBody = ["POST", "PUT", "PATCH"].includes(value.method)
+  const method = value.method ?? "POST"
+  const supportsBody = ["POST", "PUT", "PATCH"].includes(method)
+  const parameterType = value.parameter_type ?? "form"
 
   return (
     <>
@@ -237,7 +240,7 @@ function CustomFunctionForm({
         <div className="grid gap-4 sm:grid-cols-[9rem_1fr]">
           <Field label="Method">
             <Select
-              value={value.method}
+              value={method}
               onValueChange={(method) => onChange({ ...value, method: method as CustomFunctionTool["method"] })}
             >
               <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
@@ -259,7 +262,7 @@ function CustomFunctionForm({
           <div className="sm:col-span-2">
             <NumberField
               label="Timeout (ms)"
-              value={value.timeout_ms}
+              value={value.timeout_ms ?? 120000}
               onChange={(timeout_ms) => onChange({ ...value, timeout_ms })}
             />
           </div>
@@ -268,7 +271,7 @@ function CustomFunctionForm({
 
       <Section title="Headers">
         <KeyValueEditor
-          value={value.headers}
+          value={keyValueFromRecord(value.headers)}
           onChange={(headers) => onChange({ ...value, headers })}
           keyPlaceholder="Authorization"
           valuePlaceholder="Bearer {{token}}"
@@ -277,7 +280,7 @@ function CustomFunctionForm({
 
       <Section title="Query parameters">
         <KeyValueEditor
-          value={value.query_params}
+          value={keyValueFromRecord(value.query_params)}
           onChange={(query_params) => onChange({ ...value, query_params })}
           keyPlaceholder="customer_id"
           valuePlaceholder="{{customer_id}}"
@@ -287,9 +290,9 @@ function CustomFunctionForm({
       {supportsBody && (
         <Section title="Request body parameters">
           <Tabs
-            value={value.parameter_mode}
-            onValueChange={(parameter_mode) =>
-              onChange({ ...value, parameter_mode: parameter_mode as "form" | "json" })
+            value={parameterType}
+            onValueChange={(parameter_type) =>
+              onChange({ ...value, parameter_type: parameter_type as "form" | "json" })
             }
           >
             <TabsList>
@@ -298,7 +301,7 @@ function CustomFunctionForm({
             </TabsList>
             <TabsContent value="form" className="pt-4">
               <ParameterEditor
-                value={value.parameter_fields}
+                value={value.parameter_fields ?? []}
                 onChange={(parameter_fields) => onChange({ ...value, parameter_fields })}
               />
             </TabsContent>
@@ -306,7 +309,7 @@ function CustomFunctionForm({
               <Field label="JSON schema">
                 <Textarea
                   className="min-h-52 font-mono text-xs"
-                  value={value.parameters_json}
+                  value={value.parameters_json ?? JSON.stringify(value.parameters ?? { type: "object", properties: {} }, null, 2)}
                   onChange={(event) => onChange({ ...value, parameters_json: event.target.value })}
                 />
               </Field>
@@ -316,8 +319,8 @@ function CustomFunctionForm({
             <CheckRow
               label="Payload: args only"
               description="Send arguments at the top level without the call wrapper."
-              checked={value.args_only}
-              onCheckedChange={(args_only) => onChange({ ...value, args_only })}
+              checked={value.args_at_root ?? false}
+              onCheckedChange={(args_at_root) => onChange({ ...value, args_at_root })}
             />
           </div>
         </Section>
@@ -325,8 +328,10 @@ function CustomFunctionForm({
 
       <Section title="Store response fields as variables">
         <KeyValueEditor
-          value={value.response_variables}
-          onChange={(response_variables) => onChange({ ...value, response_variables })}
+          value={keyValueFromRecord(value.response_variables)}
+          onChange={(response_variables) =>
+            onChange({ ...value, response_variables })
+          }
           keyPlaceholder="data.customer.name"
           valuePlaceholder="customer_name"
         />
@@ -335,48 +340,40 @@ function CustomFunctionForm({
       <Section title="Conversation behavior">
         <div className="space-y-4">
           <CheckRow
+            label="Typing sound"
+            description="Play a typing sound while the request is running."
+            checked={value.enable_typing_sound ?? false}
+            onCheckedChange={(enable_typing_sound) => onChange({ ...value, enable_typing_sound })}
+          />
+          <CheckRow
             label="Talk while waiting"
             description="Say something while the API request is running."
-            checked={value.speak_during_execution.enabled}
-            onCheckedChange={(enabled) =>
-              onChange({
-                ...value,
-                speak_during_execution: { ...value.speak_during_execution, enabled },
-              })
-            }
+            checked={value.speak_during_execution ?? false}
+            onCheckedChange={(speak_during_execution) => onChange({ ...value, speak_during_execution })}
           />
-          {value.speak_during_execution.enabled && (
+          {value.speak_during_execution && (
             <div className="grid gap-4 rounded-lg border bg-muted/20 p-4 sm:grid-cols-[10rem_1fr]">
               <Field label="Message type">
                 <Select
-                  value={value.speak_during_execution.type}
-                  onValueChange={(type) =>
-                    onChange({
-                      ...value,
-                      speak_during_execution: {
-                        ...value.speak_during_execution,
-                        type: type as "prompt" | "static",
-                      },
-                    })
+                  value={value.execution_message_type ?? "prompt"}
+                  onValueChange={(execution_message_type) =>
+                    onChange({ ...value, execution_message_type: execution_message_type as CustomFunctionTool["execution_message_type"] })
                   }
                 >
                   <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="prompt">Prompt</SelectItem>
-                    <SelectItem value="static">Static sentence</SelectItem>
+                    <SelectItem value="static_text">Static sentence</SelectItem>
                   </SelectContent>
                 </Select>
               </Field>
               <Field label="Message">
                 <Textarea
-                  value={value.speak_during_execution.text}
+                  value={value.execution_message_description ?? ""}
                   onChange={(event) =>
                     onChange({
                       ...value,
-                      speak_during_execution: {
-                        ...value.speak_during_execution,
-                        text: event.target.value,
-                      },
+                      execution_message_description: event.target.value,
                     })
                   }
                   placeholder="Let me look that up for you."
@@ -387,12 +384,12 @@ function CustomFunctionForm({
           <CheckRow
             label="Talk after action completed"
             description="Continue speaking immediately after the function returns."
-            checked={value.speak_after_execution}
+            checked={value.speak_after_execution ?? true}
             onCheckedChange={(speak_after_execution) => onChange({ ...value, speak_after_execution })}
           />
           <Field label="Maximum retries">
             <Select
-              value={String(value.max_retry)}
+              value={String(value.max_retry ?? 0)}
               onValueChange={(retry) => onChange({ ...value, max_retry: Number(retry) })}
             >
               <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
@@ -407,6 +404,11 @@ function CustomFunctionForm({
       </Section>
     </>
   )
+}
+
+function keyValueFromRecord(value: Record<string, string> | KeyValue[] | undefined) {
+  if (Array.isArray(value)) return value
+  return Object.entries(value ?? {}).map(([key, itemValue]) => ({ key, value: itemValue }))
 }
 
 function ParameterEditor({
