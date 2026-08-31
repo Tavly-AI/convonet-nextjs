@@ -30,9 +30,71 @@ model Workspace {
   users         User[]
   agents        Agent[]
   agentVersions AgentVersion[]
+  twilioSubaccount TwilioSubaccount?
+  twilioSipTrunk   TwilioSipTrunk?
+  twilioPhoneNumbers TwilioPhoneNumber[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model TwilioSubaccount {
+  id          String    @id @default(cuid())
+  workspaceId String    @unique
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  sipTrunk    TwilioSipTrunk?
+
+  sid             String  @unique
+  authToken       String
+  friendlyName    String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([workspaceId])
+}
+
+model TwilioSipTrunk {
+  id                 String           @id @default(cuid())
+  workspaceId        String           @unique
+  workspace          Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  twilioSubaccountId String           @unique
+  twilioSubaccount   TwilioSubaccount @relation(fields: [twilioSubaccountId], references: [id], onDelete: Cascade)
+
+  trunkSid          String  @unique
+  terminationUri    String
+  credentialListSid String
+  authUsername      String
+  authPassword      String
+  originationUrlSid String
+  phoneNumbers      TwilioPhoneNumber[]
+  
+  livekitOutboundTrunkId String?
+  livekitInboundTrunkId  String?
+  livekitDispatchRuleId  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([workspaceId])
+  @@index([twilioSubaccountId])
+}
+
+model TwilioPhoneNumber {
+  id               String         @id @default(cuid())
+  workspaceId      String
+  workspace        Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  twilioSipTrunkId String
+  twilioSipTrunk   TwilioSipTrunk @relation(fields: [twilioSipTrunkId], references: [id], onDelete: Cascade)
+
+  phoneNumber    String @unique
+  phoneNumberSid String @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([workspaceId])
+  @@index([twilioSipTrunkId])
 }
 
 model Agent {

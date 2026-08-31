@@ -148,7 +148,7 @@ const data1 = {
   deploy: [
     {
       name: "Phone Numbers",
-      url: "#",
+      url: "/dashboard/phone-numbers",
       icon: <PhoneIcon />,
     },
     {
