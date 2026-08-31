@@ -1,9 +1,9 @@
-"use client"
+import Link from "next/link"
+import { Suspense } from "react"
+import { PhoneIcon, PlusIcon } from "lucide-react"
 
-import { useState } from "react"
-import { PhoneIcon, PlusIcon, SearchIcon } from "lucide-react"
-
-import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
+import { Button, buttonVariants } from "@/components/ui/button"
 import {
   Card,
   CardAction,
@@ -11,32 +11,17 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
-import { BuyNumberModal } from "./number-modal/buy-number-modal"
+import { type PhoneNumberWithConfig } from "../_lib/phone-number-config-actions"
+import { VerificationModal } from "./side-display/verification-modal"
+import { UserPhoneNumbersList } from "./side-display/user-phone-numbers-list"
 
-export type PhoneNumberListItem = {
-  id: string
-  name: string
-}
+export function LeftSidebar({ phoneNumberId, phoneNumbers }: { phoneNumberId?: string, phoneNumbers: PhoneNumberWithConfig[] }) {
 
-const phoneNumbers: PhoneNumberListItem[] = [
-  { id: "my-number", name: "my number" },
-  { id: "outbound-trunk-2", name: "My outbound trunk 2" },
-]
-
-export function LeftSidebar() {
-  const selectedPhoneNumberId = phoneNumbers[0].id
+  const selectedPhoneNumberId =
+    phoneNumbers.some((phoneNumber) => phoneNumber.id === phoneNumberId)
+      ? phoneNumberId
+      : phoneNumbers[0]?.id
 
   return (
     <Card className="gap-4 p-4">
@@ -46,64 +31,25 @@ export function LeftSidebar() {
           Phone Numbers
         </CardTitle>
         <CardAction>
-          <VerificationModal />
+          <Suspense
+            fallback={
+              <Button size="icon-lg" aria-label="Add phone number" disabled>
+                <PlusIcon className="size-5" />
+              </Button>
+            }
+          >
+            <VerificationModal />
+          </Suspense>
         </CardAction>
       </CardHeader>
 
       <Separator />
 
       <CardContent className="flex flex-col gap-4 px-0">
-        <div className="relative">
-          <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            className="pl-8"
-            placeholder="Search phone numbers"
-            aria-label="Search phone numbers"
-          />
-        </div>
-
-        <div className="flex flex-col gap-1">
-          {phoneNumbers.map((phoneNumber) => (
-            <Button
-              key={phoneNumber.id}
-              variant={
-                phoneNumber.id === selectedPhoneNumberId ? "secondary" : "ghost"
-              }
-              className="h-10 justify-start px-3 text-left"
-            >
-              {phoneNumber.name}
-            </Button>
-          ))}
-        </div>
+        <Suspense fallback={null}>
+          <UserPhoneNumbersList phoneNumbers={phoneNumbers} />
+        </Suspense>
       </CardContent>
     </Card>
-  )
-}
-
-function VerificationModal() {
-  const [open, setOpen] = useState(false)
-
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger
-        render={<Button size="icon-lg" aria-label="Add phone number" />}
-      >
-        <PlusIcon className="size-5" />
-      </DialogTrigger>
-      <DialogContent className="max-w-md p-0">
-        <DialogHeader className="border-b px-5 py-4">
-          <DialogTitle>Complete verification</DialogTitle>
-          <DialogDescription>
-            Complete verification before using purchased numbers for outbound calls.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="px-5 py-4 text-sm text-muted-foreground">
-          Continue when your verification is complete.
-        </div>
-        <DialogFooter className="border-t px-5 py-4 sm:justify-between">
-          <DialogClose render={<BuyNumberModal />} />
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
   )
 }

@@ -170,6 +170,9 @@ export async function updateTwilioSipTrunk({
                 twilioSipTrunkId,
                 phoneNumber,
                 phoneNumberSid,
+                config: {
+                    create: {}
+                },
             },
         }),
     ])
