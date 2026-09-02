@@ -22,26 +22,29 @@ type TwilioSipTrunkSetup = {
     }
 }
 
-export async function buyNumber(phoneNumber: string) {
+export async function buyNumber(phoneNumber1: string) {
+    const phoneNumber = phoneNumber1
     // TWILLIO PURCHASE NUMBER API
 
-    let purchasedNumber: TwilioPurchasedNumber
-
-    try {
-        const response = await fetch("/api/twillio/purchase-number", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ phoneNumber }),
-        })
-        const data = await response.json()
-
-        if (!response.ok) { throw new Error(data.error ?? "Failed to purchase Twilio number.") }
-
-        purchasedNumber = data
-    } catch (error) {
-        toast.error(error instanceof Error ? error.message : "Failed to purchase Twilio number.")
-        return
+    const purchasedNumber: TwilioPurchasedNumber = {
+        sid: "PN2b7a5bc43c857a2a4c85edbc6905ce71"
     }
+
+    // try {
+    //     const response = await fetch("/api/twillio/purchase-number", {
+    //         method: "POST",
+    //         headers: { "Content-Type": "application/json" },
+    //         body: JSON.stringify({ phoneNumber }),
+    //     })
+    //     const data = await response.json()
+
+    //     if (!response.ok) { throw new Error(data.error ?? "Failed to purchase Twilio number.") }
+
+    //     purchasedNumber = data
+    // } catch (error) {
+    //     toast.error(error instanceof Error ? error.message : "Failed to purchase Twilio number.")
+    //     return
+    // }
 
     // UPDATE TWILLIO SIP TRUNKING
 
@@ -73,7 +76,7 @@ export async function buyNumber(phoneNumber: string) {
                 terminationUri: sipTrunkSetup.twilio.terminationUri,
                 authUsername: sipTrunkSetup.twilio.authUsername,
                 authPassword: sipTrunkSetup.twilio.authPassword,
-                transport: "tcp",
+                transport: "tls",
                 livekitOutboundTrunkId: sipTrunkSetup.twilio.livekitOutboundTrunkId,
                 livekitInboundTrunkId: sipTrunkSetup.twilio.livekitInboundTrunkId,
                 livekitDispatchRuleId: sipTrunkSetup.twilio.livekitDispatchRuleId,
@@ -85,6 +88,7 @@ export async function buyNumber(phoneNumber: string) {
                 terminationUri: sipTrunkSetup.twilio.terminationUri,
                 authUsername: sipTrunkSetup.twilio.authUsername,
                 authPassword: sipTrunkSetup.twilio.authPassword,
+                transport: "tls",
             })
         }
 

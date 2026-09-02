@@ -1,7 +1,8 @@
 // optimize file
 "use client"
 
-import { FormEvent, useState } from "react"
+import { useState } from "react"
+import type { FormEvent } from "react"
 import {
   CheckIcon,
   Loader2Icon,
@@ -32,16 +33,20 @@ const countries = [
   { value: "GB", label: "United Kingdom" },
 ]
 
+type NumberType = "standard" | "toll-free"
+
 export type NumberSearchFilters = {
   country: string
   search: string
+  type: NumberType
 }
 
-function getTwilioSearchUrl({ country, search }: NumberSearchFilters) {
+function getTwilioSearchUrl({ country, search, type }: NumberSearchFilters) {
   const params = new URLSearchParams({ country })
   const searchTerm = search.trim()
 
   if (searchTerm) params.set("search", searchTerm)
+  params.set("type", type)
 
   return `/api/twillio/search-number?${params.toString()}`
 }
@@ -57,13 +62,17 @@ export function NumberModalFilters({
 }) {
   const [country, setCountry] = useState(countries[0].value)
   const [search, setSearch] = useState("")
+  const [type, setType] = useState<NumberType>("standard")
 
-  async function searchNumbers(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
+  async function searchNumbers(event?: FormEvent<HTMLFormElement>, nextType?: NumberType) {
+    event?.preventDefault()
+
+    const filters: NumberSearchFilters = { country, search, type: nextType ?? type }
+
     onSearchStart()
 
     try {
-      const response = await fetch(getTwilioSearchUrl({ country, search }))
+      const response = await fetch(getTwilioSearchUrl(filters))
       const data = await response.json()
 
       if (!response.ok) {
@@ -77,6 +86,13 @@ export function NumberModalFilters({
       )
       onSearchComplete([])
     }
+  }
+
+  async function handleTypeChange(nextType: NumberType) {
+    if (isSearching) return
+
+    setType(nextType)
+    await searchNumbers(undefined, nextType)
   }
 
   return (
@@ -131,16 +147,39 @@ export function NumberModalFilters({
         </div>
       </form>
 
-      <div className="flex items-center gap-2">
-        <Button variant="outline" size="sm" className="border-ring">
-          <CheckIcon />
-          Standard ($2/month)
-        </Button>
-        <Button variant="ghost" size="sm" disabled>
-          Toll-free ($5/month)
-        </Button>
-      </div>
-
+      <TypeButtons type={type} onTypeChange={handleTypeChange} />
     </>
+  )
+}
+
+// MISC CODE
+const numberTypes = [
+  {
+    value: "standard",
+    label: "Standard ($2/month)",
+  },
+  {
+    value: "toll-free",
+    label: "Toll-free ($5/month)",
+  },
+] as const
+
+function TypeButtons({ type, onTypeChange, }: { type: NumberType; onTypeChange: (type: NumberType) => void }) {
+  return (
+    <div className="flex items-center gap-2">
+      {numberTypes.map((item) => (
+        <Button
+          key={item.value}
+          type="button"
+          variant={type === item.value ? "outline" : "ghost"}
+          size="sm"
+          className={type === item.value ? "border-ring" : undefined}
+          onClick={() => onTypeChange(item.value)}
+        >
+          {type === item.value && <CheckIcon />}
+          {item.label}
+        </Button>
+      ))}
+    </div>
   )
 }

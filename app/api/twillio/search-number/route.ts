@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import twilio from "twilio"
+import type { LocalInstance } from "twilio/lib/rest/api/v2010/account/availablePhoneNumberCountry/local"
+import type { TollFreeInstance } from "twilio/lib/rest/api/v2010/account/availablePhoneNumberCountry/tollFree"
 
 const client = twilio(process.env.TWILIO_ACCOUNT_SID!, process.env.TWILIO_AUTH_TOKEN!)
 
@@ -9,17 +11,23 @@ export async function GET(request: NextRequest) {
 
         const country = searchParams.get("country")
         const search = searchParams.get("search")
+        const type = searchParams.get("type")
 
         if (!country) { return NextResponse.json({ error: "country is required" }, { status: 400 }) }
 
-        const numbers = await client.availablePhoneNumbers(country).local.list({
-            ...(search && { contains: search }),
+        const numberSearchOptions = {
+            ...(search ? { contains: search } : {}),
             voiceEnabled: true,
-            limit: 20,
-        })
+            limit: 100,
+        }
+
+        const numbers =
+            type === "toll-free"
+                ? await client.availablePhoneNumbers(country).tollFree.list(numberSearchOptions)
+                : await client.availablePhoneNumbers(country).local.list(numberSearchOptions)
 
         return NextResponse.json(
-            numbers.map(number => ({
+            numbers.map((number: LocalInstance | TollFreeInstance) => ({
                 phoneNumber: number.phoneNumber,
                 friendlyName: number.friendlyName,
                 locality: number.locality,
