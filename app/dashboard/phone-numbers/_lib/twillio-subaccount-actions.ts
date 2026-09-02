@@ -59,13 +59,17 @@ export async function updateCurrentWorkspaceTwilioSipTrunk({
         throw new Error("Twilio SIP trunk is not configured")
     }
 
+    if (!sipTrunk.twilioTrunkSid) {
+        throw new Error("Twilio trunk SID is not configured")
+    }
+
     return updateTwilioSipTrunk({
         workspaceId: user.workspaceId,
-        twilioSipTrunkId: sipTrunk.id,
+        sipTrunkConnectionId: sipTrunk.id,
         phoneNumber,
         phoneNumberSid,
         subaccountSid: subaccount.sid,
         subaccountAuthToken: subaccount.authToken,
-        trunkSid: sipTrunk.trunkSid,
+        twilioTrunkSid: sipTrunk.twilioTrunkSid,
     })
 }

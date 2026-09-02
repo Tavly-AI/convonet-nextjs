@@ -43,7 +43,7 @@ export async function RightDisplay({
   })
 
   let phoneNumber = phoneNumberId
-    ? await prisma.twilioPhoneNumber.findFirst({
+    ? await prisma.phoneNumber.findFirst({
       where: {
         id: phoneNumberId,
         workspaceId,
@@ -53,7 +53,7 @@ export async function RightDisplay({
     : null
 
   if (!phoneNumber) {
-    phoneNumber = await prisma.twilioPhoneNumber.findFirst({
+    phoneNumber = await prisma.phoneNumber.findFirst({
       where: { workspaceId },
       include: { config: true },
       orderBy: { createdAt: "asc" },

@@ -11,6 +11,7 @@ type TwilioPurchasedNumber = {
 }
 
 type TwilioSipTrunkSetup = {
+    sipTrunkConnectionId: string
     twilio: {
         terminationUri: string
         authUsername: string
@@ -67,15 +68,19 @@ export async function buyNumber(phoneNumber: string) {
             sipTrunkSetup.twilio.livekitDispatchRuleId
         ) {
             await updateLiveKitNumber({
+                sipTrunkConnectionId: sipTrunkSetup.sipTrunkConnectionId,
                 phoneNumber,
+                terminationUri: sipTrunkSetup.twilio.terminationUri,
                 authUsername: sipTrunkSetup.twilio.authUsername,
                 authPassword: sipTrunkSetup.twilio.authPassword,
+                transport: "tcp",
                 livekitOutboundTrunkId: sipTrunkSetup.twilio.livekitOutboundTrunkId,
                 livekitInboundTrunkId: sipTrunkSetup.twilio.livekitInboundTrunkId,
                 livekitDispatchRuleId: sipTrunkSetup.twilio.livekitDispatchRuleId,
             })
         } else {
             await setupLiveKitNumber({
+                sipTrunkConnectionId: sipTrunkSetup.sipTrunkConnectionId,
                 phoneNumber,
                 terminationUri: sipTrunkSetup.twilio.terminationUri,
                 authUsername: sipTrunkSetup.twilio.authUsername,

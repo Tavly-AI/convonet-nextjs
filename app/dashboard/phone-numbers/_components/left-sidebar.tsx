@@ -1,9 +1,6 @@
-import Link from "next/link"
 import { Suspense } from "react"
 import { PhoneIcon, PlusIcon } from "lucide-react"
-
-import { cn } from "@/lib/utils"
-import { Button, buttonVariants } from "@/components/ui/button"
+import { Button } from "@/components/ui/button"
 import {
   Card,
   CardAction,
@@ -15,14 +12,10 @@ import { Separator } from "@/components/ui/separator"
 import { type PhoneNumberWithConfig } from "../_lib/phone-number-config-actions"
 import { VerificationModal } from "./side-display/verification-modal"
 import { UserPhoneNumbersList } from "./side-display/user-phone-numbers-list"
+import { SetupByobModal } from "./side-display/setup-byob-modal"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 
-export function LeftSidebar({ phoneNumberId, phoneNumbers }: { phoneNumberId?: string, phoneNumbers: PhoneNumberWithConfig[] }) {
-
-  const selectedPhoneNumberId =
-    phoneNumbers.some((phoneNumber) => phoneNumber.id === phoneNumberId)
-      ? phoneNumberId
-      : phoneNumbers[0]?.id
-
+export function LeftSidebar({ phoneNumbers }: { phoneNumbers: PhoneNumberWithConfig[] }) {
   return (
     <Card className="gap-4 p-4">
       <CardHeader className="px-0">
@@ -31,15 +24,7 @@ export function LeftSidebar({ phoneNumberId, phoneNumbers }: { phoneNumberId?: s
           Phone Numbers
         </CardTitle>
         <CardAction>
-          <Suspense
-            fallback={
-              <Button size="icon-lg" aria-label="Add phone number" disabled>
-                <PlusIcon className="size-5" />
-              </Button>
-            }
-          >
-            <VerificationModal />
-          </Suspense>
+          <ChooseButton />
         </CardAction>
       </CardHeader>
 
@@ -51,5 +36,35 @@ export function LeftSidebar({ phoneNumberId, phoneNumbers }: { phoneNumberId?: s
         </Suspense>
       </CardContent>
     </Card>
+  )
+}
+
+function ChooseButton() {
+  return (
+    <Popover>
+      <PopoverTrigger
+        render={
+          <Button size="icon-lg" aria-label="Add phone number" />
+        }
+      >
+        <PlusIcon className="size-5" />
+      </PopoverTrigger>
+
+      <PopoverContent align="end" className="w-48 rounded-2xl">
+        <div className="flex flex-col gap-2">
+          <Suspense
+            fallback={
+              <Button variant="outline" disabled>
+                Buy Number
+              </Button>
+            }
+          >
+            <VerificationModal />
+          </Suspense>
+
+          <SetupByobModal />
+        </div>
+      </PopoverContent>
+    </Popover>
   )
 }

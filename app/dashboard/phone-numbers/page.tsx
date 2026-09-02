@@ -8,6 +8,7 @@ import { RightDisplay } from "./_components/right-display"
 import { getPhoneNumbers } from "./_lib/phone-number-config-actions"
 
 export default async function Page({ searchParams }: { searchParams?: Promise<{ phoneNumberId?: string }> }) {
+
   // resolve the params
   const resolvedSearchParams = await searchParams
   const phoneNumberId = resolvedSearchParams?.phoneNumberId
@@ -16,7 +17,7 @@ export default async function Page({ searchParams }: { searchParams?: Promise<{ 
     <main className="flex min-h-0 flex-1 flex-col p-4 lg:p-6">
       <div className="grid min-h-[calc(100vh-var(--header-height)-3rem)] gap-4 lg:grid-cols-[400px_1fr]">
         <Suspense fallback={<PhoneNumbersSidebarLoading />}>
-          <PhoneNumbersSidebar phoneNumberId={phoneNumberId} />
+          <PhoneNumbersSidebar />
         </Suspense>
         <Suspense
           key={phoneNumberId ?? "default"}
@@ -29,10 +30,10 @@ export default async function Page({ searchParams }: { searchParams?: Promise<{ 
   )
 }
 
-async function PhoneNumbersSidebar({ phoneNumberId, }: { phoneNumberId?: string }) {
+async function PhoneNumbersSidebar() {
   const phoneNumbers = await getPhoneNumbers()
   return (
-    <LeftSidebar phoneNumberId={phoneNumberId} phoneNumbers={phoneNumbers} />
+    <LeftSidebar phoneNumbers={phoneNumbers} />
   )
 }
 

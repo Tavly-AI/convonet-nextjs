@@ -42,17 +42,17 @@ export async function savePhoneNumberNickname(
   input: UpdatePhoneNumberNicknameInput
 ) {
   const parsed = updatePhoneNumberNicknameSchema.parse(input)
-  const twilioPhoneNumberId = await getPhoneNumberId(parsed.phoneNumberId)
+  const phoneNumberId = await getPhoneNumberId(parsed.phoneNumberId)
 
-  await prisma.twilioPhoneNumberConfig.upsert({
+  await prisma.phoneNumberConfig.upsert({
     where: {
-      twilioPhoneNumberId,
+      phoneNumberId,
     },
     update: {
       nickname: parsed.nickname || null,
     },
     create: {
-      twilioPhoneNumberId,
+      phoneNumberId,
       nickname: parsed.nickname || null,
     },
   })
@@ -64,11 +64,11 @@ export async function saveInboundPhoneNumberConfig(
   input: UpdateInboundPhoneNumberConfigInput
 ) {
   const parsed = updateInboundPhoneNumberConfigSchema.parse(input)
-  const twilioPhoneNumberId = await getPhoneNumberId(parsed.phoneNumberId)
+  const phoneNumberId = await getPhoneNumberId(parsed.phoneNumberId)
 
-  await prisma.twilioPhoneNumberConfig.upsert({
+  await prisma.phoneNumberConfig.upsert({
     where: {
-      twilioPhoneNumberId,
+      phoneNumberId,
     },
     update: {
       inboundAgents: parseAgents(parsed.inboundAgentId) as Prisma.InputJsonValue,
@@ -79,7 +79,7 @@ export async function saveInboundPhoneNumberConfig(
       fallbackNumber: parsed.fallbackNumber || null,
     },
     create: {
-      twilioPhoneNumberId,
+      phoneNumberId,
       inboundAgents: parseAgents(parsed.inboundAgentId) as Prisma.InputJsonValue,
       allowedInboundCountryList: parseCountryList(
         parsed.allowedInboundCountries
@@ -96,11 +96,11 @@ export async function saveOutboundPhoneNumberConfig(
   input: UpdateOutboundPhoneNumberConfigInput
 ) {
   const parsed = updateOutboundPhoneNumberConfigSchema.parse(input)
-  const twilioPhoneNumberId = await getPhoneNumberId(parsed.phoneNumberId)
+  const phoneNumberId = await getPhoneNumberId(parsed.phoneNumberId)
 
-  await prisma.twilioPhoneNumberConfig.upsert({
+  await prisma.phoneNumberConfig.upsert({
     where: {
-      twilioPhoneNumberId,
+      phoneNumberId,
     },
     update: {
       outboundAgents: parseAgents(parsed.outboundAgentId) as Prisma.InputJsonValue,
@@ -109,7 +109,7 @@ export async function saveOutboundPhoneNumberConfig(
       ) as Prisma.InputJsonValue,
     },
     create: {
-      twilioPhoneNumberId,
+      phoneNumberId,
       outboundAgents: parseAgents(parsed.outboundAgentId) as Prisma.InputJsonValue,
       allowedOutboundCountryList: parseCountryList(
         parsed.allowedOutboundCountries
@@ -121,7 +121,7 @@ export async function saveOutboundPhoneNumberConfig(
 }
 
 export type PhoneNumberWithConfig =
-  Prisma.TwilioPhoneNumberGetPayload<{
+  Prisma.PhoneNumberGetPayload<{
     include: {
       config: true
     }
@@ -130,7 +130,7 @@ export type PhoneNumberWithConfig =
 export async function getPhoneNumbers(): Promise<PhoneNumberWithConfig[]> {
   const workspaceId = await getCurrentWorkspaceId()
 
-  return prisma.twilioPhoneNumber.findMany({
+  return prisma.phoneNumber.findMany({
     where: {
       workspaceId,
     },
@@ -174,7 +174,7 @@ function parseAgents(agentId?: string) {
 async function getPhoneNumberId(phoneNumberId: string) {
   const workspaceId = await getCurrentWorkspaceId()
 
-  const phoneNumber = await prisma.twilioPhoneNumber.findFirst({
+  const phoneNumber = await prisma.phoneNumber.findFirst({
     where: {
       id: phoneNumberId,
       workspaceId,

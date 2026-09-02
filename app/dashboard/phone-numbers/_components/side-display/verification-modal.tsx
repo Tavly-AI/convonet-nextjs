@@ -50,10 +50,8 @@ export async function VerificationModal() {
 
   return (
     <Dialog>
-      <DialogTrigger
-        render={<Button size="icon-lg" aria-label="Add phone number" />}
-      >
-        <PlusIcon className="size-5" />
+      <DialogTrigger render={<Button variant="outline" className="rounded-b-none" />}>
+        Buy Number
       </DialogTrigger>
       <DialogContent className="max-w-md p-0">
         <DialogHeader className="border-b px-5 py-4">
