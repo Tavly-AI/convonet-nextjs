@@ -31,6 +31,7 @@ model Workspace {
   agents        Agent[]
   agentVersions AgentVersion[]
   twilioSubaccount TwilioSubaccount?
+  telnyxManagedAccount TelnyxManagedAccount?
   sipTrunkConnections SipTrunkConnection[]
   phoneNumbers      PhoneNumber[]
 
@@ -54,16 +55,37 @@ model TwilioSubaccount {
   @@index([workspaceId])
 }
 
+model TelnyxManagedAccount {
+  id                 String             @id @default(cuid())
+  workspaceId        String             @unique
+  workspace          Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  sipTrunkConnection SipTrunkConnection?
+
+  managedAccountId   String             @unique
+  apiKey             String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([workspaceId])
+}
+
 model SipTrunkConnection {
   id                 String            @id @default(cuid())
   workspaceId        String
   workspace          Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
   twilioSubaccountId String?           @unique
   twilioSubaccount   TwilioSubaccount? @relation(fields: [twilioSubaccountId], references: [id], onDelete: Cascade)
+  twilioTrunkSid     String?           @unique
+
+
+  telnyxManagedAccountId String?       @unique
+  telnyxManagedAccount   TelnyxManagedAccount? @relation(fields: [telnyxManagedAccountId], references: [id], onDelete: Cascade)
+  telnyxConnectionId String?           @unique
 
   providerType       String
-  
-  twilioTrunkSid     String?           @unique
+
   terminationUri     String
   authUsername       String?
   authPassword       String?
@@ -79,6 +101,7 @@ model SipTrunkConnection {
 
   @@index([workspaceId])
   @@index([twilioSubaccountId])
+  @@index([telnyxManagedAccountId])
 }
 
 model PhoneNumber {

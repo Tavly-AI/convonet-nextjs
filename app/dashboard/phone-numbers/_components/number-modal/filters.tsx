@@ -21,10 +21,13 @@ import {
 } from "@/components/ui/select"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import type { AvailableNumber } from "./numbers-table"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
+
+export type PhoneNumberProvider = "twilio" | "telnyx"
 
 const providers = [
-  { value: "twilio", label: "Twilio", disabled: false },
-  { value: "telnyx", label: "Telnyx", disabled: true },
+  { value: "twilio" as PhoneNumberProvider, label: "Twilio" },
+  { value: "telnyx" as PhoneNumberProvider, label: "Telnyx" },
 ]
 
 const countries = [
@@ -41,14 +44,14 @@ export type NumberSearchFilters = {
   type: NumberType
 }
 
-function getTwilioSearchUrl({ country, search, type }: NumberSearchFilters) {
-  const params = new URLSearchParams({ country })
+function getProviderSearchUrl(provider: PhoneNumberProvider, { country, search, type }: NumberSearchFilters) {
+  const params = new URLSearchParams({ country, type })
   const searchTerm = search.trim()
 
-  if (searchTerm) params.set("search", searchTerm)
-  params.set("type", type)
+  if (searchTerm) { params.set("search", searchTerm) }
+  const route = provider === "twilio" ? "twillio" : "telnyx"
 
-  return `/api/twillio/search-number?${params.toString()}`
+  return `/api/${route}/search-number?${params.toString()}`
 }
 
 export function NumberModalFilters({
@@ -60,6 +63,12 @@ export function NumberModalFilters({
   onSearchStart: () => void
   onSearchComplete: (numbers: AvailableNumber[]) => void
 }) {
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+
+  const [provider, setProvider] = useState<PhoneNumberProvider>("twilio")
+
   const [country, setCountry] = useState(countries[0].value)
   const [search, setSearch] = useState("")
   const [type, setType] = useState<NumberType>("standard")
@@ -72,7 +81,7 @@ export function NumberModalFilters({
     onSearchStart()
 
     try {
-      const response = await fetch(getTwilioSearchUrl(filters))
+      const response = await fetch(getProviderSearchUrl(provider, filters))
       const data = await response.json()
 
       if (!response.ok) {
@@ -95,15 +104,28 @@ export function NumberModalFilters({
     await searchNumbers(undefined, nextType)
   }
 
+  // hack: change the param so
+  // app/dashboard/phone-numbers/_components/number-modal/buy-number-class.tsx
+  // can read provider type
+  function handleProviderChange(value: string) {
+    const provider = value as PhoneNumberProvider
+
+    setProvider(provider)
+
+    const params = new URLSearchParams(searchParams.toString())
+    params.set("provider", provider)
+
+    router.replace(`${pathname}?${params.toString()}`)
+  }
+
   return (
     <>
-      <Tabs value="twilio">
+      <Tabs value={provider} onValueChange={handleProviderChange}>
         <TabsList className="grid h-8 w-full grid-cols-2">
           {providers.map((provider) => (
             <TabsTrigger
               key={provider.value}
               value={provider.value}
-              disabled={provider.disabled}
             >
               {provider.label}
             </TabsTrigger>

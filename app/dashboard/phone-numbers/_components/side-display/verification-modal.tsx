@@ -1,4 +1,3 @@
-import { PlusIcon } from "lucide-react"
 import { redirect } from "next/navigation"
 
 import { getCurrentUserId } from "@/lib/auth"
@@ -16,6 +15,8 @@ import {
 } from "@/components/ui/dialog"
 
 import { BuyNumberModal } from "../number-modal/buy-number-modal"
+import { getOrCreateTelnyxManagedAccount } from "../../_lib/telnyx-subaccount-trunk"
+import { getOrCreateTelnyxSipTrunk } from "../../_lib/telnyx-setup-sip-trunk"
 import { getOrCreateTwilioSubaccount } from "../../_lib/twillio-subaccount"
 import { getOrCreateTwilioSipTrunk } from "../../_lib/twillio-setup-sip-trunk"
 
@@ -46,6 +47,13 @@ export async function VerificationModal() {
     workspaceId: user.workspace.id,
     subaccountSid: twilioSubaccount.sid,
     subaccountAuthToken: twilioSubaccount.authToken,
+  })
+
+  const telnyxManagedAccount = await getOrCreateTelnyxManagedAccount(user.workspace.id)
+
+  await getOrCreateTelnyxSipTrunk({
+    workspaceId: user.workspace.id,
+    managedAccount: telnyxManagedAccount,
   })
 
   return (
