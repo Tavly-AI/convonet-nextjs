@@ -83,8 +83,10 @@ export function CreateChatAgentModal({ open, onOpenChange }: CreateChatAgentModa
                             <button
                                 type="button"
                                 onClick={() => setAgentType("conversational_flow")}
+                                disabled
                                 className={cn(
                                     "rounded-lg border bg-background p-4 text-left transition-colors hover:bg-muted/40",
+                                    "disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-background",
                                     agentType === "conversational_flow" && "border-ring"
                                 )}
                             >

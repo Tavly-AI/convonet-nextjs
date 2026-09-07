@@ -44,7 +44,10 @@ export function NavDocuments({
       <SidebarMenu>
         {items.map((item) => (
           <SidebarMenuItem key={item.name}>
-            <SidebarMenuButton render={<Link href={item.url} />}>
+            <SidebarMenuButton
+              className={item.url === "#" ? "pointer-events-none cursor-not-allowed opacity-50" : ""}
+              render={<Link href={item.url} />}
+            >
               {item.icon}
               <span>{item.name}</span>
             </SidebarMenuButton>
