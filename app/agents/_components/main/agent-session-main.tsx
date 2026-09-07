@@ -6,9 +6,11 @@ import { toast } from "sonner"
 
 import { loadAgentSession } from "@/app/agents/actions"
 import {
+    getGeneralPrompt,
     initializeAgentFromTemplate,
     initializeAgentSession,
     initializeChatAgentSession,
+    writeGeneralPrompt,
 } from "@/app/agents/_lib/session-storage/agent-session"
 import { Card, CardHeader } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -16,6 +18,7 @@ import { AgentSessionPrimaryTab } from "./agent-session-primary-tab"
 import { AgentSessionTabSecondary } from "./agent-session-secondary-tab"
 import { AgentSessionVersion } from "./agent-session-version"
 import { AgentSessionName } from "./agent-session-name"
+import Loading from "@/app/loading"
 
 export function AgentSessionMain() {
     const searchParams = useSearchParams()
@@ -55,6 +58,13 @@ export function AgentSessionMain() {
                 if (cancelled) return
                 initializeAgentSession()
                 toast.error(error instanceof Error ? error.message : "Failed to load agent.")
+            } finally {
+
+                // hack: force agent-session.ts file to make a writeAgentSession() onLoad
+                if (!cancelled) {
+                    const prompt = getGeneralPrompt()
+                    writeGeneralPrompt(prompt)
+                }
             }
         })
 
@@ -65,7 +75,7 @@ export function AgentSessionMain() {
 
 
     // make sure the sessionStorage is corretly loaded
-    if (isSessionLoading) return null
+    if (isSessionLoading) return <Loading />
 
     return (
         <Tabs

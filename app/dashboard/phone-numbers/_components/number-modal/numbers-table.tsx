@@ -69,67 +69,69 @@ export function NumbersTable({
           <WebsiteCustomLoader title="Purchasing phone number" />
         </div>
       ) : null}
-      <Table>
-        <TableHeader className="bg-muted/60">
-          <TableRow className="hover:bg-transparent">
-            <TableHead className="pl-4">Phone number</TableHead>
-            <TableHead>Location</TableHead>
-            <TableHead className="text-right">Capabilities</TableHead>
-            <TableHead className="w-20 text-right">
-              <span className="sr-only">Buy</span>
-            </TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {numbers.map((number) => (
-            <TableRow key={number.phoneNumber}>
-              <TableCell className="pl-4 font-medium">
-                {number.phoneNumber}
-              </TableCell>
-              <TableCell className="text-muted-foreground">
-                {getNumberLocation(number)}
-              </TableCell>
-              <TableCell className="text-right">
-                <div className="flex justify-end gap-1">
-                  {number.capabilities.voice && (
-                    <Badge variant="secondary">Voice</Badge>
-                  )}
-                  {number.capabilities.SMS && (
-                    <Badge variant="outline">SMS</Badge>
-                  )}
-                </div>
-              </TableCell>
-              <TableCell className="pr-4 text-right">
-                <Button
-                  size="sm"
-                  disabled={isBuying}
-                  onClick={(event) => {
-                    event.stopPropagation()
-                    handleBuyNumber(number.phoneNumber)
-                  }}
-                >
-                  Buy
-                </Button>
-              </TableCell>
+      <div className="h-full overflow-y-auto">
+        <Table>
+          <TableHeader className="bg-muted/60">
+            <TableRow className="hover:bg-transparent">
+              <TableHead className="pl-4">Phone number</TableHead>
+              <TableHead>Location</TableHead>
+              <TableHead className="text-right">Capabilities</TableHead>
+              <TableHead className="w-20 text-right">
+                <span className="sr-only">Buy</span>
+              </TableHead>
             </TableRow>
-          ))}
+          </TableHeader>
+          <TableBody>
+            {numbers.map((number) => (
+              <TableRow key={number.phoneNumber}>
+                <TableCell className="pl-4 font-medium">
+                  {number.phoneNumber}
+                </TableCell>
+                <TableCell className="text-muted-foreground">
+                  {getNumberLocation(number)}
+                </TableCell>
+                <TableCell className="text-right">
+                  <div className="flex justify-end gap-1">
+                    {number.capabilities.voice && (
+                      <Badge variant="secondary">Voice</Badge>
+                    )}
+                    {number.capabilities.SMS && (
+                      <Badge variant="outline">SMS</Badge>
+                    )}
+                  </div>
+                </TableCell>
+                <TableCell className="pr-4 text-right">
+                  <Button
+                    size="sm"
+                    disabled={isBuying}
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      handleBuyNumber(number.phoneNumber)
+                    }}
+                  >
+                    Buy
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
 
-          {!numbers.length && (
-            <TableRow>
-              <TableCell colSpan={4} className="h-72 text-center">
-                <div className="mx-auto flex max-w-sm flex-col items-center gap-2 text-muted-foreground">
-                  {isSearching ? (
-                    <Loader2Icon className="size-5 animate-spin" />
-                  ) : (
-                    <SearchIcon className="size-5" />
-                  )}
-                  <p>{getEmptyStateText(isSearching, searched)}</p>
-                </div>
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
+            {!numbers.length && (
+              <TableRow>
+                <TableCell colSpan={4} className="h-72 text-center">
+                  <div className="mx-auto flex max-w-sm flex-col items-center gap-2 text-muted-foreground">
+                    {isSearching ? (
+                      <Loader2Icon className="size-5 animate-spin" />
+                    ) : (
+                      <SearchIcon className="size-5" />
+                    )}
+                    <p>{getEmptyStateText(isSearching, searched)}</p>
+                  </div>
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   )
 }

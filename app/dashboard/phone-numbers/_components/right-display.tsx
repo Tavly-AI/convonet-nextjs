@@ -1,12 +1,11 @@
 import {
-  BracesIcon,
   ClipboardIcon,
   EllipsisIcon,
-  ListTreeIcon,
-  PencilIcon,
   UserRoundIcon,
 } from "lucide-react"
 
+import { getCurrentWorkspaceId } from "@/app/agents/_lib/helper-actions"
+import { prisma } from "@/lib/prisma"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -16,121 +15,81 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { Checkbox } from "@/components/ui/checkbox"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import { Toggle } from "@/components/ui/toggle"
+import { PhoneNumberForm } from "./main-display/phone-number-form"
 
-export type PhoneNumberDisplay = {
-  id: string
-  name: string
-  number: string
-  provider: string
-  inboundAgent: AgentSettings
-  outboundAgent: AgentSettings
-  addOns: AddOn[]
-}
+export async function RightDisplay({
+  phoneNumberId,
+}: {
+  phoneNumberId?: string
+}) {
+  const workspaceId = await getCurrentWorkspaceId()
+  const agents = await prisma.agent.findMany({
+    where: {
+      workspaceId,
+      channel: "voice",
+    },
+    orderBy: { updatedAt: "desc" },
+    select: {
+      id: true,
+      name: true,
+    },
+  })
 
-type AgentSettings = {
-  title: string
-  agentPlaceholder: string
-  countryLabel: string
-  webhook?: boolean
-  fallback?: {
-    label: string
-    description: string
-    placeholder: string
+  let phoneNumber = phoneNumberId
+    ? await prisma.phoneNumber.findFirst({
+      where: {
+        id: phoneNumberId,
+        workspaceId,
+      },
+      include: { config: true },
+    })
+    : null
+
+  if (!phoneNumber) {
+    phoneNumber = await prisma.phoneNumber.findFirst({
+      where: { workspaceId },
+      include: { config: true },
+      orderBy: { createdAt: "asc" },
+    })
   }
-}
 
-type AddOn = {
-  title: string
-  description: string
-  action: string
-  variant?: "ghost" | "outline"
-}
+  if (!phoneNumber) {
+    return (
+      <Card className="gap-5 p-5">
+        <CardHeader className="px-0">
+          <CardTitle className="text-xl">Phone Numbers</CardTitle>
+          <CardDescription>
+            Buy a number to configure inbound and outbound call routing.
+          </CardDescription>
+        </CardHeader>
+      </Card>
+    )
+  }
 
-const phoneNumber: PhoneNumberDisplay = {
-  id: "my-number",
-  name: "my number",
-  number: "+19786984651",
-  provider: "Custom telephony",
-  inboundAgent: {
-    title: "Inbound Call Agent",
-    agentPlaceholder: "None (disable inbound)",
-    countryLabel: "Allowed Inbound Countries",
-    webhook: true,
-    fallback: {
-      label: "Fallback Number",
-      description:
-        "When inbound call concurrency is reached and cannot free up after extended ringing, will fallback to this number. (Learn more)",
-      placeholder: "+11234567890",
-    },
-  },
-  outboundAgent: {
-    title: "Outbound Call Agent",
-    agentPlaceholder: "None (disable outbound)",
-    countryLabel: "Allowed Outbound Countries",
-  },
-  addOns: [
-    {
-      title: "SMS",
-      description: "The ability to send SMS",
-      action: "Setup SMS Function",
-    },
-    {
-      title: "Verified Phone Number",
-      description: "Use this phone number after outbound verification.",
-      action: "Configure",
-      variant: "outline",
-    },
-    {
-      title: "Branded Call",
-      description: "Display your verified business name as the caller ID. ($0.1/outbound call - U.S. numbers only)",
-      action: "Configure",
-      variant: "outline",
-    },
-  ],
-}
+  const name = phoneNumber.config?.nickname?.trim() || phoneNumber.phoneNumber
 
-
-export function RightDisplay() {
   return (
     <Card className="gap-5 p-5">
       <CardHeader className="items-center px-0 md:grid-cols-[1fr_auto_auto]">
         <div className="space-y-2">
           <CardTitle className="flex items-center gap-2 text-xl">
-            {phoneNumber.name}
-            <Button variant="ghost" size="icon-sm" aria-label="Rename phone number">
-              <PencilIcon />
-            </Button>
+            {name}
           </CardTitle>
           <CardDescription className="flex flex-wrap items-center gap-1">
-            ID: {phoneNumber.number}
+            ID: {phoneNumber.phoneNumber}
             <ClipboardIcon className="size-3.5" />
-            <span>· Provider: {phoneNumber.provider}</span>
+            <span>· Provider: Twilio</span>
           </CardDescription>
         </div>
 
         <CardAction className="flex items-center gap-2">
-          <Button variant="outline" size="lg" className="hidden sm:inline-flex">
-            <UserRoundIcon />
-            Verify your identity to make outbound calls
-          </Button>
           <DropdownMenu>
             <DropdownMenuTrigger
               render={
@@ -154,89 +113,82 @@ export function RightDisplay() {
       <Separator />
 
       <CardContent className="space-y-5 px-0">
-        <AgentSettingsCard settings={phoneNumber.inboundAgent} />
-        <AgentSettingsCard settings={phoneNumber.outboundAgent} />
+        <PhoneNumberForm
+          phoneNumberId={phoneNumber.id}
+          nickname={phoneNumber.config?.nickname ?? ""}
+          inboundAgentId={readAgentId(phoneNumber.config?.inboundAgents)}
+          outboundAgentId={readAgentId(phoneNumber.config?.outboundAgents)}
+          allowedInboundCountries={readCountryList(phoneNumber.config?.allowedInboundCountryList)}
+          allowedOutboundCountries={readCountryList(phoneNumber.config?.allowedOutboundCountryList)}
+          inboundWebhookUrl={phoneNumber.config?.inboundWebhookUrl ?? ""}
+          fallbackNumber={phoneNumber.config?.fallbackNumber ?? ""}
+          agents={agents}
+        />
 
-        <section className="space-y-3">
-          <h2 className="font-medium">Advanced Add-Ons</h2>
-          {phoneNumber.addOns.map((addOn) => (
-            <Card key={addOn.title} size="sm" className="gap-3 p-4">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <p className="font-medium">{addOn.title}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {addOn.description}
-                  </p>
-                </div>
-                <Button variant={addOn.variant ?? "ghost"}>
-                  {addOn.action}
-                  {addOn.variant !== "outline" && <ListTreeIcon />}
-                </Button>
-              </div>
-            </Card>
-          ))}
-        </section>
+
+        <AdvanceAddOnsUI />
       </CardContent>
     </Card>
   )
 }
 
-function AgentSettingsCard({ settings }: { settings: AgentSettings }) {
+
+function AdvanceAddOnsUI() {
   return (
-    <section className="space-y-2">
-      <h2 className="font-medium">{settings.title}</h2>
-      <Card size="sm" className="gap-4 p-4">
-        <div className="space-y-2">
-          <div className="flex items-center justify-between gap-3">
-            <Label>Call Agent</Label>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <BracesIcon className="size-4" />
-              A/B Testing
-              <Toggle size="sm" aria-label={`${settings.title} A/B testing`} />
-            </div>
+    <section className="space-y-3">
+      <h2 className="font-medium">Advanced Add-Ons</h2>
+      <Card size="sm" className="gap-3 p-4">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <p className="font-medium">SMS</p>
+            <p className="text-sm text-muted-foreground">
+              The ability to send SMS
+            </p>
           </div>
-          <Select>
-            <SelectTrigger className="h-10 w-full">
-              <SelectValue placeholder={settings.agentPlaceholder} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">{settings.agentPlaceholder}</SelectItem>
-            </SelectContent>
-          </Select>
+          <Button variant="ghost">Setup SMS Function</Button>
         </div>
-
-        {settings.webhook && (
-          <Label className="font-normal text-muted-foreground">
-            <Checkbox />
-            Add an inbound webhook.
-            <span>(Learn more).</span>
-          </Label>
-        )}
-
-        <div className="space-y-2">
-          <Label>{settings.countryLabel}</Label>
-          <Select>
-            <SelectTrigger className="h-10 w-full">
-              <SelectValue placeholder="All countries allowed" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All countries allowed</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {settings.fallback && (
-          <div className="space-y-2">
-            <div>
-              <Label>{settings.fallback.label}</Label>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {settings.fallback.description}
-              </p>
-            </div>
-            <Input placeholder={settings.fallback.placeholder} />
+      </Card>
+      <Card size="sm" className="gap-3 p-4">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <p className="font-medium">Verified Phone Number</p>
+            <p className="text-sm text-muted-foreground">
+              Use this phone number after outbound verification.
+            </p>
           </div>
-        )}
+          <Button variant="outline">Configure</Button>
+        </div>
+      </Card>
+      <Card size="sm" className="gap-3 p-4">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <p className="font-medium">Branded Call</p>
+            <p className="text-sm text-muted-foreground">
+              Display your verified business name as the caller ID. ($0.1/outbound call - U.S. numbers only)
+            </p>
+          </div>
+          <Button variant="outline">Configure</Button>
+        </div>
       </Card>
     </section>
   )
+}
+
+// MISC CODE
+
+function readAgentId(value: unknown) {
+  if (!Array.isArray(value)) return ""
+
+  const agent = value[0]
+  if (!agent || typeof agent !== "object" || !("agent_id" in agent)) return ""
+
+  return typeof agent.agent_id === "string" ? agent.agent_id : ""
+}
+
+function readCountryList(value: unknown) {
+  if (!Array.isArray(value)) return ""
+
+  return value
+    .filter((item): item is string => typeof item === "string" && item.trim().length > 0)
+    .join(", ")
 }

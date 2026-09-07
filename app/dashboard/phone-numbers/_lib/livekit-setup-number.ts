@@ -4,28 +4,37 @@ import {
     ListUpdate,
     SIPDispatchRule,
     SIPDispatchRuleIndividual,
+    SIPOutboundTrunkInfo,
     SIPTransport,
 } from "@livekit/protocol"
 import { SipClient } from "livekit-server-sdk"
 
-import { getCurrentUserId } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 
 export type LiveKitSetupNumberInput = {
+    sipTrunkConnectionId: string
     phoneNumber: string
     terminationUri: string
     authUsername: string
     authPassword: string
+    transport?: string | null
 }
 
 export type LiveKitSetupNumberResponse = {
+    sipTrunkConnectionId: string
     phoneNumber: string
     livekitOutboundTrunkId: string
     livekitInboundTrunkId: string
     livekitDispatchRuleId: string
 }
 
-export type LiveKitUpdateNumberInput = Omit<LiveKitSetupNumberInput, "terminationUri"> & {
+export type LiveKitUpdateNumberInput = {
+    sipTrunkConnectionId: string
+    phoneNumber: string
+    terminationUri: string
+    authUsername: string
+    authPassword: string
+    transport?: string | null
     livekitOutboundTrunkId: string
     livekitInboundTrunkId: string
     livekitDispatchRuleId: string
@@ -58,25 +67,9 @@ function createIndividualDispatchRule() {
     })
 }
 
-async function getCurrentWorkspaceId() {
-    const userId = await getCurrentUserId()
-    if (!userId) throw new Error("Unauthorized")
-
-    const user = await prisma.user.findUnique({
-        where: { id: userId },
-        select: { workspaceId: true },
-    })
-
-    if (!user?.workspaceId) {
-        throw new Error("Workspace is required")
-    }
-
-    return user.workspaceId
-}
-
-async function getWorkspacePhoneNumbers(workspaceId: string, currentPhoneNumber: string) {
-    const phoneNumbers = await prisma.twilioPhoneNumber.findMany({
-        where: { workspaceId },
+async function getSipTrunkPhoneNumbers(sipTrunkConnectionId: string, currentPhoneNumber: string) {
+    const phoneNumbers = await prisma.phoneNumber.findMany({
+        where: { sipTrunkConnectionId },
         select: { phoneNumber: true },
         orderBy: { createdAt: "asc" },
     })
@@ -87,35 +80,29 @@ async function getWorkspacePhoneNumbers(workspaceId: string, currentPhoneNumber:
 }
 
 export async function setupLiveKitNumber({
+    sipTrunkConnectionId,
     phoneNumber,
     terminationUri,
     authUsername,
     authPassword,
+    transport,
 }: LiveKitSetupNumberInput): Promise<LiveKitSetupNumberResponse> {
     const sipClient = getSipClient()
-    const workspaceId = await getCurrentWorkspaceId()
-    const phoneNumbers = await getWorkspacePhoneNumbers(workspaceId, phoneNumber)
-    const sipTrunk = await prisma.twilioSipTrunk.findUnique({
-        where: { workspaceId },
-    })
-
-    if (!sipTrunk) {
-        throw new Error("Twilio SIP trunk is not configured")
-    }
+    const phoneNumbers = await getSipTrunkPhoneNumbers(sipTrunkConnectionId, phoneNumber)
 
     const outboundTrunk = await sipClient.createSipOutboundTrunk(
-        `outbound-${workspaceId}`,
+        `outbound-${sipTrunkConnectionId}`,
         terminationUri,
         phoneNumbers,
         {
             authUsername,
             authPassword,
-            transport: SIPTransport.SIP_TRANSPORT_TCP,
+            transport: toSipTransport(transport),
         }
     )
 
     const inboundTrunk = await sipClient.createSipInboundTrunk(
-        `inbound-${workspaceId}`,
+        `inbound-${sipTrunkConnectionId}`,
         phoneNumbers,
         {
             krispEnabled: true,
@@ -128,13 +115,13 @@ export async function setupLiveKitNumber({
             roomPrefix: "inbound-",
         },
         {
-            name: `dispatch-${workspaceId}`,
+            name: `dispatch-${sipTrunkConnectionId}`,
             trunkIds: [inboundTrunk.sipTrunkId],
         }
     )
 
-    await prisma.twilioSipTrunk.update({
-        where: { workspaceId },
+    await prisma.sipTrunkConnection.update({
+        where: { id: sipTrunkConnectionId },
         data: {
             livekitOutboundTrunkId: outboundTrunk.sipTrunkId,
             livekitInboundTrunkId: inboundTrunk.sipTrunkId,
@@ -143,6 +130,7 @@ export async function setupLiveKitNumber({
     })
 
     return {
+        sipTrunkConnectionId,
         phoneNumber,
         livekitOutboundTrunkId: outboundTrunk.sipTrunkId,
         livekitInboundTrunkId: inboundTrunk.sipTrunkId,
@@ -151,37 +139,45 @@ export async function setupLiveKitNumber({
 }
 
 export async function updateLiveKitNumber({
+    sipTrunkConnectionId,
     phoneNumber,
+    terminationUri,
     authUsername,
     authPassword,
+    transport,
     livekitOutboundTrunkId,
     livekitInboundTrunkId,
     livekitDispatchRuleId,
 }: LiveKitUpdateNumberInput): Promise<LiveKitSetupNumberResponse> {
     const sipClient = getSipClient()
-    const workspaceId = await getCurrentWorkspaceId()
-    const phoneNumbers = await getWorkspacePhoneNumbers(workspaceId, phoneNumber)
+    const phoneNumbers = await getSipTrunkPhoneNumbers(sipTrunkConnectionId, phoneNumber)
 
     const [outboundTrunk, inboundTrunk, dispatchRule] = await Promise.all([
-        sipClient.updateSipOutboundTrunkFields(livekitOutboundTrunkId, {
-            name: `outbound-${workspaceId}`,
-            numbers: setList(phoneNumbers),
-            authUsername,
-            authPassword,
-        }),
+        sipClient.updateSipOutboundTrunk(
+            livekitOutboundTrunkId,
+            new SIPOutboundTrunkInfo({
+                sipTrunkId: livekitOutboundTrunkId,
+                name: `outbound-${sipTrunkConnectionId}`,
+                address: terminationUri,
+                numbers: phoneNumbers,
+                authUsername,
+                authPassword,
+                transport: toSipTransport(transport),
+            })
+        ),
         sipClient.updateSipInboundTrunkFields(livekitInboundTrunkId, {
-            name: `inbound-${workspaceId}`,
+            name: `inbound-${sipTrunkConnectionId}`,
             numbers: setList(phoneNumbers),
         }),
         sipClient.updateSipDispatchRuleFields(livekitDispatchRuleId, {
-            name: `dispatch-${workspaceId}`,
+            name: `dispatch-${sipTrunkConnectionId}`,
             trunkIds: setList([livekitInboundTrunkId]),
             rule: createIndividualDispatchRule(),
         }),
     ])
 
-    await prisma.twilioSipTrunk.update({
-        where: { workspaceId },
+    await prisma.sipTrunkConnection.update({
+        where: { id: sipTrunkConnectionId },
         data: {
             livekitOutboundTrunkId: outboundTrunk.sipTrunkId,
             livekitInboundTrunkId: inboundTrunk.sipTrunkId,
@@ -190,9 +186,23 @@ export async function updateLiveKitNumber({
     })
 
     return {
+        sipTrunkConnectionId,
         phoneNumber,
         livekitOutboundTrunkId: outboundTrunk.sipTrunkId,
         livekitInboundTrunkId: inboundTrunk.sipTrunkId,
         livekitDispatchRuleId: dispatchRule.sipDispatchRuleId,
+    }
+}
+
+// MISC CODE
+
+function toSipTransport(value?: string | null) {
+    switch (value) {
+        case "udp":
+            return SIPTransport.SIP_TRANSPORT_UDP
+        case "tls":
+            return SIPTransport.SIP_TRANSPORT_TLS
+        default:
+            return SIPTransport.SIP_TRANSPORT_TCP
     }
 }

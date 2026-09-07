@@ -4,14 +4,27 @@
 import { toast } from "sonner"
 
 import { setupLiveKitNumber, updateLiveKitNumber } from "../../_lib/livekit-setup-number"
+import { updateCurrentWorkspaceTelnyxSipTrunk } from "../../_lib/telnyx-subaccount-actions"
 import { updateCurrentWorkspaceTwilioSipTrunk } from "../../_lib/twillio-subaccount-actions"
+import type { PhoneNumberProvider } from "./filters"
+import { useSearchParams } from "next/navigation"
 
-type TwilioPurchasedNumber = {
+type PurchasedNumber = {
     sid: string
 }
 
-type TwilioSipTrunkSetup = {
-    twilio: {
+type SipTrunkSetup = {
+    sipTrunkConnectionId: string
+    twilio?: {
+        terminationUri: string
+        authUsername: string
+        authPassword: string
+        livekitOutboundTrunkId: string | null
+        livekitInboundTrunkId: string | null
+        livekitDispatchRuleId: string | null
+    }
+    telnyx?: {
+        connectionId: string
         terminationUri: string
         authUsername: string
         authPassword: string
@@ -22,64 +35,79 @@ type TwilioSipTrunkSetup = {
 }
 
 export async function buyNumber(phoneNumber: string) {
-    // TWILLIO PURCHASE NUMBER API
 
-    let purchasedNumber: TwilioPurchasedNumber
+    const searchParams = useSearchParams()
+    const provider: PhoneNumberProvider = searchParams.get("provider") === "telnyx" ? "telnyx" : "twilio"
+
+
+    // TWILLIO PURCHASE NUMBER API
+    let purchasedNumber: PurchasedNumber
 
     try {
-        const response = await fetch("/api/twillio/purchase-number", {
+        const route = provider === "telnyx" ? "/api/telnyx/purchase-number" : "/api/twillio/purchase-number"
+        const response = await fetch(route, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ phoneNumber }),
         })
         const data = await response.json()
 
-        if (!response.ok) { throw new Error(data.error ?? "Failed to purchase Twilio number.") }
+        if (!response.ok) { throw new Error(data.error ?? `Failed to purchase ${provider === "telnyx" ? "Telnyx" : "Twilio"} number.`) }
 
         purchasedNumber = data
     } catch (error) {
-        toast.error(error instanceof Error ? error.message : "Failed to purchase Twilio number.")
+        toast.error(error instanceof Error ? error.message : `Failed to purchase ${provider === "telnyx" ? "Telnyx" : "Twilio"} number.`)
         return
     }
 
     // UPDATE TWILLIO SIP TRUNKING
-
-    let sipTrunkSetup: TwilioSipTrunkSetup
+    let sipTrunkSetup: SipTrunkSetup
 
     try {
-        sipTrunkSetup = await updateCurrentWorkspaceTwilioSipTrunk({
-            phoneNumber,
-            phoneNumberSid: purchasedNumber.sid,
-        })
+        sipTrunkSetup = provider === "telnyx"
+            ? await updateCurrentWorkspaceTelnyxSipTrunk({ phoneNumber })
+            : await updateCurrentWorkspaceTwilioSipTrunk({ phoneNumber, phoneNumberSid: purchasedNumber.sid, })
     } catch (error) {
         toast.error(
-            error instanceof Error ? error.message : "Failed to setup Twilio SIP trunk."
+            error instanceof Error ? error.message : `Failed to setup ${provider === "telnyx" ? "Telnyx" : "Twilio"} SIP trunk.`
         )
         return
     }
 
     // LIVEKIT SETUP
 
+    const providerSetup = provider === "telnyx" ? sipTrunkSetup.telnyx : sipTrunkSetup.twilio
+
+    if (!providerSetup) {
+        toast.error("SIP trunk setup response is incomplete.")
+        return
+    }
+
     try {
         if (
-            sipTrunkSetup.twilio.livekitOutboundTrunkId &&
-            sipTrunkSetup.twilio.livekitInboundTrunkId &&
-            sipTrunkSetup.twilio.livekitDispatchRuleId
+            providerSetup.livekitOutboundTrunkId &&
+            providerSetup.livekitInboundTrunkId &&
+            providerSetup.livekitDispatchRuleId
         ) {
             await updateLiveKitNumber({
+                sipTrunkConnectionId: sipTrunkSetup.sipTrunkConnectionId,
                 phoneNumber,
-                authUsername: sipTrunkSetup.twilio.authUsername,
-                authPassword: sipTrunkSetup.twilio.authPassword,
-                livekitOutboundTrunkId: sipTrunkSetup.twilio.livekitOutboundTrunkId,
-                livekitInboundTrunkId: sipTrunkSetup.twilio.livekitInboundTrunkId,
-                livekitDispatchRuleId: sipTrunkSetup.twilio.livekitDispatchRuleId,
+                terminationUri: providerSetup.terminationUri,
+                authUsername: providerSetup.authUsername,
+                authPassword: providerSetup.authPassword,
+                transport: "tls",
+                livekitOutboundTrunkId: providerSetup.livekitOutboundTrunkId,
+                livekitInboundTrunkId: providerSetup.livekitInboundTrunkId,
+                livekitDispatchRuleId: providerSetup.livekitDispatchRuleId,
             })
         } else {
             await setupLiveKitNumber({
+                sipTrunkConnectionId: sipTrunkSetup.sipTrunkConnectionId,
                 phoneNumber,
-                terminationUri: sipTrunkSetup.twilio.terminationUri,
-                authUsername: sipTrunkSetup.twilio.authUsername,
-                authPassword: sipTrunkSetup.twilio.authPassword,
+                terminationUri: providerSetup.terminationUri,
+                authUsername: providerSetup.authUsername,
+                authPassword: providerSetup.authPassword,
+                transport: "tls",
             })
         }
 

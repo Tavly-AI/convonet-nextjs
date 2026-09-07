@@ -1,7 +1,8 @@
 // optimize file
 "use client"
 
-import { FormEvent, useState } from "react"
+import { useState } from "react"
+import type { FormEvent } from "react"
 import {
   CheckIcon,
   Loader2Icon,
@@ -20,10 +21,13 @@ import {
 } from "@/components/ui/select"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import type { AvailableNumber } from "./numbers-table"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
+
+export type PhoneNumberProvider = "twilio" | "telnyx"
 
 const providers = [
-  { value: "twilio", label: "Twilio", disabled: false },
-  { value: "telnyx", label: "Telnyx", disabled: true },
+  { value: "twilio" as PhoneNumberProvider, label: "Twilio" },
+  { value: "telnyx" as PhoneNumberProvider, label: "Telnyx" },
 ]
 
 const countries = [
@@ -32,18 +36,22 @@ const countries = [
   { value: "GB", label: "United Kingdom" },
 ]
 
+type NumberType = "standard" | "toll-free"
+
 export type NumberSearchFilters = {
   country: string
   search: string
+  type: NumberType
 }
 
-function getTwilioSearchUrl({ country, search }: NumberSearchFilters) {
-  const params = new URLSearchParams({ country })
+function getProviderSearchUrl(provider: PhoneNumberProvider, { country, search, type }: NumberSearchFilters) {
+  const params = new URLSearchParams({ country, type })
   const searchTerm = search.trim()
 
-  if (searchTerm) params.set("search", searchTerm)
+  if (searchTerm) { params.set("search", searchTerm) }
+  const route = provider === "twilio" ? "twillio" : "telnyx"
 
-  return `/api/twillio/search-number?${params.toString()}`
+  return `/api/${route}/search-number?${params.toString()}`
 }
 
 export function NumberModalFilters({
@@ -55,15 +63,25 @@ export function NumberModalFilters({
   onSearchStart: () => void
   onSearchComplete: (numbers: AvailableNumber[]) => void
 }) {
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+
+  const [provider, setProvider] = useState<PhoneNumberProvider>("twilio")
+
   const [country, setCountry] = useState(countries[0].value)
   const [search, setSearch] = useState("")
+  const [type, setType] = useState<NumberType>("standard")
 
-  async function searchNumbers(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
+  async function searchNumbers(event?: FormEvent<HTMLFormElement>, nextType?: NumberType) {
+    event?.preventDefault()
+
+    const filters: NumberSearchFilters = { country, search, type: nextType ?? type }
+
     onSearchStart()
 
     try {
-      const response = await fetch(getTwilioSearchUrl({ country, search }))
+      const response = await fetch(getProviderSearchUrl(provider, filters))
       const data = await response.json()
 
       if (!response.ok) {
@@ -79,15 +97,35 @@ export function NumberModalFilters({
     }
   }
 
+  async function handleTypeChange(nextType: NumberType) {
+    if (isSearching) return
+
+    setType(nextType)
+    await searchNumbers(undefined, nextType)
+  }
+
+  // hack: change the param so
+  // app/dashboard/phone-numbers/_components/number-modal/buy-number-class.tsx
+  // can read provider type
+  function handleProviderChange(value: string) {
+    const provider = value as PhoneNumberProvider
+
+    setProvider(provider)
+
+    const params = new URLSearchParams(searchParams.toString())
+    params.set("provider", provider)
+
+    router.replace(`${pathname}?${params.toString()}`)
+  }
+
   return (
     <>
-      <Tabs value="twilio">
+      <Tabs value={provider} onValueChange={handleProviderChange}>
         <TabsList className="grid h-8 w-full grid-cols-2">
           {providers.map((provider) => (
             <TabsTrigger
               key={provider.value}
               value={provider.value}
-              disabled={provider.disabled}
             >
               {provider.label}
             </TabsTrigger>
@@ -131,16 +169,39 @@ export function NumberModalFilters({
         </div>
       </form>
 
-      <div className="flex items-center gap-2">
-        <Button variant="outline" size="sm" className="border-ring">
-          <CheckIcon />
-          Standard ($2/month)
-        </Button>
-        <Button variant="ghost" size="sm" disabled>
-          Toll-free ($5/month)
-        </Button>
-      </div>
-
+      <TypeButtons type={type} onTypeChange={handleTypeChange} />
     </>
+  )
+}
+
+// MISC CODE
+const numberTypes = [
+  {
+    value: "standard",
+    label: "Standard ($2/month)",
+  },
+  {
+    value: "toll-free",
+    label: "Toll-free ($5/month)",
+  },
+] as const
+
+function TypeButtons({ type, onTypeChange, }: { type: NumberType; onTypeChange: (type: NumberType) => void }) {
+  return (
+    <div className="flex items-center gap-2">
+      {numberTypes.map((item) => (
+        <Button
+          key={item.value}
+          type="button"
+          variant={type === item.value ? "outline" : "ghost"}
+          size="sm"
+          className={type === item.value ? "border-ring" : undefined}
+          onClick={() => onTypeChange(item.value)}
+        >
+          {type === item.value && <CheckIcon />}
+          {item.label}
+        </Button>
+      ))}
+    </div>
   )
 }

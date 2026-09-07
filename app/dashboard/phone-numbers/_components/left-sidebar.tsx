@@ -1,8 +1,5 @@
-"use client"
-
-import { useState } from "react"
-import { PhoneIcon, PlusIcon, SearchIcon } from "lucide-react"
-
+import { Suspense } from "react"
+import { PhoneIcon, PlusIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -11,33 +8,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
-import { BuyNumberModal } from "./number-modal/buy-number-modal"
+import { type PhoneNumberWithConfig } from "../_lib/phone-number-config-actions"
+import { VerificationModal } from "./side-display/verification-modal"
+import { UserPhoneNumbersList } from "./side-display/user-phone-numbers-list"
+import { SetupByobModal } from "./side-display/setup-byob-modal"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 
-export type PhoneNumberListItem = {
-  id: string
-  name: string
-}
-
-const phoneNumbers: PhoneNumberListItem[] = [
-  { id: "my-number", name: "my number" },
-  { id: "outbound-trunk-2", name: "My outbound trunk 2" },
-]
-
-export function LeftSidebar() {
-  const selectedPhoneNumberId = phoneNumbers[0].id
-
+export function LeftSidebar({ phoneNumbers }: { phoneNumbers: PhoneNumberWithConfig[] }) {
   return (
     <Card className="gap-4 p-4">
       <CardHeader className="px-0">
@@ -46,64 +24,47 @@ export function LeftSidebar() {
           Phone Numbers
         </CardTitle>
         <CardAction>
-          <VerificationModal />
+          <ChooseButton />
         </CardAction>
       </CardHeader>
 
       <Separator />
 
       <CardContent className="flex flex-col gap-4 px-0">
-        <div className="relative">
-          <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            className="pl-8"
-            placeholder="Search phone numbers"
-            aria-label="Search phone numbers"
-          />
-        </div>
-
-        <div className="flex flex-col gap-1">
-          {phoneNumbers.map((phoneNumber) => (
-            <Button
-              key={phoneNumber.id}
-              variant={
-                phoneNumber.id === selectedPhoneNumberId ? "secondary" : "ghost"
-              }
-              className="h-10 justify-start px-3 text-left"
-            >
-              {phoneNumber.name}
-            </Button>
-          ))}
-        </div>
+        <Suspense fallback={null}>
+          <UserPhoneNumbersList phoneNumbers={phoneNumbers} />
+        </Suspense>
       </CardContent>
     </Card>
   )
 }
 
-function VerificationModal() {
-  const [open, setOpen] = useState(false)
-
+function ChooseButton() {
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger
-        render={<Button size="icon-lg" aria-label="Add phone number" />}
+    <Popover>
+      <PopoverTrigger
+        render={
+          <Button size="icon-lg" aria-label="Add phone number" />
+        }
       >
         <PlusIcon className="size-5" />
-      </DialogTrigger>
-      <DialogContent className="max-w-md p-0">
-        <DialogHeader className="border-b px-5 py-4">
-          <DialogTitle>Complete verification</DialogTitle>
-          <DialogDescription>
-            Complete verification before using purchased numbers for outbound calls.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="px-5 py-4 text-sm text-muted-foreground">
-          Continue when your verification is complete.
+      </PopoverTrigger>
+
+      <PopoverContent align="end" className="w-48 rounded-2xl">
+        <div className="flex flex-col gap-2">
+          <Suspense
+            fallback={
+              <Button variant="outline" disabled>
+                Buy Number
+              </Button>
+            }
+          >
+            <VerificationModal />
+          </Suspense>
+
+          <SetupByobModal />
         </div>
-        <DialogFooter className="border-t px-5 py-4 sm:justify-between">
-          <DialogClose render={<BuyNumberModal />} />
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      </PopoverContent>
+    </Popover>
   )
 }

@@ -23,7 +23,7 @@ export function GeneralPrompt() {
     React.useEffect(() => {
         const timeout = setTimeout(() => {
             writeGeneralPrompt(prompt)
-        }, 1000)
+        }, 100)
         return () => clearTimeout(timeout)
     }, [])
 

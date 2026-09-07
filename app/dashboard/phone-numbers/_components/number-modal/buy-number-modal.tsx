@@ -2,10 +2,6 @@
 "use client"
 
 import { useState } from "react"
-import {
-  ChevronLeftIcon,
-  ChevronRightIcon,
-} from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -18,7 +14,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { NumberModalFilters } from "./filters"
+import {
+  NumberModalFilters,
+} from "./filters"
 import { NumbersTable, type AvailableNumber } from "./numbers-table"
 
 export function BuyNumberModal() {
@@ -26,13 +24,13 @@ export function BuyNumberModal() {
   const [searched, setSearched] = useState(false)
   const [isSearching, setIsSearching] = useState(false)
 
-  function startSearch() {
+  function handleSearchStart() {
     setIsSearching(true)
     setSearched(true)
   }
 
-  function completeSearch(availableNumbers: AvailableNumber[]) {
-    setNumbers(availableNumbers)
+  function handleSearchComplete(nextNumbers: AvailableNumber[]) {
+    setNumbers(nextNumbers)
     setIsSearching(false)
   }
 
@@ -52,8 +50,8 @@ export function BuyNumberModal() {
         <div className="flex min-h-0 flex-1 flex-col gap-4 px-5 py-4">
           <NumberModalFilters
             isSearching={isSearching}
-            onSearchStart={startSearch}
-            onSearchComplete={completeSearch}
+            onSearchStart={handleSearchStart}
+            onSearchComplete={handleSearchComplete}
           />
 
           <NumbersTable
@@ -62,33 +60,12 @@ export function BuyNumberModal() {
             isSearching={isSearching}
           />
 
-          <div className="flex items-center justify-between rounded-b-lg border bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="icon-xs"
-                disabled
-                aria-label="Previous page"
-              >
-                <ChevronLeftIcon />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon-xs"
-                disabled
-                aria-label="Next page"
-              >
-                <ChevronRightIcon />
-              </Button>
-              <span>Showing first {numbers.length} results</span>
-            </div>
+          <div className="rounded-b-lg border bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
+            <span>{searched ? `${numbers.length} results` : "Search to see results"}</span>
           </div>
         </div>
 
-        <DialogFooter className="shrink-0 items-center justify-between border-t px-5 py-4 sm:justify-between">
-          <Button variant="outline" size="sm">
-            Outbound Transport: TCP
-          </Button>
+        <DialogFooter className="shrink-0 items-center justify-end border-t px-5 py-4 sm:justify-end">
           <div className="flex gap-2">
             <DialogClose render={<Button variant="outline" />}>
               Cancel

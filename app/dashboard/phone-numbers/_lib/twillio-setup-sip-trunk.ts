@@ -10,9 +10,9 @@ export type TwilioSetupSipTrunkInput = {
 
 export type TwilioUpdateSipTrunkInput = TwilioSetupSipTrunkInput & {
     workspaceId: string
-    twilioSipTrunkId: string
+    sipTrunkConnectionId: string
     phoneNumber: string
-    trunkSid: string
+    twilioTrunkSid: string
     phoneNumberSid: string
 }
 
@@ -27,8 +27,11 @@ function generatePassword() {
 }
 
 export async function getTwilioSipTrunk(workspaceId: string) {
-    return prisma.twilioSipTrunk.findUnique({
-        where: { workspaceId },
+    return prisma.sipTrunkConnection.findFirst({
+        where: {
+            workspaceId,
+            providerType: "twilio",
+        },
     })
 }
 
@@ -45,16 +48,16 @@ export async function getOrCreateTwilioSipTrunk({
         subaccountAuthToken,
     })
 
-    return prisma.twilioSipTrunk.create({
+    return prisma.sipTrunkConnection.create({
         data: {
             workspace: { connect: { id: workspaceId } },
             twilioSubaccount: { connect: { workspaceId } },
-            trunkSid: sipTrunkSetup.twilio.trunkSid,
+            providerType: "twilio",
+            twilioTrunkSid: sipTrunkSetup.twilio.twilioTrunkSid,
             terminationUri: sipTrunkSetup.twilio.terminationUri,
-            credentialListSid: sipTrunkSetup.twilio.credentialListSid,
             authUsername: sipTrunkSetup.twilio.authUsername,
             authPassword: sipTrunkSetup.twilio.authPassword,
-            originationUrlSid: sipTrunkSetup.twilio.originationUrlSid,
+            transport: "tcp",
         },
     })
 }
@@ -116,37 +119,31 @@ export async function setupTwilioSipTrunk({ subaccountSid, subaccountAuthToken }
         phoneNumber: null,
 
         twilio: {
-            trunkSid: trunk.sid,
+            twilioTrunkSid: trunk.sid,
             terminationUri,
 
             secure: trunk.secure,
             transferMode: trunk.transferMode,
             transferCallerId: trunk.transferCallerId,
 
-            credentialListSid: credentialList.sid,
             authUsername,
             authPassword,
-
-            originationUrlSid: originationUrl.sid,
         },
     }
 }
 
 export async function updateTwilioSipTrunk({
     workspaceId,
-    twilioSipTrunkId,
+    sipTrunkConnectionId,
     phoneNumber,
     subaccountSid,
     subaccountAuthToken,
-    trunkSid,
+    twilioTrunkSid,
     phoneNumberSid,
 }: TwilioUpdateSipTrunkInput) {
-    const existingPhoneNumber = await prisma.twilioPhoneNumber.findFirst({
+    const existingPhoneNumber = await prisma.phoneNumber.findFirst({
         where: {
-            OR: [
-                { phoneNumber },
-                { phoneNumberSid },
-            ],
+            phoneNumber,
         },
     })
 
@@ -158,32 +155,38 @@ export async function updateTwilioSipTrunk({
     const client = twilio(subaccountSid, subaccountAuthToken)
 
     // connect phone number to trunk
-    await attachPhoneNumber(client, trunkSid, phoneNumberSid)
+    await attachPhoneNumber(client, twilioTrunkSid, phoneNumberSid)
 
     const [sipTrunk] = await prisma.$transaction([
-        prisma.twilioSipTrunk.findUniqueOrThrow({
-            where: { trunkSid },
+        prisma.sipTrunkConnection.findUniqueOrThrow({
+            where: { twilioTrunkSid },
         }),
-        prisma.twilioPhoneNumber.create({
+        prisma.phoneNumber.create({
             data: {
                 workspaceId,
-                twilioSipTrunkId,
+                sipTrunkConnectionId,
                 phoneNumber,
-                phoneNumberSid,
+                providerType: "twilio",
+                config: {
+                    create: {}
+                },
             },
         }),
     ])
 
+    if (!sipTrunk.twilioTrunkSid || !sipTrunk.authUsername || !sipTrunk.authPassword) {
+        throw new Error("Twilio SIP trunk connection is incomplete.")
+    }
+
     return {
+        sipTrunkConnectionId: sipTrunk.id,
         phoneNumber,
 
         twilio: {
-            trunkSid: sipTrunk.trunkSid,
+            twilioTrunkSid: sipTrunk.twilioTrunkSid,
             terminationUri: sipTrunk.terminationUri,
-            credentialListSid: sipTrunk.credentialListSid,
             authUsername: sipTrunk.authUsername,
             authPassword: sipTrunk.authPassword,
-            originationUrlSid: sipTrunk.originationUrlSid,
             livekitOutboundTrunkId: sipTrunk.livekitOutboundTrunkId,
             livekitInboundTrunkId: sipTrunk.livekitInboundTrunkId,
             livekitDispatchRuleId: sipTrunk.livekitDispatchRuleId,
@@ -193,8 +196,8 @@ export async function updateTwilioSipTrunk({
 
 async function attachPhoneNumber(
     client: ReturnType<typeof twilio>,
-    trunkSid: string,
+    twilioTrunkSid: string,
     phoneNumberSid: string
 ) {
-    return client.trunking.v1.trunks(trunkSid).phoneNumbers.create({ phoneNumberSid, })
+    return client.trunking.v1.trunks(twilioTrunkSid).phoneNumbers.create({ phoneNumberSid, })
 }

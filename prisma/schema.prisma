@@ -30,9 +30,11 @@ model Workspace {
   users         User[]
   agents        Agent[]
   agentVersions AgentVersion[]
+  knowledgeBases KnowledgeBase[]
   twilioSubaccount TwilioSubaccount?
-  twilioSipTrunk   TwilioSipTrunk?
-  twilioPhoneNumbers TwilioPhoneNumber[]
+  telnyxManagedAccount TelnyxManagedAccount?
+  sipTrunkConnections SipTrunkConnection[]
+  phoneNumbers      PhoneNumber[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -42,7 +44,7 @@ model TwilioSubaccount {
   id          String    @id @default(cuid())
   workspaceId String    @unique
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  sipTrunk    TwilioSipTrunk?
+  sipTrunkConnection SipTrunkConnection?
 
   sid             String  @unique
   authToken       String
@@ -54,20 +56,42 @@ model TwilioSubaccount {
   @@index([workspaceId])
 }
 
-model TwilioSipTrunk {
-  id                 String           @id @default(cuid())
-  workspaceId        String           @unique
-  workspace          Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  twilioSubaccountId String           @unique
-  twilioSubaccount   TwilioSubaccount @relation(fields: [twilioSubaccountId], references: [id], onDelete: Cascade)
+model TelnyxManagedAccount {
+  id                 String             @id @default(cuid())
+  workspaceId        String             @unique
+  workspace          Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  sipTrunkConnection SipTrunkConnection?
 
-  trunkSid          String  @unique
-  terminationUri    String
-  credentialListSid String
-  authUsername      String
-  authPassword      String
-  originationUrlSid String
-  phoneNumbers      TwilioPhoneNumber[]
+  managedAccountId   String             @unique
+  apiKey             String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([workspaceId])
+}
+
+model SipTrunkConnection {
+  id                 String            @id @default(cuid())
+  workspaceId        String
+  workspace          Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  twilioSubaccountId String?           @unique
+  twilioSubaccount   TwilioSubaccount? @relation(fields: [twilioSubaccountId], references: [id], onDelete: Cascade)
+  twilioTrunkSid     String?           @unique
+
+
+  telnyxManagedAccountId String?       @unique
+  telnyxManagedAccount   TelnyxManagedAccount? @relation(fields: [telnyxManagedAccountId], references: [id], onDelete: Cascade)
+  telnyxConnectionId String?           @unique
+
+  providerType       String
+
+  terminationUri     String
+  authUsername       String?
+  authPassword       String?
+  transport          String?
+  phoneNumbers       PhoneNumber[]
   
   livekitOutboundTrunkId String?
   livekitInboundTrunkId  String?
@@ -78,23 +102,45 @@ model TwilioSipTrunk {
 
   @@index([workspaceId])
   @@index([twilioSubaccountId])
+  @@index([telnyxManagedAccountId])
 }
 
-model TwilioPhoneNumber {
-  id               String         @id @default(cuid())
+model PhoneNumber {
+  id               String                  @id @default(cuid())
   workspaceId      String
-  workspace        Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  twilioSipTrunkId String
-  twilioSipTrunk   TwilioSipTrunk @relation(fields: [twilioSipTrunkId], references: [id], onDelete: Cascade)
+  workspace        Workspace               @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  sipTrunkConnectionId String?
+  sipTrunkConnection   SipTrunkConnection? @relation(fields: [sipTrunkConnectionId], references: [id], onDelete: Cascade)
+  config           PhoneNumberConfig?
 
-  phoneNumber    String @unique
-  phoneNumberSid String @unique
+  phoneNumber    String                  @unique
+
+  providerType   String
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([workspaceId])
-  @@index([twilioSipTrunkId])
+  @@index([providerType])
+  @@index([sipTrunkConnectionId])
+}
+
+model PhoneNumberConfig {
+  id            String      @id @default(cuid())
+  phoneNumberId String      @unique
+  phoneNumber   PhoneNumber @relation(fields: [phoneNumberId], references: [id], onDelete: Cascade)
+
+  nickname                   String?
+  allowedInboundCountryList  Json?
+  allowedOutboundCountryList Json?
+  inboundAgents              Json?
+  outboundAgents             Json?
+  inboundWebhookUrl          String?
+  inboundSmsWebhookUrl       String?
+  fallbackNumber             String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Agent {
@@ -136,4 +182,41 @@ model AgentVersion {
   @@unique([agentId, version])
   @@index([workspaceId])
   @@index([agentId])
+}
+
+model KnowledgeBase {
+  id                  String                @id @default(cuid())
+  workspaceId         String
+  workspace           Workspace             @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  name                String
+  sources             KnowledgeBaseSource[]
+
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+
+  @@index([workspaceId])
+  @@index([workspaceId, name])
+}
+
+model KnowledgeBaseSource {
+  id               String                   @id @default(cuid())
+  knowledgeBaseId  String
+  knowledgeBase    KnowledgeBase            @relation(fields: [knowledgeBaseId], references: [id], onDelete: Cascade)
+
+  type             String                   @default("document")
+  filename         String
+  fileUrl          String?
+  fileSize         Int?
+
+  status           String?
+  ingestionJobId   String?
+  lastIngestedAt   DateTime?
+
+  createdAt        DateTime                 @default(now())
+  updatedAt        DateTime                 @updatedAt
+
+  @@index([knowledgeBaseId])
+  @@index([knowledgeBaseId, type])
+  @@index([ingestionJobId])
 }

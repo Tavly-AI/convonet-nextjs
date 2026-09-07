@@ -1,48 +1,64 @@
-import { getCurrentUserId } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
-import { redirect } from "next/navigation"
+import { Suspense } from "react"
+
+import { WebsiteCustomLoader } from "@/components/custom/website-custom-loader"
+import { Card } from "@/components/ui/card"
 
 import { LeftSidebar } from "./_components/left-sidebar"
-import { getOrCreateTwilioSubaccount } from "./_lib/twillio-subaccount"
 import { RightDisplay } from "./_components/right-display"
-import { getOrCreateTwilioSipTrunk } from "./_lib/twillio-setup-sip-trunk"
+import { getPhoneNumbers } from "./_lib/phone-number-config-actions"
 
-export default async function Page() {
-  const userId = await getCurrentUserId()
-  if (!userId) redirect("/auth/login")
+export default async function Page({ searchParams }: { searchParams?: Promise<{ phoneNumberId?: string }> }) {
 
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: {
-      workspace: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
-    },
-  })
-
-  if (!user?.workspace) redirect("/auth/login")
-
-  // switch to the verification
-  const twilioSubaccount = await getOrCreateTwilioSubaccount(
-    user.workspace.id,
-    `${user.workspace.name} Twilio subaccount`
-  )
-
-  await getOrCreateTwilioSipTrunk({
-    workspaceId: user.workspace.id,
-    subaccountSid: twilioSubaccount.sid,
-    subaccountAuthToken: twilioSubaccount.authToken,
-  })
+  // resolve the params
+  const resolvedSearchParams = await searchParams
+  const phoneNumberId = resolvedSearchParams?.phoneNumberId
 
   return (
     <main className="flex min-h-0 flex-1 flex-col p-4 lg:p-6">
       <div className="grid min-h-[calc(100vh-var(--header-height)-3rem)] gap-4 lg:grid-cols-[400px_1fr]">
-        <LeftSidebar />
-        <RightDisplay />
+        <Suspense fallback={<PhoneNumbersSidebarLoading />}>
+          <PhoneNumbersSidebar />
+        </Suspense>
+        <Suspense
+          key={phoneNumberId ?? "default"}
+          fallback={<PhoneNumberDetailsLoading />}
+        >
+          <RightDisplay phoneNumberId={phoneNumberId} />
+        </Suspense>
       </div>
     </main>
+  )
+}
+
+async function PhoneNumbersSidebar() {
+  const phoneNumbers = await getPhoneNumbers()
+  return (
+    <LeftSidebar phoneNumbers={phoneNumbers} />
+  )
+}
+
+function PhoneNumbersSidebarLoading() {
+  return (
+    <Card className="min-h-[60vh] gap-5 p-5">
+      <div className="flex flex-1 items-center justify-center">
+        <WebsiteCustomLoader
+          title="Loading phone numbers"
+          detail="Fetching sidebar..."
+        />
+      </div>
+    </Card>
+  )
+}
+
+function PhoneNumberDetailsLoading() {
+  return (
+    <Card className="min-h-[60vh] gap-5 p-5">
+      <div className="flex flex-1 items-center justify-center">
+        <WebsiteCustomLoader
+          title="Loading phone number"
+          detail="Fetching configuration..."
+        />
+      </div>
+    </Card>
   )
 }

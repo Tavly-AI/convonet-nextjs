@@ -141,7 +141,7 @@ const data1 = {
     },
     {
       name: "Knowledge Base",
-      url: "#",
+      url: "/dashboard/knowledge-base",
       icon: <BookOpenIcon />,
     },
   ],

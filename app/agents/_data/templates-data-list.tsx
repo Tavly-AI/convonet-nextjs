@@ -35,11 +35,11 @@ export function getAgentTemplates(): Record<string, AgentTemplateData> {
                 language: "en-US",
                 webhook_timeout_ms: 30000,
                 data_storage_setting: "everything",
-                opt_in_signed_url: false, 
+                opt_in_signed_url: false,
                 end_call_after_silence_ms: 684000,
                 version: 0,
                 assigned_tags: [],
-                is_published: false,                             
+                is_published: false,
                 responsiveness: 1,
                 interruption_sensitivity: 0.8,
                 reminder_trigger_ms: 15000,
@@ -48,13 +48,13 @@ export function getAgentTemplates(): Record<string, AgentTemplateData> {
                 begin_message_delay_ms: 0,
                 timezone: "America/Los_Angeles",
 
-                voice_id : "",
+                voice_id: "",
                 voice_temperature: 1,
                 voice_speed: 1,
                 volume: 1,
                 enable_backchannel: true,
                 backchannel_frequency: 0.8,
-                
+
 
 
                 allow_user_dtmf: true,
@@ -66,6 +66,7 @@ export function getAgentTemplates(): Record<string, AgentTemplateData> {
                 },
 
                 handbook_config: {
+                    conversational_personality: false,
                     echo_verification: false,
                     nato_phonetic_alphabet: false,
                     default_personality: true,
@@ -380,7 +381,7 @@ export function getAgentTemplates(): Record<string, AgentTemplateData> {
 
             llmConfig: {
                 llm_id: "",
-                version:"",
+                version: "",
                 model: "gpt-4.1",
                 //used all tools within the TypeScript template literal string (e.g. check_availability, book_appointment, transfer_to_staff, send_sms, cancel_appointment, leave_message, end_call) 
                 generalPrompt: `## Role
@@ -721,7 +722,7 @@ If the caller insists on speaking with a human, Call \`transfer_to_staff\` immed
                     filter_score: 0.6,
                 },
                 mcps: [],
-                is_published : false,
+                is_published: false,
 
             },
         },
@@ -792,6 +793,7 @@ If the caller insists on speaking with a human, Call \`transfer_to_staff\` immed
                     ]
                 },
                 handbook_config: {
+                    conversational_personality: false,
                     high_empathy: false,
                     speech_normalization: true,
                     echo_verification: false,
@@ -1079,6 +1081,7 @@ Call \`end_call\``,
                     mode: "post_call"
                 },
                 handbook_config: {
+                    conversational_personality: false,
                     scope_boundaries: false,
                     natural_filler_words: true,
                     nato_phonetic_alphabet: false,
@@ -1662,6 +1665,7 @@ NO_RESPONSE_NEEDED`,
                     mode: "post_call"
                 },
                 handbook_config: {
+                    conversational_personality: false,
                     scope_boundaries: false,
                     natural_filler_words: true,
                     nato_phonetic_alphabet: false,
@@ -2113,7 +2117,16 @@ NO_RESPONSE_NEEDED
                     mode: "post_call"
                 },
                 handbook_config: {
-                    speech_normalization: false
+                    conversational_personality: false,
+                    speech_normalization: false,
+                    default_personality: false,
+                    natural_filler_words: false,
+                    high_empathy: false,
+                    echo_verification: false,
+                    nato_phonetic_alphabet: false,
+                    smart_matching: false,
+                    ai_disclosure: false,
+                    scope_boundaries: false
                 },
                 //tools
                 generalTools: [
@@ -2636,6 +2649,7 @@ If asked whether you are a robot, respond exactly with:
                     ]
                 },
                 handbook_config: {
+                    conversational_personality: false,
                     scope_boundaries: true,
                     natural_filler_words: false,
                     high_empathy: false,
@@ -3367,16 +3381,16 @@ If the caller says "Hold on," "One moment," "Please wait," "Espera," or "Un mome
 
                 generalTools: [
                     {
-                       // speak_after_execution: true,
+                        // speak_after_execution: true,
                         type: "end_call",
                         name: "end_call",
-                        description : "",
+                        description: "",
                     },
                     {
                         name: "transfer_call",
                         execution_message_description: "One moment while I connect you.",
                         custom_sip_headers: {},
-                       // speak_after_execution: true,
+                        // speak_after_execution: true,
                         transfer_destination: {
                             type: "predefined",
                             number: "+18563630633"
@@ -3406,6 +3420,7 @@ If the caller says "Hold on," "One moment," "Please wait," "Espera," or "Un mome
                     categories: []
                 },
                 handbook_config: {
+                    conversational_personality: false,
                     echo_verification: false,
                     speech_normalization: false,
                     scope_boundaries: true,
@@ -3685,6 +3700,7 @@ If the caller says "Hold on," "One moment," or "Please wait," respond exactly wi
                     categories: [],
                 },
                 handbook_config: {
+                    conversational_personality: false,
                     default_personality: true,
                     speech_normalization: true,
                     echo_verification: false,
@@ -4295,6 +4311,7 @@ After collecting the number, provide a natural variation of:
                     mode: "post_call",
                 },
                 handbook_config: {
+                    conversational_personality: false,
                     natural_filler_words: false,
                     scope_boundaries: false,
                     high_empathy: false,
@@ -4796,6 +4813,7 @@ A: The sales team can discuss options.`,
                     categories: [],
                 },
                 handbook_config: {
+                    conversational_personality: false,
                     speech_normalization: true,
                     scope_boundaries: true,
                     ai_disclosure: true,
@@ -5264,6 +5282,7 @@ Call \`end_call\` if:
                     categories: [],
                 },
                 handbook_config: {
+                    conversational_personality: false,
                     speech_normalization: true,
                     echo_verification: true,
                     smart_matching: true,
@@ -5589,6 +5608,7 @@ If the caller says "Hold on," "One moment," or "Please wait," respond exactly wi
                     categories: [],
                 },
                 handbook_config: {
+                    conversational_personality: false,
                     nato_phonetic_alphabet: false,
                     scope_boundaries: false,
                     ai_disclosure: false,
@@ -6003,6 +6023,7 @@ NO_RESPONSE_NEEDED
                     categories: [],
                 },
                 handbook_config: {
+                    conversational_personality: false,
                     default_personality: true,
                     natural_filler_words: false,
                     echo_verification: true,
@@ -6341,6 +6362,7 @@ NO_RESPONSE_NEEDED\n`,
                     categories: [],
                 },
                 handbook_config: {
+                    conversational_personality: false,
                     scope_boundaries: false,
                     speech_normalization: false,
                     high_empathy: true,
@@ -6705,6 +6727,7 @@ NO_RESPONSE_NEEDED\n`,
                     categories: [],
                 },
                 handbook_config: {
+                    conversational_personality: false,
                     speech_normalization: false,
                     echo_verification: false,
                     natural_filler_words: false,
@@ -7157,6 +7180,7 @@ If asked whether the call is automated, respond exactly with:
                     categories: [],
                 },
                 handbook_config: {
+                    conversational_personality: false,
                     speech_normalization: false,
                     ai_disclosure: false,
                     nato_phonetic_alphabet: false,
@@ -7623,6 +7647,7 @@ If asked whether you are automated, respond exactly with:
                     categories: [],
                 },
                 handbook_config: {
+                    conversational_personality: false,
                     ai_disclosure: true,
                     scope_boundaries: true,
                     echo_verification: false,
@@ -8085,7 +8110,16 @@ If asked whether Maya is a real person or automated, provide a natural variation
                     categories: [],
                 },
                 handbook_config: {
+                    conversational_personality: false,
                     speech_normalization: false,
+                    default_personality: false,
+                    natural_filler_words: false,
+                    high_empathy: false,
+                    echo_verification: false,
+                    nato_phonetic_alphabet: false,
+                    smart_matching: false,
+                    ai_disclosure: false,
+                    scope_boundaries: false
                 },
 
                 // Post-call analysis
@@ -8552,6 +8586,7 @@ Remain silent until they return.
                     categories: [],
                 },
                 handbook_config: {
+                    conversational_personality: false,
                     speech_normalization: true,
                     echo_verification: false,
                     natural_filler_words: false,
@@ -8866,6 +8901,7 @@ If the customer expresses interest in speaking with a specialist or agrees to le
                     categories: [],
                 },
                 handbook_config: {
+                    conversational_personality: false,
                     scope_boundaries: true,
                     nato_phonetic_alphabet: false,
                     high_empathy: false,
@@ -9139,6 +9175,7 @@ A: Each account must use its own email address and phone number. If you're arran
                     categories: [],
                 },
                 handbook_config: {
+                    conversational_personality: false,
                     ai_disclosure: true,
                     natural_filler_words: false,
                     scope_boundaries: true,
@@ -9427,6 +9464,7 @@ A: Open the **Recycle Bin**, locate the file, right-click it, and select **Resto
                     categories: [],
                 },
                 handbook_config: {
+                    conversational_personality: false,
                     high_empathy: false,
                     default_personality: true,
                     nato_phonetic_alphabet: false,
@@ -9799,6 +9837,7 @@ Provide a natural variation of:
                     categories: [],
                 },
                 handbook_config: {
+                    conversational_personality: false,
                     high_empathy: true,
                     nato_phonetic_alphabet: false,
                     smart_matching: false,
@@ -10128,6 +10167,7 @@ Agent: What about [Y]?
                     categories: [],
                 },
                 handbook_config: {
+                    conversational_personality: false,
                     high_empathy: false,
                     nato_phonetic_alphabet: false,
                     smart_matching: false,
@@ -10409,6 +10449,7 @@ Your role is **translation only**.
                     categories: [],
                 },
                 handbook_config: {
+                    conversational_personality: false,
                     high_empathy: false,
                     nato_phonetic_alphabet: false,
                     smart_matching: false,
@@ -10667,6 +10708,7 @@ If the caller says "Hold on," "One moment," or "Please wait," respond exactly wi
                     categories: [],
                 },
                 handbook_config: {
+                    conversational_personality: false,
                     smart_matching: true,
                     echo_verification: false,
                     natural_filler_words: false,
