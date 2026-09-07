@@ -986,8 +986,10 @@ export function writeVoiceId(voiceId: string) {
 // =========================== LANGUAGE =============================
 // =================================================================
 
-export function getLanguage(): AgentLanguage {
-    return getAgentSession()?.config.language ?? "en-US"
+export function getLanguage(): string {
+    const lang = getAgentSession()?.config.language
+    if (Array.isArray(lang)) return (lang[0] as string) ?? "en-US"
+    return (lang as string) ?? "en-US"
 }
 
 export function writeLanguage(language: AgentLanguage) {
