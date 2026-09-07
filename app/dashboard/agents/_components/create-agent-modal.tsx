@@ -3,6 +3,7 @@
 import { useState } from "react"
 import {
   BracesIcon,
+  Loader2Icon,
   WorkflowIcon,
 } from "lucide-react"
 
@@ -208,11 +209,40 @@ export function CreateAgentModal({ open, onOpenChange }: CreateAgentModalProps) 
         </div>
 
         <DialogFooter className="shrink-0 border-t px-6 py-4">
-          <Button type="button" onClick={() => { createAgent() }}>
-            Create agent
-          </Button>
+          <CreateAgentButton onCreate={createAgent} />
         </DialogFooter>
       </DialogContent>
     </Dialog >
+  )
+}
+
+type CreateAgentButtonProps = {
+  onCreate: () => Promise<void>
+}
+
+export function CreateAgentButton({ onCreate }: CreateAgentButtonProps) {
+  const [isCreating, setIsCreating] = useState(false)
+
+  async function handleCreate() {
+    if (isCreating) return
+    setIsCreating(true)
+
+    try {
+      await onCreate()
+    } finally {
+      setIsCreating(false)
+    }
+  }
+
+  return (
+    <Button
+      type="button"
+      onClick={handleCreate}
+      disabled={isCreating}
+    >
+      {isCreating && <Loader2Icon className="mr-2 size-4 animate-spin" />}
+
+      {isCreating ? "Creating..." : "Create agent"}
+    </Button>
   )
 }

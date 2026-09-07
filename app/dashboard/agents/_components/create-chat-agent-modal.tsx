@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 import { AGENT_CHANNELS } from "@/lib/constants"
+import { CreateAgentButton } from "./create-agent-modal"
 
 export type CreateChatAgentModalProps = {
     open: boolean
@@ -110,9 +111,7 @@ export function CreateChatAgentModal({ open, onOpenChange }: CreateChatAgentModa
                 </div>
 
                 <DialogFooter className="border-t px-6 py-4">
-                    <Button type="button" onClick={createAgent}>
-                        Create agent
-                    </Button>
+                    <CreateAgentButton onCreate={createAgent} />
                 </DialogFooter>
             </DialogContent>
         </Dialog>
