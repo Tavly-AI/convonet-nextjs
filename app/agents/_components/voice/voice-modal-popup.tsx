@@ -217,6 +217,7 @@ export function VoiceModalPopup({
                       <TableHead>Voice</TableHead>
                       <TableHead>Trait</TableHead>
                       <TableHead>Voice ID</TableHead>
+                      <TableHead>Select</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>

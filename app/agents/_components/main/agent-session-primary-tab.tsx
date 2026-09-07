@@ -2,20 +2,18 @@
 
 import * as React from "react"
 import {
-  BotIcon,
-  Clock3Icon,
   GaugeIcon,
   SquareStackIcon,
   WalletCardsIcon,
 } from "lucide-react"
 
-import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { Textarea } from "@/components/ui/textarea"
 import { VoiceModalPopup } from "../voice/voice-modal-popup"
+import { AgentHandbookDialog } from "./agent-session-handbook"
 import { LanguageSelect } from "./agent-session-language"
 import { LLMModelSelect } from "./agent-session-model"
 import { GeneralPrompt } from "./agent-session-prompt"
+import { TimezoneSelect } from "./agent-session-timezone"
 
 
 export function AgentSessionPrimaryTab() {
@@ -41,14 +39,9 @@ export function AgentSessionPrimaryTab() {
           <LanguageSelect />
 
           <div className="ml-auto flex items-center gap-2">
-            <Button type="button" variant="outline" className="h-9">
-              <BotIcon className="size-4 text-muted-foreground" />
-              Agent Handbook
-            </Button>
+            <AgentHandbookDialog />
 
-            <Button type="button" variant="outline" size="icon-lg">
-              <Clock3Icon />
-            </Button>
+            <TimezoneSelect />
           </div>
         </div>
 

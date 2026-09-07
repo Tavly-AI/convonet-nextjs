@@ -13,6 +13,8 @@ export type PronunciationDictionaryEntry = {
     phoneme: string
 }
 
+export type AgentLanguage = string | string[]
+
 export type SpeechSettings = {
     ambient_sound: string
     responsiveness: number
@@ -22,6 +24,41 @@ export type SpeechSettings = {
     reminder_max_count: number
     pronunciation_dictionary: PronunciationDictionaryEntry[]
 }
+
+// ===================================================================
+// ==================== HANDBOOK DEFAULT & TYPES =====================
+// ===================================================================
+
+export type HandbookConfig = {
+    default_personality: boolean
+    conversational_personality: boolean
+    natural_filler_words: boolean
+    high_empathy: boolean
+    echo_verification: boolean
+    nato_phonetic_alphabet: boolean
+    speech_normalization: boolean
+    smart_matching: boolean
+    ai_disclosure: boolean
+    scope_boundaries: boolean
+}
+
+export const DEFAULT_HANDBOOK_CONFIG = {
+    default_personality: true,
+    conversational_personality: true,
+    natural_filler_words: true,
+    high_empathy: true,
+    echo_verification: true,
+    nato_phonetic_alphabet: true,
+    speech_normalization: true,
+    smart_matching: true,
+    ai_disclosure: true,
+    scope_boundaries: true,
+} satisfies HandbookConfig
+
+// =================================================================
+// ================ HANDBOOK DEFAULT & TYPES END ===================
+// =================================================================
+
 
 export type DenoisingMode =
     | "noise-cancellation"
@@ -263,7 +300,7 @@ export const DEFAULT_WEBHOOK_SETTINGS = {
 export type AgentSessionConfig = Record<string, unknown> & {
     agentType: string
     voiceId: string | null
-    language: string
+    language: AgentLanguage
     phoneNumber: string | null
     generalTools: GeneralTool[]
     webhook_url: string | null
@@ -277,6 +314,8 @@ export type AgentSessionConfig = Record<string, unknown> & {
     guardrail_config: SecurityFallbackSettings["guardrail_config"]
     post_call_analysis_data: PostCallAnalysisData[]
     post_call_analysis_model: PostCallAnalysisModel
+    handbook_config?: HandbookConfig
+    timezone?: string
 
     auto_close_message?: string | null
 }
@@ -316,6 +355,9 @@ const EMPTY_AGENT: AgentSessionAgent = {
         ...DEFAULT_SECURITY_FALLBACK_SETTINGS,
         ...DEFAULT_POST_CALL_ANALYSIS_SETTINGS,
 
+        handbook_config: DEFAULT_HANDBOOK_CONFIG,
+        timezone: "America/New_York",
+
         agentType: "single_prompt",
         voiceId: null,
         language: "en-US",
@@ -342,6 +384,9 @@ const EMPTY_CHAT_AGENT: AgentSessionAgent = {
         ...DEFAULT_WEBHOOK_SETTINGS,
         ...DEFAULT_SECURITY_FALLBACK_SETTINGS,
         ...DEFAULT_POST_CALL_ANALYSIS_SETTINGS,
+
+        handbook_config: DEFAULT_HANDBOOK_CONFIG,
+        timezone: "America/New_York",
 
         agentType: "single_prompt",
         voiceId: null,
@@ -424,6 +469,12 @@ export function initializeAgentSession(agent: AgentSessionSource | null = null) 
                     ? (storedConfig.guardrail_config as { input_topics: GuardrailInputTopic[] }).input_topics
                     : EMPTY_AGENT.config.guardrail_config.input_topics,
             },
+            handbook_config: {
+                ...EMPTY_AGENT.config.handbook_config,
+                ...(typeof storedConfig.handbook_config === "object" && storedConfig.handbook_config
+                    ? storedConfig.handbook_config
+                    : {}),
+            } as HandbookConfig,
         },
         llmConfig: {
             ...EMPTY_AGENT.llmConfig,
@@ -490,6 +541,12 @@ export function initializeChatAgentSession(
                     ? (storedConfig.guardrail_config as { input_topics: GuardrailInputTopic[] }).input_topics
                     : EMPTY_CHAT_AGENT.config.guardrail_config.input_topics,
             },
+            handbook_config: {
+                ...EMPTY_CHAT_AGENT.config.handbook_config,
+                ...(typeof storedConfig.handbook_config === "object" && storedConfig.handbook_config
+                    ? storedConfig.handbook_config
+                    : {}),
+            } as HandbookConfig,
         },
 
         llmConfig: {
@@ -564,6 +621,56 @@ export function writeGeneralTools(tools: GeneralTool[]) {
     })
 
     return tools
+}
+
+// =================================================================
+// ================= HANDBOOK & TIMEZONE SETTINGS ================
+// =================================================================
+
+export function getHandbookConfig(): HandbookConfig {
+    return {
+        ...DEFAULT_HANDBOOK_CONFIG,
+        ...(getAgentSession()?.config.handbook_config ?? {}),
+    }
+}
+
+export function writeHandbookConfig(handbook_config: Partial<HandbookConfig>) {
+    const agent = getAgentSession()
+    if (!agent) throw new Error("Agent session is not initialized.")
+
+    const nextConfig = {
+        ...getHandbookConfig(),
+        ...handbook_config,
+    }
+
+    writeAgentSession({
+        ...agent,
+        config: {
+            ...agent.config,
+            handbook_config: nextConfig,
+        },
+    })
+
+    return nextConfig
+}
+
+export function getTimezone() {
+    return getAgentSession()?.config.timezone ?? "America/New_York"
+}
+
+export function writeTimezone(timezone: string) {
+    const agent = getAgentSession()
+    if (!agent) throw new Error("Agent session is not initialized.")
+
+    writeAgentSession({
+        ...agent,
+        config: {
+            ...agent.config,
+            timezone,
+        },
+    })
+
+    return timezone
 }
 
 // =================================================================
@@ -795,11 +902,11 @@ export function writeVoiceId(voiceId: string) {
 // =========================== LANGUAGE =============================
 // =================================================================
 
-export function getLanguage() {
+export function getLanguage(): AgentLanguage {
     return getAgentSession()?.config.language ?? "en-US"
 }
 
-export function writeLanguage(language: string) {
+export function writeLanguage(language: AgentLanguage) {
     const agent = getAgentSession()
     if (!agent) throw new Error("Agent session is not initialized.")
 
