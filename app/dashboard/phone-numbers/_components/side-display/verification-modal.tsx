@@ -21,6 +21,9 @@ import { getOrCreateTwilioSubaccount } from "../../_lib/twillio-subaccount"
 import { getOrCreateTwilioSipTrunk } from "../../_lib/twillio-setup-sip-trunk"
 
 export async function VerificationModal() {
+
+  if (!process.env.TELNYX_API_KEY) return
+
   const userId = await getCurrentUserId()
   if (!userId) redirect("/auth/login")
 
