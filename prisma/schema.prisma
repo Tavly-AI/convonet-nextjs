@@ -30,6 +30,7 @@ model Workspace {
   users         User[]
   agents        Agent[]
   agentVersions AgentVersion[]
+  knowledgeBases KnowledgeBase[]
   twilioSubaccount TwilioSubaccount?
   telnyxManagedAccount TelnyxManagedAccount?
   sipTrunkConnections SipTrunkConnection[]
@@ -181,4 +182,41 @@ model AgentVersion {
   @@unique([agentId, version])
   @@index([workspaceId])
   @@index([agentId])
+}
+
+model KnowledgeBase {
+  id                  String                @id @default(cuid())
+  workspaceId         String
+  workspace           Workspace             @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  name                String
+  sources             KnowledgeBaseSource[]
+
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+
+  @@index([workspaceId])
+  @@index([workspaceId, name])
+}
+
+model KnowledgeBaseSource {
+  id               String                   @id @default(cuid())
+  knowledgeBaseId  String
+  knowledgeBase    KnowledgeBase            @relation(fields: [knowledgeBaseId], references: [id], onDelete: Cascade)
+
+  type             String                   @default("document")
+  filename         String
+  fileUrl          String?
+  fileSize         Int?
+
+  status           String?
+  ingestionJobId   String?
+  lastIngestedAt   DateTime?
+
+  createdAt        DateTime                 @default(now())
+  updatedAt        DateTime                 @updatedAt
+
+  @@index([knowledgeBaseId])
+  @@index([knowledgeBaseId, type])
+  @@index([ingestionJobId])
 }
