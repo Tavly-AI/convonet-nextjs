@@ -28,6 +28,10 @@ import { CheckRow, Field } from "../functions/general-tool-form"
 
 const DEFAULT_SETTINGS = {
   ambient_sound: "none",
+  ambient_sound_volume: 0.3,
+  enable_backchannel: false,
+  backchannel_frequency: 0.3,
+  backchannel_words: ["okay", "I see", "mm-hmm"],
   responsiveness: 0.84,
   enable_dynamic_responsiveness: false,
   interruption_sensitivity: 0.9,
