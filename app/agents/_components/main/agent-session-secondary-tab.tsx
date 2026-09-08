@@ -88,7 +88,7 @@ export function AgentSessionTabSecondary() {
 
 
   return (
-    <Card className="min-h-96 gap-0 py-0">
+    <Card className="max-h-[91vh] min-h-0 overflow-y-auto gap-0 py-0">
       <div className="divide-y px-4">
         {SECONDARY_TABS.filter((tab) => filterTabs(tab, channel)).map((tab) => {
           const { id, label, icon: Icon } = tab
