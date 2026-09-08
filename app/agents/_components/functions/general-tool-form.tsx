@@ -30,7 +30,6 @@ import type {
   ExtractDynamicVariableTool,
   FunctionParameter,
   GeneralTool,
-  KeyValue,
   PressDigitTool,
   SendSMSTool,
 } from "@/app/agents/_lib/functions/general-tools"
@@ -285,7 +284,7 @@ function CustomFunctionForm({
       <Section title="Headers">
         <KeyValueEditor
           value={keyValueFromRecord(value.headers)}
-          onChange={(headers) => onChange({ ...value, headers })}
+          onChange={(headers) => onChange({ ...value, headers: recordFromKeyValue(headers) })}
           keyPlaceholder="Authorization"
           valuePlaceholder="Bearer {{token}}"
         />
@@ -294,7 +293,7 @@ function CustomFunctionForm({
       <Section title="Query parameters">
         <KeyValueEditor
           value={keyValueFromRecord(value.query_params)}
-          onChange={(query_params) => onChange({ ...value, query_params })}
+          onChange={(query_params) => onChange({ ...value, query_params: recordFromKeyValue(query_params) })}
           keyPlaceholder="customer_id"
           valuePlaceholder="{{customer_id}}"
         />
@@ -343,7 +342,7 @@ function CustomFunctionForm({
         <KeyValueEditor
           value={keyValueFromRecord(value.response_variables)}
           onChange={(response_variables) =>
-            onChange({ ...value, response_variables })
+            onChange({ ...value, response_variables: recordFromKeyValue(response_variables) })
           }
           keyPlaceholder="data.customer.name"
           valuePlaceholder="customer_name"
@@ -450,7 +449,7 @@ return { ok: true, formatted_total: "$" + amount.toFixed(2) };`}
         <KeyValueEditor
           value={keyValueFromRecord(value.response_variables)}
           onChange={(response_variables) =>
-            onChange({ ...value, response_variables })
+            onChange({ ...value, response_variables: recordFromKeyValue(response_variables) })
           }
           keyPlaceholder="dynamic_variable_name"
           valuePlaceholder="result.path"
@@ -781,9 +780,12 @@ function SendSMSForm({
   )
 }
 
-function keyValueFromRecord(value: Record<string, string> | KeyValue[] | undefined) {
-  if (Array.isArray(value)) return value
+function keyValueFromRecord(value: Record<string, string> | undefined) {
   return Object.entries(value ?? {}).map(([key, itemValue]) => ({ key, value: itemValue }))
+}
+
+function recordFromKeyValue(value: { key: string; value: string }[]) {
+  return Object.fromEntries(value.map(({ key, value: itemValue }) => [key, itemValue]))
 }
 
 function splitCommaList(value: string) {

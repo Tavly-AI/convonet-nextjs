@@ -94,7 +94,7 @@ export type TransferCallTool = {
   description: string
   transfer_destination: TransferDestination
   transfer_option: TransferOption
-  custom_sip_headers?: Record<string, string> | KeyValue[]
+  custom_sip_headers?: Record<string, string>
   ignore_e164_validation?: boolean
 } & ExecutionMessageFields
 
@@ -133,13 +133,13 @@ export type CustomFunctionTool = {
   url: string
   args_at_root?: boolean
   enable_typing_sound?: boolean
-  headers?: Record<string, string> | KeyValue[]
+  headers?: Record<string, string>
   max_retry?: number
   method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE"
   parameter_type?: "form" | "json"
   parameters?: FunctionParameters
-  query_params?: Record<string, string> | KeyValue[]
-  response_variables?: Record<string, string> | KeyValue[]
+  query_params?: Record<string, string>
+  response_variables?: Record<string, string>
   speak_after_execution?: boolean
   timeout_ms?: number
 
@@ -153,7 +153,7 @@ export type CodeTool = {
   description: string
   code: string
   enable_typing_sound?: boolean
-  response_variables?: Record<string, string> | KeyValue[]
+  response_variables?: Record<string, string>
   speak_after_execution?: boolean
   timeout_ms?: number
 } & ExecutionMessageFields

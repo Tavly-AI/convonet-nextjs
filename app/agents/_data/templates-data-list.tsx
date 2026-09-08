@@ -26,20 +26,12 @@ export function getAgentTemplates(): Record<string, AgentTemplateData> {
                 agentType: "single_prompt",
                 voiceId: null,
                 phoneNumber: null,
-                response_engine: {
-                    llm_id: "",
-                    version: 0,
-                    type: "retell-llm"
-                },
                 // Retell template overrides
                 language: "en-US",
                 webhook_timeout_ms: 30000,
                 data_storage_setting: "everything",
                 opt_in_signed_url: false,
                 end_call_after_silence_ms: 684000,
-                version: 0,
-                assigned_tags: [],
-                is_published: false,
                 responsiveness: 1,
                 interruption_sensitivity: 0.8,
                 reminder_trigger_ms: 15000,
@@ -47,8 +39,6 @@ export function getAgentTemplates(): Record<string, AgentTemplateData> {
                 max_call_duration_ms: 7200000,
                 begin_message_delay_ms: 0,
                 timezone: "America/Los_Angeles",
-
-                voice_id: "",
                 voice_temperature: 1,
                 voice_speed: 1,
                 volume: 1,
@@ -56,9 +46,7 @@ export function getAgentTemplates(): Record<string, AgentTemplateData> {
                 backchannel_frequency: 0.8,
 
 
-
                 allow_user_dtmf: true,
-                user_dtmf_options: {},
 
                 pii_config: {
                     mode: "post_call",
@@ -168,7 +156,6 @@ export function getAgentTemplates(): Record<string, AgentTemplateData> {
                             required: ["date"],
                         },
                         response_variables: {
-                            available_slots: "data.slots",
                         },
                     },
                     {
@@ -232,9 +219,6 @@ export function getAgentTemplates(): Record<string, AgentTemplateData> {
                             ],
                         },
                         response_variables: {
-                            booked_date: "data.date",
-                            booked_time: "data.time",
-                            confirmation_number: "data.confirmation_id",
                         },
                     },
                     {
@@ -293,7 +277,6 @@ export function getAgentTemplates(): Record<string, AgentTemplateData> {
                             required: ["patient_name", "appointment_date"],
                         },
                         response_variables: {
-                            cancellation_status: "data.status",
                         },
                     },
                     {
@@ -380,8 +363,6 @@ export function getAgentTemplates(): Record<string, AgentTemplateData> {
             },
 
             llmConfig: {
-                llm_id: "",
-                version: "",
                 model: "gpt-4.1",
                 //used all tools within the TypeScript template literal string (e.g. check_availability, book_appointment, transfer_to_staff, send_sms, cancel_appointment, leave_message, end_call) 
                 generalPrompt: `## Role
@@ -721,8 +702,7 @@ If the caller insists on speaking with a human, Call \`transfer_to_staff\` immed
                     top_k: 3,
                     filter_score: 0.6,
                 },
-                mcps: [],
-                is_published: false,
+                mcps: []
 
             },
         },
@@ -739,19 +719,12 @@ If the caller insists on speaking with a human, Call \`transfer_to_staff\` immed
                 voiceId: null,
                 language: "en-US",
                 phoneNumber: null,
-                response_engine: {
-                    version: 0,
-                    type: "",
-                    llm_id: ""
-                },
                 // Template-specific call settings
                 max_call_duration_ms: 3600000,
                 interruption_sensitivity: 0.9,
                 enable_dynamic_responsiveness: true,
-                voice_id: "",
                 voice_temperature: 1,
                 voice_speed: 1.2,
-                enable_dynamic_voice_speed: true,
                 volume: 1,
                 begin_message_delay_ms: 1000,
                 voicemail_option: {
@@ -761,16 +734,12 @@ If the caller insists on speaking with a human, Call \`transfer_to_staff\` immed
                     }
                 },
                 allow_user_dtmf: true,
-                user_dtmf_options: {},
                 denoising_mode: "noise-and-background-speech-cancellation",
 
 
 
                 data_storage_setting: "everything",
                 opt_in_signed_url: false,
-                version: 0,
-                assigned_tags: [],
-                is_published: false,
                 post_call_analysis_model: "gpt-4.1-mini",
                 pii_config: {
                     categories: [],
@@ -1036,8 +1005,7 @@ Call \`end_call\``,
                 kb_config: {
                     filter_score: 0.6,
                     top_k: 3
-                },
-                is_published: false,
+                }
             },
         },
         "rider-appointment-booking": {
@@ -1053,28 +1021,18 @@ Call \`end_call\``,
                 voiceId: "retell-Grace",
                 language: "en-US",
                 phoneNumber: null,
-                response_engine: {
-                    version: 0,
-                    type: "",
-                    llm_id: ""
-                },
                 // Template-specific call settings
                 max_call_duration_ms: 3600000,
                 interruption_sensitivity: 0.9,
-                voice_id: null,
                 voice_temperature: 1,
                 voice_speed: 1,
                 volume: 1,
                 begin_message_delay_ms: 600,
                 allow_user_dtmf: true,
-                user_dtmf_options: {},
                 denoising_mode: "noise-and-background-speech-cancellation",
 
                 data_storage_setting: "everything",
                 opt_in_signed_url: false,
-                version: 0,
-                assigned_tags: [],
-                is_published: false,
                 post_call_analysis_model: "gpt-4.1",
                 pii_config: {
                     categories: [],
@@ -1324,7 +1282,6 @@ Call \`end_call\``,
                 model: "gpt-4.1",
                 // "llm_id": "llm_561dc109445705623f4b69c8b9d9",
                 // "version": 0,
-                model_high_priority: true,
 
                 generalPrompt: `## Role
 
@@ -1619,8 +1576,7 @@ NO_RESPONSE_NEEDED`,
                     filter_score: 0.6,
                     top_k: 3
                 },
-                mcps: [],
-                is_published: false,
+                mcps: []
             },
         },
         "b2b-demo-qualification": {
@@ -1636,29 +1592,19 @@ NO_RESPONSE_NEEDED`,
                 voiceId: "retell-Grace",
                 language: "en-US",
                 phoneNumber: null,
-                response_engine: {
-                    version: 0,
-                    type: "",
-                    llm_id: ""
-                },
                 // Template-specific call settings
                 max_call_duration_ms: 3600000,
                 interruption_sensitivity: 0.9,
-                voice_id: null,
                 voice_temperature: 1,
                 voice_speed: 1,
                 volume: 1,
                 begin_message_delay_ms: 600,
                 allow_user_dtmf: true,
-                user_dtmf_options: {},
                 denoising_mode: "noise-and-background-speech-cancellation",
                 timezone: "America/Los_Angeles",
 
                 data_storage_setting: "everything",
                 opt_in_signed_url: false,
-                version: 0,
-                assigned_tags: [],
-                is_published: false,
                 post_call_analysis_model: "gpt-4.1",
                 pii_config: {
                     categories: [],
@@ -1749,7 +1695,6 @@ NO_RESPONSE_NEEDED`,
                 model: "gpt-4.1",
                 // "llm_id": "llm_28fc7d84a628edb630fd4f6cb70d",
                 // "version": 0,
-                model_high_priority: true,
 
                 generalPrompt: `## Role
 
@@ -2066,18 +2011,12 @@ NO_RESPONSE_NEEDED
 
                 start_speaker: "agent",
 
-                default_dynamic_variables: {
-                    support_transfer_number: null,
-                    company: null,
-                    transfer_number: null,
-                },
                 knowledge_base_ids: [],
                 kb_config: {
                     top_k: 3,
                     filter_score: 0.6,
                 },
-                mcps: [],
-                is_published: false,
+                mcps: []
             },
         },
         "payment-collection": {
@@ -2093,40 +2032,30 @@ NO_RESPONSE_NEEDED
                 voiceId: "retell-Cimo",
                 language: "en-US",
                 phoneNumber: null,
-                response_engine: {
-                    version: 0,
-                    type: "",
-                    llm_id: ""
-                },
                 // Template-specific call settings
                 max_call_duration_ms: 3600000,
                 interruption_sensitivity: 0.9,
-                voice_id: null,
                 allow_user_dtmf: true,
-                user_dtmf_options: {},
                 timezone: "America/Los_Angeles",
 
                 data_storage_setting: "everything",
                 opt_in_signed_url: false,
-                version: 0,
-                assigned_tags: [],
-                is_published: false,
                 post_call_analysis_model: "gpt-4.1-mini",
                 pii_config: {
                     categories: [],
                     mode: "post_call"
                 },
                 handbook_config: {
-                    conversational_personality: false,
-                    speech_normalization: false,
-                    default_personality: false,
+                    scope_boundaries: true,
                     natural_filler_words: false,
+                    conversational_personality: false,
                     high_empathy: false,
-                    echo_verification: false,
+                    smart_matching: true,
+                    speech_normalization: true,
+                    ai_disclosure: true,
+                    default_personality: true,
                     nato_phonetic_alphabet: false,
-                    smart_matching: false,
-                    ai_disclosure: false,
-                    scope_boundaries: false
+                    echo_verification: false
                 },
                 //tools
                 generalTools: [
@@ -2499,21 +2428,12 @@ If asked whether you are a robot, respond exactly with:
 
                 start_speaker: "user",
                 begin_message: "",
-                default_dynamic_variables: {
-                    company_phone: null,
-                    customer_name: null,
-                    creditor_name: null,
-                    balance_amount: null,
-                    company_name: null,
-                    agent_name: null,
-                },
                 knowledge_base_ids: [],
                 kb_config: {
                     filter_score: 0.6,
                     top_k: 3
                 },
-                mcps: [],
-                is_published: false,
+                mcps: []
             },
         },
         "ivr-navigation-payment-bot": {
@@ -2529,18 +2449,11 @@ If asked whether you are a robot, respond exactly with:
                 voiceId: "retell-Della",
                 language: "en-US",
                 phoneNumber: null,
-                response_engine: {
-                    version: 0,
-                    type: "",
-                    llm_id: ""
-                },
                 // Template-specific call settings
                 max_call_duration_ms: 1800000,
                 interruption_sensitivity: 0.87,
-                voice_id: null,
                 voice_temperature: 1,
                 voice_speed: 1,
-                enable_dynamic_voice_speed: false,
                 volume: 1,
                 begin_message_delay_ms: 2000,
                 ring_duration_ms: 90000,
@@ -2564,9 +2477,7 @@ If asked whether you are a robot, respond exactly with:
                     }
                 },
                 allow_user_dtmf: true,
-                user_dtmf_options: {},
                 stt_mode: "fast",
-                vocab_specialization: "general",
                 denoising_mode: "noise-and-background-speech-cancellation",
                 boosted_keywords: [
                     "account number",
@@ -2621,9 +2532,6 @@ If asked whether you are a robot, respond exactly with:
 
                 data_storage_setting: "everything",
                 opt_in_signed_url: false,
-                version: 0,
-                assigned_tags: [],
-                is_published: false,
                 post_call_analysis_model: "gpt-4.1-mini",
                 pii_config: {
                     mode: "post_call",
@@ -2873,7 +2781,6 @@ If asked whether you are a robot, respond exactly with:
                 model: "gpt-4.1",
                 // "llm_id": "llm_486d8c3354b488c1ac35fada432b",
                 // "version": 0,
-                model_high_priority: true,
 
                 generalPrompt: `## Role
 
@@ -3046,8 +2953,7 @@ Do not retry the same failed path. Do not guess missing information.`,
                     filter_score: 0.6,
                     top_k: 3
                 },
-                mcps: [],
-                is_published: false,
+                mcps: []
             },
         },
         "multilingual-agent": {
@@ -3074,11 +2980,6 @@ Do not retry the same failed path. Do not guess missing information.`,
                     "nl-NL"
                 ],
                 phoneNumber: null,
-                response_engine: {
-                    llm_id: null,
-                    type: null,
-                    version: 0
-                },
 
                 generalTools: [
                     {
@@ -3114,10 +3015,8 @@ Do not retry the same failed path. Do not guess missing information.`,
                 denoising_mode: "noise-and-background-speech-cancellation",
                 interruption_sensitivity: 0.9,
                 allow_user_dtmf: true,
-                user_dtmf_options: {},
 
                 // Voice
-                voice_id: null,
                 voice_temperature: 0.92,
                 voice_speed: 1,
                 volume: 1,
@@ -3149,13 +3048,23 @@ Do not retry the same failed path. Do not guess missing information.`,
                         required: false
                     }
                 ],
+                handbook_config: {
+                    high_empathy: false,
+                    nato_phonetic_alphabet: false,
+                    smart_matching: false,
+                    conversational_personality: false,
+                    natural_filler_words: false,
+                    ai_disclosure: true,
+                    speech_normalization: false,
+                    default_personality: true,
+                    echo_verification: false,
+                    scope_boundaries: false,
+                },
+                timezone: "America/Los_Angeles"
             },
 
             llmConfig: {
                 model: "gpt-4.1",
-                llm_id: null,
-                version: 0,
-                model_high_priority: true,
                 generalPrompt: `## Role
 
 You are **Maria**, a bilingual Level 1 technical support specialist for **NovaTech Electronics**. Your job is to greet callers, determine their language preference, identify their device and issue, guide them through basic troubleshooting steps, and escalate if the issue cannot be resolved.
@@ -3356,8 +3265,7 @@ If the caller says "Hold on," "One moment," "Please wait," "Espera," or "Un mome
                 kb_config: {
                     top_k: 3,
                     filter_score: 0.6
-                },
-                is_published: false
+                }
             },
         },
         "multi-department-router": {
@@ -3373,11 +3281,6 @@ If the caller says "Hold on," "One moment," "Please wait," "Espera," or "Un mome
                 voiceId: "retell-Grace",
                 language: "en-US",
                 phoneNumber: null,
-                response_engine: {
-                    version: 0,
-                    llm_id: "",
-                    type: "retell-llm"
-                },
 
                 generalTools: [
                     {
@@ -3411,9 +3314,6 @@ If the caller says "Hold on," "One moment," "Please wait," "Espera," or "Un mome
                 // Template-specific call settings
                 data_storage_setting: "everything",
                 opt_in_signed_url: false,
-                version: 0,
-                assigned_tags: [],
-                is_published: false,
                 post_call_analysis_model: "gpt-4.1",
                 pii_config: {
                     mode: "post_call",
@@ -3439,7 +3339,6 @@ If the caller says "Hold on," "One moment," "Please wait," "Espera," or "Un mome
                         description: "Extract the name of the department the user was ultimately routed to"
                     }
                 ],
-                voice_id: "retell-Grace",
                 voice_temperature: 1,
                 voice_speed: 1,
                 volume: 1,
@@ -3447,7 +3346,6 @@ If the caller says "Hold on," "One moment," "Please wait," "Espera," or "Un mome
                 interruption_sensitivity: 0.9,
                 begin_message_delay_ms: 600,
                 allow_user_dtmf: true,
-                user_dtmf_options: {},
                 denoising_mode: "noise-and-background-speech-cancellation"
             },
 
@@ -3615,8 +3513,7 @@ If the caller says "Hold on," "One moment," or "Please wait," respond exactly wi
                 kb_config: {
                     filter_score: 0.6,
                     top_k: 3
-                },
-                is_published: false
+                }
             },
         },
         "after-hours-law-receptionist": {
@@ -3643,11 +3540,6 @@ If the caller says "Hold on," "One moment," or "Please wait," respond exactly wi
                     "nl-NL"
                 ],
                 phoneNumber: null,
-                response_engine: {
-                    llm_id: "",
-                    type: "retell-llm",
-                    version: 0,
-                },
 
                 generalTools: [
                     {
@@ -3682,14 +3574,10 @@ If the caller says "Hold on," "One moment," or "Please wait," respond exactly wi
                 // Template-specific call settings
                 data_storage_setting: "everything",
                 opt_in_signed_url: false,
-                version: 0,
-                assigned_tags: [],
-                is_published: false,
                 max_call_duration_ms: 3600000,
                 interruption_sensitivity: 0.9,
                 stt_mode: "accurate",
                 allow_user_dtmf: true,
-                user_dtmf_options: {},
                 denoising_mode: "noise-and-background-speech-cancellation",
                 timezone: "America/Los_Angeles",
 
@@ -3732,15 +3620,11 @@ If the caller says "Hold on," "One moment," or "Please wait," respond exactly wi
                         ],
                         description: "",
                     },
-                ],
-                voice_id: "retell-Cimo",
+                ]
             },
 
             llmConfig: {
                 model: "gpt-4.1",
-                llm_id: null,
-                version: 0,
-                model_high_priority: true,
 
                 generalPrompt: `## Role
 
@@ -4241,8 +4125,7 @@ After collecting the number, provide a natural variation of:
                 kb_config: {
                     top_k: 3,
                     filter_score: 0.6,
-                },
-                is_published: false,
+                }
             },
         },
         "lead-reactivation": {
@@ -4256,14 +4139,8 @@ After collecting the number, provide a natural variation of:
 
                 agentType: "single_prompt",
                 voiceId: "retell-Grace",
-                voice_id: "retell-Grace",
                 language: "en-US",
                 phoneNumber: null,
-                response_engine: {
-                    llm_id: "",
-                    type: "retell-llm",
-                    version: 0,
-                },
 
                 generalTools: [
                     {
@@ -4289,14 +4166,10 @@ After collecting the number, provide a natural variation of:
                 // Call settings
                 data_storage_setting: "everything",
                 opt_in_signed_url: false,
-                version: 0,
-                assigned_tags: [],
-                is_published: false,
                 max_call_duration_ms: 3600000,
                 interruption_sensitivity: 0.9,
                 begin_message_delay_ms: 600,
                 allow_user_dtmf: true,
-                user_dtmf_options: {},
                 denoising_mode: "noise-and-background-speech-cancellation",
                 timezone: "America/Los_Angeles",
 
@@ -4392,9 +4265,6 @@ After collecting the number, provide a natural variation of:
 
             llmConfig: {
                 model: "gpt-4.1",
-                llm_id: null,
-                version: 0,
-                model_high_priority: true,
 
                 generalPrompt: `## Role
 
@@ -4584,8 +4454,7 @@ A: The sales team can discuss options.`,
                 kb_config: {
                     top_k: 3,
                     filter_score: 0.6,
-                },
-                is_published: false,
+                }
             },
         },
         "insurance": {
@@ -4599,14 +4468,8 @@ A: The sales team can discuss options.`,
 
                 agentType: "single_prompt",
                 voiceId: "retell-Della",
-                voice_id: "retell-Della",
                 language: "en-US",
                 phoneNumber: null,
-                response_engine: {
-                    llm_id: "",
-                    type: "retell-llm",
-                    version: 0,
-                },
 
                 generalTools: [
                     {
@@ -4719,7 +4582,7 @@ A: The sales team can discuss options.`,
                                         "The patient's in-network out-of-pocket maximum in dollars",
                                 },
                                 authorization_number: {
-                                    type: ["string", "null"],
+                                    type: "string",
                                     description:
                                         "The prior authorization number if applicable, otherwise null",
                                 },
@@ -4774,15 +4637,11 @@ A: The sales team can discuss options.`,
                 // Call settings
                 data_storage_setting: "everything",
                 opt_in_signed_url: false,
-                version: 0,
-                assigned_tags: [],
-                is_published: false,
                 max_call_duration_ms: 3600000,
                 interruption_sensitivity: 0.8,
                 begin_message_delay_ms: 1000,
                 ring_duration_ms: 90000,
                 allow_user_dtmf: true,
-                user_dtmf_options: {},
                 denoising_mode: "noise-and-background-speech-cancellation",
                 ambient_sound: "call-center",
                 enable_dynamic_responsiveness: true,
@@ -4790,7 +4649,6 @@ A: The sales team can discuss options.`,
 
                 voice_temperature: 1,
                 voice_speed: 1.1,
-                enable_dynamic_voice_speed: true,
                 volume: 1,
 
                 // Security & Guardrails
@@ -4999,9 +4857,6 @@ A: The sales team can discuss options.`,
 
             llmConfig: {
                 model: "gpt-4.1",
-                llm_id: null,
-                version: 0,
-                model_high_priority: true,
 
                 generalPrompt: `## Role
 
@@ -5191,8 +5046,7 @@ Call \`end_call\` if:
                 kb_config: {
                     filter_score: 0.6,
                     top_k: 3,
-                },
-                is_published: false,
+                }
             },
         },
         "delivery-status-caller": {
@@ -5206,14 +5060,8 @@ Call \`end_call\` if:
 
                 agentType: "single_prompt",
                 voiceId: "retell-Merritt",
-                voice_id: "retell-Merritt",
                 language: "en-US",
                 phoneNumber: null,
-                response_engine: {
-                    llm_id: "",
-                    type: "retell-llm",
-                    version: 0,
-                },
 
                 generalTools: [
                     {
@@ -5261,14 +5109,10 @@ Call \`end_call\` if:
                 // Call settings
                 data_storage_setting: "everything",
                 opt_in_signed_url: false,
-                version: 0,
-                assigned_tags: [],
-                is_published: false,
                 max_call_duration_ms: 3600000,
                 interruption_sensitivity: 0.9,
                 begin_message_delay_ms: 600,
                 allow_user_dtmf: true,
-                user_dtmf_options: {},
                 denoising_mode: "noise-and-background-speech-cancellation",
                 timezone: "America/Los_Angeles",
 
@@ -5313,9 +5157,6 @@ Call \`end_call\` if:
 
             llmConfig: {
                 model: "gpt-4.1",
-                llm_id: null,
-                version: 0,
-                model_high_priority: true,
 
                 generalPrompt: `## Role
 
@@ -5459,8 +5300,7 @@ If the caller says "Hold on," "One moment," or "Please wait," respond exactly wi
                 kb_config: {
                     top_k: 3,
                     filter_score: 0.6,
-                },
-                is_published: false,
+                }
             },
         },
         "event-webinar-reminder": {
@@ -5474,14 +5314,8 @@ If the caller says "Hold on," "One moment," or "Please wait," respond exactly wi
 
                 agentType: "single_prompt",
                 voiceId: "retell-Grace",
-                voice_id: "retell-Grace",
                 language: "en-US",
                 phoneNumber: null,
-                response_engine: {
-                    llm_id: "",
-                    type: "retell-llm",
-                    version: 0,
-                },
 
                 generalTools: [
                     {
@@ -5521,8 +5355,7 @@ If the caller says "Hold on," "One moment," or "Please wait," respond exactly wi
                             type: "object",
                             properties: {
                                 attendant_number: {
-                                    type: "string",
-                                    const: "{{user_number}}",
+                                    type: "string"
                                 },
                             },
                             required: ["attendant_number"],
@@ -5571,12 +5404,10 @@ If the caller says "Hold on," "One moment," or "Please wait," respond exactly wi
                             type: "object",
                             properties: {
                                 attendant_number: {
-                                    type: "string",
-                                    const: "{{user_number}}",
+                                    type: "string"
                                 },
                                 next_event_id: {
-                                    type: "string",
-                                    const: "{{next_event_id}}",
+                                    type: "string"
                                 },
                             },
                             required: ["next_event_id", "attendant_number"],
@@ -5587,14 +5418,10 @@ If the caller says "Hold on," "One moment," or "Please wait," respond exactly wi
                 // Call settings
                 data_storage_setting: "everything",
                 opt_in_signed_url: false,
-                version: 0,
-                assigned_tags: [],
-                is_published: false,
                 max_call_duration_ms: 3600000,
                 interruption_sensitivity: 0.9,
                 begin_message_delay_ms: 600,
                 allow_user_dtmf: true,
-                user_dtmf_options: {},
                 denoising_mode: "noise-and-background-speech-cancellation",
                 timezone: "America/Los_Angeles",
 
@@ -5658,9 +5485,6 @@ If the caller says "Hold on," "One moment," or "Please wait," respond exactly wi
 
             llmConfig: {
                 model: "gpt-4.1",
-                llm_id: null,
-                version: 0,
-                model_high_priority: true,
 
                 generalPrompt: `## Role
 
@@ -5890,8 +5714,7 @@ NO_RESPONSE_NEEDED
                 kb_config: {
                     top_k: 3,
                     filter_score: 0.6,
-                },
-                is_published: false,
+                }
             },
         },
         "high-intent-lead-screener": {
@@ -5905,14 +5728,8 @@ NO_RESPONSE_NEEDED
 
                 agentType: "single_prompt",
                 voiceId: "11labs-Nico",
-                voice_id: "11labs-Nico",
                 language: "en-US",
                 phoneNumber: null,
-                response_engine: {
-                    llm_id: "",
-                    type: "retell-llm",
-                    version: 0,
-                },
 
                 generalTools: [
                     {
@@ -6002,14 +5819,10 @@ NO_RESPONSE_NEEDED
                 // Call settings
                 data_storage_setting: "everything",
                 opt_in_signed_url: false,
-                version: 0,
-                assigned_tags: [],
-                is_published: false,
                 max_call_duration_ms: 3600000,
                 interruption_sensitivity: 0.9,
                 begin_message_delay_ms: 600,
                 allow_user_dtmf: true,
-                user_dtmf_options: {},
                 denoising_mode: "noise-and-background-speech-cancellation",
                 timezone: "America/Los_Angeles",
 
@@ -6094,9 +5907,6 @@ NO_RESPONSE_NEEDED
 
             llmConfig: {
                 model: "gpt-4.1",
-                llm_id: null,
-                version: 0,
-                model_high_priority: true,
 
                 generalPrompt: `## Role
 
@@ -6292,8 +6102,7 @@ NO_RESPONSE_NEEDED\n`,
                 kb_config: {
                     top_k: 3,
                     filter_score: 0.6,
-                },
-                is_published: false,
+                }
             },
         },
         "legal-intake-screener": {
@@ -6307,14 +6116,8 @@ NO_RESPONSE_NEEDED\n`,
 
                 agentType: "single_prompt",
                 voiceId: "retell-Cimo",
-                voice_id: "retell-Cimo",
                 language: "en-US",
                 phoneNumber: null,
-                response_engine: {
-                    llm_id: "",
-                    type: "retell-llm",
-                    version: 0,
-                },
 
                 generalTools: [
                     {
@@ -6341,14 +6144,10 @@ NO_RESPONSE_NEEDED\n`,
                 // Call settings
                 data_storage_setting: "everything",
                 opt_in_signed_url: false,
-                version: 0,
-                assigned_tags: [],
-                is_published: false,
                 max_call_duration_ms: 3600000,
                 interruption_sensitivity: 0.9,
                 begin_message_delay_ms: 600,
                 allow_user_dtmf: true,
-                user_dtmf_options: {},
                 denoising_mode: "noise-and-background-speech-cancellation",
                 timezone: "America/Los_Angeles",
 
@@ -6442,9 +6241,6 @@ NO_RESPONSE_NEEDED\n`,
 
             llmConfig: {
                 model: "gpt-4.1",
-                llm_id: null,
-                version: 0,
-                model_high_priority: true,
 
                 generalPrompt: `## Role
 
@@ -6661,8 +6457,7 @@ NO_RESPONSE_NEEDED\n`,
                 kb_config: {
                     filter_score: 0.6,
                     top_k: 3,
-                },
-                is_published: false,
+                }
             },
         },
         "provider-office-follow-up": {
@@ -6676,14 +6471,8 @@ NO_RESPONSE_NEEDED\n`,
 
                 agentType: "single_prompt",
                 voiceId: "retell-Cimo",
-                voice_id: "retell-Cimo",
                 language: "en-US",
                 phoneNumber: null,
-                response_engine: {
-                    llm_id: "",
-                    type: "retell-llm",
-                    version: 0,
-                },
 
                 generalTools: [
                     {
@@ -6708,13 +6497,9 @@ NO_RESPONSE_NEEDED\n`,
                 // Call settings
                 data_storage_setting: "everything",
                 opt_in_signed_url: false,
-                version: 0,
-                assigned_tags: [],
-                is_published: false,
                 max_call_duration_ms: 3600000,
                 interruption_sensitivity: 0.9,
                 allow_user_dtmf: true,
-                user_dtmf_options: {},
                 timezone: "America/Los_Angeles",
 
                 voice_temperature: 1,
@@ -6818,9 +6603,6 @@ NO_RESPONSE_NEEDED\n`,
 
             llmConfig: {
                 model: "gpt-4.1",
-                llm_id: null,
-                version: 0,
-                model_high_priority: true,
 
                 generalPrompt: `## Role
 
@@ -7118,8 +6900,7 @@ If asked whether the call is automated, respond exactly with:
                 kb_config: {
                     top_k: 3,
                     filter_score: 0.6,
-                },
-                is_published: false,
+                }
             },
         },
         "pharmacy-refill": {
@@ -7133,14 +6914,8 @@ If asked whether the call is automated, respond exactly with:
 
                 agentType: "single_prompt",
                 voiceId: "retell-Cimo",
-                voice_id: "retell-Cimo",
                 language: "en-US",
                 phoneNumber: null,
-                response_engine: {
-                    llm_id: "",
-                    type: "retell-llm",
-                    version: 0,
-                },
 
                 generalTools: [
                     {
@@ -7161,13 +6936,9 @@ If asked whether the call is automated, respond exactly with:
                 // Call settings
                 data_storage_setting: "everything",
                 opt_in_signed_url: false,
-                version: 0,
-                assigned_tags: [],
-                is_published: false,
                 max_call_duration_ms: 3600000,
                 interruption_sensitivity: 0.9,
                 allow_user_dtmf: true,
-                user_dtmf_options: {},
                 timezone: "America/Los_Angeles",
 
                 voice_temperature: 1,
@@ -7253,9 +7024,6 @@ If asked whether the call is automated, respond exactly with:
 
             llmConfig: {
                 model: "gpt-4.1",
-                llm_id: null,
-                version: 0,
-                model_high_priority: true,
 
                 generalPrompt: `## Role
 
@@ -7542,8 +7310,7 @@ If asked whether you are automated, respond exactly with:
                 kb_config: {
                     top_k: 3,
                     filter_score: 0.6,
-                },
-                is_published: false,
+                }
             },
         },
         "payment-reminder": {
@@ -7557,14 +7324,8 @@ If asked whether you are automated, respond exactly with:
 
                 agentType: "single_prompt",
                 voiceId: "retell-Cimo",
-                voice_id: "retell-Cimo",
                 language: "en-US",
                 phoneNumber: null,
-                response_engine: {
-                    llm_id: "",
-                    type: "retell-llm",
-                    version: 0,
-                },
 
                 generalTools: [
                     {
@@ -7627,13 +7388,9 @@ If asked whether you are automated, respond exactly with:
                 // Call settings
                 data_storage_setting: "everything",
                 opt_in_signed_url: false,
-                version: 0,
-                assigned_tags: [],
-                is_published: false,
                 max_call_duration_ms: 3600000,
                 interruption_sensitivity: 0.9,
                 allow_user_dtmf: true,
-                user_dtmf_options: {},
                 denoising_mode: "noise-and-background-speech-cancellation",
                 timezone: "America/Los_Angeles",
 
@@ -7723,9 +7480,6 @@ If asked whether you are automated, respond exactly with:
 
             llmConfig: {
                 model: "gpt-4.1",
-                llm_id: null,
-                version: 0,
-                model_high_priority: true,
 
                 generalPrompt: `## Role
 
@@ -8043,8 +7797,7 @@ If asked whether Maya is a real person or automated, provide a natural variation
                 kb_config: {
                     top_k: 3,
                     filter_score: 0.6,
-                },
-                is_published: false,
+                }
             },
         },
         "reminder-no-show-reducer": {
@@ -8058,14 +7811,8 @@ If asked whether Maya is a real person or automated, provide a natural variation
 
                 agentType: "single_prompt",
                 voiceId: "retell-Cimo",
-                voice_id: "retell-Cimo",
                 language: "en-US",
                 phoneNumber: null,
-                response_engine: {
-                    llm_id: "",
-                    type: "retell-llm",
-                    version: 0,
-                },
 
                 generalTools: [
                     {
@@ -8091,13 +7838,9 @@ If asked whether Maya is a real person or automated, provide a natural variation
                 // Call settings
                 data_storage_setting: "everything",
                 opt_in_signed_url: false,
-                version: 0,
-                assigned_tags: [],
-                is_published: false,
                 max_call_duration_ms: 3600000,
                 interruption_sensitivity: 0.9,
                 allow_user_dtmf: true,
-                user_dtmf_options: {},
                 timezone: "America/Los_Angeles",
 
                 voice_temperature: 1,
@@ -8110,16 +7853,16 @@ If asked whether Maya is a real person or automated, provide a natural variation
                     categories: [],
                 },
                 handbook_config: {
-                    conversational_personality: false,
-                    speech_normalization: false,
-                    default_personality: false,
-                    natural_filler_words: false,
                     high_empathy: false,
-                    echo_verification: false,
                     nato_phonetic_alphabet: false,
                     smart_matching: false,
-                    ai_disclosure: false,
-                    scope_boundaries: false
+                    conversational_personality: false,
+                    natural_filler_words: false,
+                    ai_disclosure: true,
+                    speech_normalization: false,
+                    default_personality: true,
+                    echo_verification: false,
+                    scope_boundaries: false,
                 },
 
                 // Post-call analysis
@@ -8190,9 +7933,6 @@ If asked whether Maya is a real person or automated, provide a natural variation
 
             llmConfig: {
                 model: "gpt-4.1",
-                llm_id: null,
-                version: 0,
-                model_high_priority: true,
 
                 generalPrompt: `## Role
 
@@ -8497,8 +8237,7 @@ Remain silent until they return.
                 kb_config: {
                     top_k: 3,
                     filter_score: 0.6,
-                },
-                is_published: false,
+                }
             },
         },
         "win-back-campaign": {
@@ -8512,14 +8251,8 @@ Remain silent until they return.
 
                 agentType: "single_prompt",
                 voiceId: "retell-Cimo",
-                voice_id: "retell-Cimo",
                 language: "en-US",
                 phoneNumber: null,
-                response_engine: {
-                    llm_id: "",
-                    type: "retell-llm",
-                    version: 0,
-                },
 
                 generalTools: [
                     {
@@ -8560,9 +8293,6 @@ Remain silent until they return.
                 // Call settings
                 data_storage_setting: "everything",
                 opt_in_signed_url: false,
-                version: 0,
-                assigned_tags: [],
-                is_published: false,
                 max_call_duration_ms: 3600000,
                 interruption_sensitivity: 0.9,
                 voicemail_option: {
@@ -8572,7 +8302,6 @@ Remain silent until they return.
                     },
                 },
                 allow_user_dtmf: true,
-                user_dtmf_options: {},
                 denoising_mode: "noise-and-background-speech-cancellation",
                 timezone: "America/Los_Angeles",
 
@@ -8623,9 +8352,6 @@ Remain silent until they return.
 
             llmConfig: {
                 model: "gpt-4.1",
-                llm_id: null,
-                version: 0,
-                model_high_priority: true,
 
                 generalPrompt: `## Role
 
@@ -8815,8 +8541,7 @@ If the customer expresses interest in speaking with a specialist or agrees to le
                 kb_config: {
                     top_k: 3,
                     filter_score: 0.6,
-                },
-                is_published: false,
+                }
             },
         },
         "faq-voice-agent": {
@@ -8830,14 +8555,8 @@ If the customer expresses interest in speaking with a specialist or agrees to le
 
                 agentType: "single_prompt",
                 voiceId: "retell-Cimo",
-                voice_id: "retell-Cimo",
                 language: "en-US",
                 phoneNumber: null,
-                response_engine: {
-                    llm_id: "",
-                    type: "retell-llm",
-                    version: 0,
-                },
 
                 generalTools: [
                     {
@@ -8880,14 +8599,9 @@ If the customer expresses interest in speaking with a specialist or agrees to le
                 // Call settings
                 data_storage_setting: "everything",
                 opt_in_signed_url: false,
-                version: 0,
-                assigned_tags: [],
-                is_published: false,
                 max_call_duration_ms: 3600000,
                 interruption_sensitivity: 0.9,
-                vocab_specialization: "medical",
                 allow_user_dtmf: true,
-                user_dtmf_options: {},
                 denoising_mode: "noise-and-background-speech-cancellation",
                 timezone: "America/Los_Angeles",
 
@@ -8920,9 +8634,6 @@ If the customer expresses interest in speaking with a specialist or agrees to le
 
             llmConfig: {
                 model: "gpt-4.1",
-                llm_id: null,
-                version: 0,
-                model_high_priority: true,
 
                 generalPrompt: `## Role
 
@@ -9099,8 +8810,7 @@ A: Each account must use its own email address and phone number. If you're arran
                 kb_config: {
                     top_k: 3,
                     filter_score: 0.6,
-                },
-                is_published: false,
+                }
             },
         },
         "support-triage": {
@@ -9114,14 +8824,8 @@ A: Each account must use its own email address and phone number. If you're arran
 
                 agentType: "single_prompt",
                 voiceId: "retell-Cimo",
-                voice_id: "retell-Cimo",
                 language: "en-US",
                 phoneNumber: null,
-                response_engine: {
-                    llm_id: "",
-                    type: "retell-llm",
-                    version: 0,
-                },
 
                 generalTools: [
                     {
@@ -9155,13 +8859,9 @@ A: Each account must use its own email address and phone number. If you're arran
                 // Call settings
                 data_storage_setting: "everything",
                 opt_in_signed_url: false,
-                version: 0,
-                assigned_tags: [],
-                is_published: false,
                 max_call_duration_ms: 3600000,
                 interruption_sensitivity: 0.9,
                 allow_user_dtmf: true,
-                user_dtmf_options: {},
                 denoising_mode: "noise-and-background-speech-cancellation",
                 timezone: "America/Los_Angeles",
 
@@ -9205,9 +8905,6 @@ A: Each account must use its own email address and phone number. If you're arran
 
             llmConfig: {
                 model: "gpt-4.1",
-                llm_id: null,
-                version: 0,
-                model_high_priority: true,
 
                 generalPrompt: `## Role
 
@@ -9316,8 +9013,7 @@ A: Open the **Recycle Bin**, locate the file, right-click it, and select **Resto
                 kb_config: {
                     filter_score: 0.6,
                     top_k: 3,
-                },
-                is_published: false,
+                }
             },
         },
         "after-hours-support-guard": {
@@ -9331,14 +9027,8 @@ A: Open the **Recycle Bin**, locate the file, right-click it, and select **Resto
 
                 agentType: "single_prompt",
                 voiceId: "retell-Cimo",
-                voice_id: "retell-Cimo",
                 language: "en-US",
                 phoneNumber: null,
-                response_engine: {
-                    llm_id: "",
-                    type: "retell-llm",
-                    version: 0,
-                },
 
                 generalTools: [
                     {
@@ -9445,13 +9135,9 @@ A: Open the **Recycle Bin**, locate the file, right-click it, and select **Resto
                 // Call settings
                 data_storage_setting: "everything",
                 opt_in_signed_url: false,
-                version: 0,
-                assigned_tags: [],
-                is_published: false,
                 max_call_duration_ms: 3600000,
                 interruption_sensitivity: 0.9,
                 allow_user_dtmf: true,
-                user_dtmf_options: {},
                 timezone: "America/Los_Angeles",
 
                 voice_temperature: 1,
@@ -9495,9 +9181,6 @@ A: Open the **Recycle Bin**, locate the file, right-click it, and select **Resto
 
             llmConfig: {
                 model: "gpt-4.1",
-                llm_id: null,
-                version: 0,
-                model_high_priority: true,
 
                 generalPrompt: `## Role
 
@@ -9699,8 +9382,7 @@ Provide a natural variation of:
                 kb_config: {
                     top_k: 3,
                     filter_score: 0.6,
-                },
-                is_published: false,
+                }
             },
         },
         "service-appointment-booking": {
@@ -9714,14 +9396,8 @@ Provide a natural variation of:
 
                 agentType: "single_prompt",
                 voiceId: "retell-Chloe",
-                voice_id: "retell-Chloe",
                 language: "en-US",
                 phoneNumber: null,
-                response_engine: {
-                    llm_id: "",
-                    type: "retell-llm",
-                    version: 0,
-                },
 
                 generalTools: [
                     {
@@ -9816,14 +9492,10 @@ Provide a natural variation of:
                 // Call settings
                 data_storage_setting: "everything",
                 opt_in_signed_url: false,
-                version: 0,
-                assigned_tags: [],
-                is_published: false,
                 max_call_duration_ms: 3600000,
                 interruption_sensitivity: 0.9,
                 begin_message_delay_ms: 0,
                 allow_user_dtmf: true,
-                user_dtmf_options: {},
                 denoising_mode: "noise-and-background-speech-cancellation",
                 timezone: "America/Los_Angeles",
 
@@ -9856,9 +9528,6 @@ Provide a natural variation of:
 
             llmConfig: {
                 model: "gpt-4.1",
-                llm_id: null,
-                version: 0,
-                model_high_priority: true,
 
                 generalPrompt: `## Role
 
@@ -10080,8 +9749,7 @@ Agent: What about [Y]?
                 kb_config: {
                     top_k: 3,
                     filter_score: 0.6,
-                },
-                is_published: false,
+                }
             },
         },
         "live-call-translator": {
@@ -10095,7 +9763,6 @@ Agent: What about [Y]?
 
                 agentType: "single_prompt",
                 voiceId: "retell-Andrea",
-                voice_id: "retell-Andrea",
                 language: [
                     "en-US",
                     "es-ES",
@@ -10109,11 +9776,6 @@ Agent: What about [Y]?
                     "nl-NL",
                 ],
                 phoneNumber: null,
-                response_engine: {
-                    llm_id: "",
-                    type: "retell-llm",
-                    version: 0,
-                },
 
                 generalTools: [
                     {
@@ -10147,13 +9809,9 @@ Agent: What about [Y]?
                 // Call settings
                 data_storage_setting: "everything",
                 opt_in_signed_url: false,
-                version: 0,
-                assigned_tags: [],
-                is_published: false,
                 max_call_duration_ms: 3600000,
                 interruption_sensitivity: 0.9,
                 allow_user_dtmf: true,
-                user_dtmf_options: {},
                 denoising_mode: "noise-and-background-speech-cancellation",
                 timezone: "America/Los_Angeles",
 
@@ -10193,9 +9851,6 @@ Agent: What about [Y]?
 
             llmConfig: {
                 model: "gpt-4.1",
-                llm_id: null,
-                version: 0,
-                model_high_priority: true,
 
                 generalPrompt: `## Role
 
@@ -10365,8 +10020,7 @@ Your role is **translation only**.
                 kb_config: {
                     top_k: 3,
                     filter_score: 0.6,
-                },
-                is_published: false,
+                }
             },
         },
         "order-status-checker": {
@@ -10380,14 +10034,8 @@ Your role is **translation only**.
 
                 agentType: "single_prompt",
                 voiceId: "retell-Cimo",
-                voice_id: "retell-Cimo",
                 language: "en-US",
                 phoneNumber: null,
-                response_engine: {
-                    llm_id: "",
-                    type: "retell-llm",
-                    version: 0,
-                },
 
                 generalTools: [
                     {
@@ -10428,14 +10076,10 @@ Your role is **translation only**.
                 // Call settings
                 data_storage_setting: "everything",
                 opt_in_signed_url: false,
-                version: 0,
-                assigned_tags: [],
-                is_published: false,
                 max_call_duration_ms: 3600000,
                 interruption_sensitivity: 0.9,
                 begin_message_delay_ms: 600,
                 allow_user_dtmf: true,
-                user_dtmf_options: {},
                 denoising_mode: "noise-and-background-speech-cancellation",
                 timezone: "America/Los_Angeles",
 
@@ -10482,9 +10126,6 @@ Your role is **translation only**.
 
             llmConfig: {
                 model: "gpt-4.1",
-                llm_id: null,
-                version: 0,
-                model_high_priority: true,
 
                 generalPrompt: `## Role
 
@@ -10644,8 +10285,7 @@ If the caller says "Hold on," "One moment," or "Please wait," respond exactly wi
                 kb_config: {
                     filter_score: 0.6,
                     top_k: 3,
-                },
-                is_published: false,
+                }
             },
         },
         "ivr-navigation": {
@@ -10659,14 +10299,8 @@ If the caller says "Hold on," "One moment," or "Please wait," respond exactly wi
 
                 agentType: "single_prompt",
                 voiceId: "retell-Cimo",
-                voice_id: "retell-Cimo",
                 language: "en-US",
                 phoneNumber: null,
-                response_engine: {
-                    llm_id: "",
-                    type: "retell-llm",
-                    version: 0,
-                },
 
                 generalTools: [
                     {
@@ -10687,14 +10321,10 @@ If the caller says "Hold on," "One moment," or "Please wait," respond exactly wi
                 // Call settings
                 data_storage_setting: "everything",
                 opt_in_signed_url: false,
-                version: 0,
-                assigned_tags: [],
-                is_published: false,
                 max_call_duration_ms: 3600000,
                 interruption_sensitivity: 0.9,
                 stt_mode: "accurate",
                 allow_user_dtmf: true,
-                user_dtmf_options: {},
                 denoising_mode: "noise-and-background-speech-cancellation",
                 timezone: "America/Los_Angeles",
 
@@ -10733,9 +10363,6 @@ If the caller says "Hold on," "One moment," or "Please wait," respond exactly wi
 
             llmConfig: {
                 model: "gpt-4.1",
-                llm_id: null,
-                version: 0,
-                model_high_priority: true,
 
                 generalPrompt: `## Role
 
@@ -11016,8 +10643,7 @@ NO_RESPONSE_NEEDED`,
                 kb_config: {
                     top_k: 3,
                     filter_score: 0.6,
-                },
-                is_published: false,
+                }
             },
         }
     }
