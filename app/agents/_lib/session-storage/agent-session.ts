@@ -26,6 +26,22 @@ export type SpeechSettings = {
 }
 
 // ===================================================================
+// =============== TTS_voiceSettings DEFAULT & TYPES =================
+// ===================================================================
+
+export type TTS_voiceSettings = {
+    voice_temperature: number
+    voice_speed: number
+    volume: number
+}
+
+export const DEFAULT_TTS_VOICE_SETTINGS = {
+    voice_temperature: 1,
+    voice_speed: 1,
+    volume: 1,
+} satisfies TTS_voiceSettings
+
+// ===================================================================
 // ==================== HANDBOOK DEFAULT & TYPES =====================
 // ===================================================================
 
@@ -278,6 +294,22 @@ export const DEFAULT_POST_CALL_ANALYSIS_SETTINGS = {
 } satisfies PostCallAnalysisSettings
 
 
+// =================================================================
+// ==================== BEGIN MESSAGE DEFAULT ======================
+// =================================================================
+
+export type BeginMessageSettings = {
+    start_speaker: "user" | "agent"
+    begin_message_delay_ms: number
+    begin_message: string
+}
+
+export const DEFAULT_BEGIN_MESSAGE_SETTINGS = {
+    start_speaker: "user",
+    begin_message_delay_ms: 1000,
+    begin_message: "Hey I am a virtual assistant calling from Retell Hospital.",
+} satisfies BeginMessageSettings
+
 
 // =================================================================
 // ==================== CALL SETTINGS DEFAULT ======================
@@ -311,8 +343,17 @@ export const DEFAULT_WEBHOOK_SETTINGS = {
 // ================ CALL SETTINGS DEFAULT END ======================
 // =================================================================
 
+// added for templates strict checking
+export type AgentSessionBaseSettings =
+    Partial<CallSettings> &
+    WebhookSettings &
+    SecurityFallbackSettings &
+    PostCallAnalysisSettings &
+    Partial<SpeechSettings> &
+    Partial<TTS_voiceSettings> &
+    Partial<RealtimeTranscriptionSettings>
 
-export type AgentSessionConfig = Record<string, unknown> & {
+export type AgentSessionConfig = AgentSessionBaseSettings & {
     agentType: string
     voiceId: string | null
     language: AgentLanguage
@@ -329,16 +370,18 @@ export type AgentSessionConfig = Record<string, unknown> & {
     guardrail_config: SecurityFallbackSettings["guardrail_config"]
     post_call_analysis_data: PostCallAnalysisData[]
     post_call_analysis_model: PostCallAnalysisModel
-    handbook_config?: HandbookConfig
-    timezone?: string
+    handbook_config: HandbookConfig
+    timezone: string
 
     auto_close_message?: string | null
 }
 
-export type AgentSessionLlmConfig = Record<string, unknown> & {
+export type AgentSessionLlmConfig = Partial<BeginMessageSettings> & {
     model: string
     generalPrompt: string
     mcps: McpConfig[]
+
+    default_dynamic_variables?: Record<string, string>
     knowledge_base_ids?: string[]
     kb_config?: KnowledgeBaseConfig
 }
@@ -367,6 +410,7 @@ const EMPTY_AGENT: AgentSessionAgent = {
     name: "Untitled Agent",
     draftVersion: 1,
     config: {
+        ...DEFAULT_TTS_VOICE_SETTINGS,
         ...DEFAULT_CALL_SETTINGS,
         ...DEFAULT_WEBHOOK_SETTINGS,
         ...DEFAULT_SECURITY_FALLBACK_SETTINGS,
@@ -385,6 +429,10 @@ const EMPTY_AGENT: AgentSessionAgent = {
         model: "gpt-4.1",
         generalPrompt: "",
         mcps: [],
+        ...DEFAULT_BEGIN_MESSAGE_SETTINGS,
+        default_dynamic_variables: {
+            customer_name: "John Doe",
+        },
         knowledge_base_ids: [],
         kb_config: DEFAULT_KNOWLEDGE_BASE_CONFIG,
     },
@@ -399,6 +447,7 @@ const EMPTY_CHAT_AGENT: AgentSessionAgent = {
     name: "Untitled Agent",
     draftVersion: 1,
     config: {
+        ...DEFAULT_TTS_VOICE_SETTINGS,
         ...DEFAULT_CHAT_SETTINGS,
         ...DEFAULT_WEBHOOK_SETTINGS,
         ...DEFAULT_SECURITY_FALLBACK_SETTINGS,
@@ -418,6 +467,10 @@ const EMPTY_CHAT_AGENT: AgentSessionAgent = {
         model: "gpt-4.1",
         generalPrompt: "",
         mcps: [],
+        ...DEFAULT_BEGIN_MESSAGE_SETTINGS,
+        default_dynamic_variables: {
+            customer_name: "John Doe",
+        },
         knowledge_base_ids: [],
         kb_config: DEFAULT_KNOWLEDGE_BASE_CONFIG,
     },

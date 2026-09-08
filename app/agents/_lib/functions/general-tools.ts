@@ -98,9 +98,30 @@ export type TransferCallTool = {
   ignore_e164_validation?: boolean
 } & ExecutionMessageFields
 
+export type FunctionParameterType =
+  | "string"
+  | "number"
+  | "boolean"
+  | "object"
+  | "array"
+
+export type FunctionParameterSchema = {
+  type?: FunctionParameterType
+  description?: string
+  enum?: string[] | number[] | boolean[]
+  properties?: Record<string, FunctionParameterSchema>
+  items?: FunctionParameterSchema
+}
+
+export type FunctionParameters = {
+  type: "object"
+  properties: Record<string, FunctionParameterSchema>
+  required?: string[]
+}
+
 export type FunctionParameter = {
   name: string
-  type: "string" | "number" | "boolean" | "object" | "array"
+  type: FunctionParameterType
   description: string
   required: boolean
 }
@@ -116,11 +137,7 @@ export type CustomFunctionTool = {
   max_retry?: number
   method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE"
   parameter_type?: "form" | "json"
-  parameters?: {
-    type: "object"
-    properties: unknown
-    required?: string[]
-  }
+  parameters?: FunctionParameters
   query_params?: Record<string, string> | KeyValue[]
   response_variables?: Record<string, string> | KeyValue[]
   speak_after_execution?: boolean
