@@ -20,6 +20,7 @@ import {
 import { CallSettings } from "@/app/agents/_components/call/call-settings"
 import { ChatSettings } from "@/app/agents/_components/chat-settings/chat-settings"
 import { GeneralToolsEditor } from "@/app/agents/_components/functions/general-tools-editor"
+import { KnowledgeBaseSettings } from "@/app/agents/_components/knowledge-base/knowledge-base-settings"
 import { McpTools } from "@/app/agents/_components/mcp/mcp-tools"
 import { PostCallAnalysisData } from "@/app/agents/_components/post-call/post-call-analysis-data"
 import { RealtimeTranscriptionSettings } from "@/app/agents/_components/realtime/realtime-settings"
@@ -44,7 +45,7 @@ const SECONDARY_TABS = [
     icon: BlocksIcon,
     content: GeneralToolsEditor,
   },
-  { id: "knowledge-base", label: "Knowledge Base", icon: BookOpenIcon },
+  { id: "knowledge-base", label: "Knowledge Base", icon: BookOpenIcon, content: KnowledgeBaseSettings },
 
   { id: "chat-settings", label: "Chat Settings", icon: MessageSquareTextIcon, content: ChatSettings },
 

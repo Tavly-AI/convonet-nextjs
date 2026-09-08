@@ -90,7 +90,7 @@ export function AgentSessionMain() {
                     <TabsTrigger value="create" className="px-4">
                         Create
                     </TabsTrigger>
-                    <TabsTrigger value="simulation" className="px-4">
+                    <TabsTrigger value="simulation" className="px-4" disabled>
                         Simulation
                     </TabsTrigger>
                 </TabsList>

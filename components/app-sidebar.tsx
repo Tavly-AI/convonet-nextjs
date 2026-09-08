@@ -251,7 +251,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data1.navMain} />
+        {/* <NavMain items={data1.navMain} /> */}
 
         {!isSettings && (
           <>
