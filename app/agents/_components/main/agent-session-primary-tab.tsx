@@ -21,7 +21,7 @@ export function AgentSessionPrimaryTab() {
   const [voiceOpen, setVoiceOpen] = React.useState(false)
 
   return (
-    <Card className="min-h-96 gap-0 py-0">
+    <Card className="max-h-[91vh] min-h-0 overflow-y-auto gap-0 py-0">
       <div className="flex min-h-full flex-col">
         <div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-b px-4 py-3 text-xs">
           <Metric label="Agent Details" />
