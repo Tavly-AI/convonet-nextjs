@@ -109,6 +109,21 @@ export const DEFAULT_CHAT_SETTINGS = {
 } satisfies ChatSettings
 
 // =================================================================
+// ==================== KBASE DEFAULT & TYPES ======================
+// =================================================================
+
+export type KnowledgeBaseConfig = {
+    top_k: number
+    filter_score: number
+}
+
+export const DEFAULT_KNOWLEDGE_BASE_CONFIG = {
+    top_k: 3,
+    filter_score: 0.6,
+} satisfies KnowledgeBaseConfig
+
+
+// =================================================================
 // ================== SECURITY DEFAULT & TYPES =====================
 // =================================================================
 
@@ -324,6 +339,8 @@ export type AgentSessionLlmConfig = Record<string, unknown> & {
     model: string
     generalPrompt: string
     mcps: McpConfig[]
+    knowledge_base_ids?: string[]
+    kb_config?: KnowledgeBaseConfig
 }
 
 export type AgentSessionAgent = {
@@ -368,6 +385,8 @@ const EMPTY_AGENT: AgentSessionAgent = {
         model: "gpt-4.1",
         generalPrompt: "",
         mcps: [],
+        knowledge_base_ids: [],
+        kb_config: DEFAULT_KNOWLEDGE_BASE_CONFIG,
     },
     createdAt: null,
     updatedAt: null,
@@ -399,6 +418,8 @@ const EMPTY_CHAT_AGENT: AgentSessionAgent = {
         model: "gpt-4.1",
         generalPrompt: "",
         mcps: [],
+        knowledge_base_ids: [],
+        kb_config: DEFAULT_KNOWLEDGE_BASE_CONFIG,
     },
     createdAt: null,
     updatedAt: null,
@@ -482,6 +503,13 @@ export function initializeAgentSession(agent: AgentSessionSource | null = null) 
             mcps: Array.isArray(storedLlmConfig.mcps)
                 ? storedLlmConfig.mcps as McpConfig[]
                 : EMPTY_AGENT.llmConfig.mcps,
+            knowledge_base_ids: Array.isArray(storedLlmConfig.knowledge_base_ids)
+                ? storedLlmConfig.knowledge_base_ids.filter((id): id is string => typeof id === "string")
+                : EMPTY_AGENT.llmConfig.knowledge_base_ids ?? [],
+            kb_config: {
+                ...EMPTY_AGENT.llmConfig.kb_config,
+                ...(isRecord(storedLlmConfig.kb_config) ? storedLlmConfig.kb_config : {}),
+            } as KnowledgeBaseConfig,
         },
     }, false)
 }
@@ -556,6 +584,13 @@ export function initializeChatAgentSession(
             mcps: Array.isArray(storedLlmConfig.mcps)
                 ? storedLlmConfig.mcps as McpConfig[]
                 : EMPTY_CHAT_AGENT.llmConfig.mcps,
+            knowledge_base_ids: Array.isArray(storedLlmConfig.knowledge_base_ids)
+                ? storedLlmConfig.knowledge_base_ids.filter((id): id is string => typeof id === "string")
+                : EMPTY_CHAT_AGENT.llmConfig.knowledge_base_ids ?? [],
+            kb_config: {
+                ...EMPTY_CHAT_AGENT.llmConfig.kb_config,
+                ...(isRecord(storedLlmConfig.kb_config) ? storedLlmConfig.kb_config : {}),
+            } as KnowledgeBaseConfig,
         },
     }, false)
 }
@@ -859,8 +894,57 @@ export function writeMcps(mcps: McpConfig[]) {
     return mcps
 }
 
+// =================================================================
+// ======================== KNOWLEDGE BASE =========================
+// =================================================================
+
+export function getKnowledgeBaseSettings() {
+    const llmConfig = getAgentSession()?.llmConfig
+
+    return {
+        knowledge_base_ids: Array.isArray(llmConfig?.knowledge_base_ids)
+            ? llmConfig.knowledge_base_ids
+            : [],
+        kb_config: {
+            ...DEFAULT_KNOWLEDGE_BASE_CONFIG,
+            ...(llmConfig?.kb_config ?? {}),
+        },
+    }
+}
+
+export function writeKnowledgeBaseSettings(settings: {
+    knowledge_base_ids?: string[]
+    kb_config?: Partial<KnowledgeBaseConfig>
+}) {
+    const agent = getAgentSession()
+    if (!agent) throw new Error("Agent session is not initialized.")
+
+    const current = getKnowledgeBaseSettings()
+    const nextSettings = {
+        knowledge_base_ids: settings.knowledge_base_ids ?? current.knowledge_base_ids,
+        kb_config: {
+            ...current.kb_config,
+            ...settings.kb_config,
+        },
+    }
+
+    writeAgentSession({
+        ...agent,
+        llmConfig: {
+            ...agent.llmConfig,
+            ...nextSettings,
+        },
+    })
+
+    return nextSettings
+}
+
 function getStorage() {
     return typeof window === "undefined" ? null : window.sessionStorage
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === "object" && value !== null && !Array.isArray(value)
 }
 
 // =================================================================

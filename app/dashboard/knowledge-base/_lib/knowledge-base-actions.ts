@@ -18,6 +18,26 @@ type KnowledgeBaseFile = {
   status?: string | null
 }
 
+export type WorkspaceKnowledgeBase = {
+  id: string
+  name: string
+}
+
+// ==================================================
+// ============== GET KNOWLEDGE BASE ================
+// ==================================================
+
+
+export async function getWorkspaceKnowledgeBases(): Promise<WorkspaceKnowledgeBase[]> {
+  const workspaceId = await getCurrentWorkspaceId()
+
+  return prisma.knowledgeBase.findMany({
+    where: { workspaceId },
+    orderBy: { createdAt: "desc" },
+    select: { id: true, name: true },
+  })
+}
+
 // ==================================================
 // ============ CREATE KNOWLEDGE BASE ===============
 // ==================================================
