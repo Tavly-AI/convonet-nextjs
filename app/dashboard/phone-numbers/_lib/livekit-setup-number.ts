@@ -6,6 +6,7 @@ import {
     SIPDispatchRuleIndividual,
     SIPOutboundTrunkInfo,
     SIPTransport,
+    SIPMediaEncryption
 } from "@livekit/protocol"
 import { SipClient } from "livekit-server-sdk"
 
@@ -98,6 +99,7 @@ export async function setupLiveKitNumber({
             authUsername,
             authPassword,
             transport: toSipTransport(transport),
+            mediaEncryption: SIPMediaEncryption.SIP_MEDIA_ENCRYPT_REQUIRE,
         }
     )
 
@@ -106,7 +108,8 @@ export async function setupLiveKitNumber({
         phoneNumbers,
         {
             krispEnabled: true,
-        }
+            mediaEncryption: SIPMediaEncryption.SIP_MEDIA_ENCRYPT_REQUIRE,
+        },
     )
 
     const dispatchRule = await sipClient.createSipDispatchRule(

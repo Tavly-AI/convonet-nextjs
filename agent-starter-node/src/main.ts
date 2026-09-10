@@ -6,7 +6,7 @@ import { createAgent } from './agent.ts';
 import * as openai from "@livekit/agents-plugin-openai"
 import * as deepgram from "@livekit/agents-plugin-deepgram"
 import * as elevenlabs from "@livekit/agents-plugin-elevenlabs"
-
+import * as sarvam from "@livekit/agents-plugin-sarvam"
 
 // Load environment variables from a local file.
 // Make sure to set LIVEKIT_URL, LIVEKIT_API_KEY, and LIVEKIT_API_SECRET
@@ -22,17 +22,21 @@ export default defineAgent({
       llm: openai.LLM.withGroq({
         model: "openai/gpt-oss-120b",
       }),
+
       // STT → Deepgram directly
       stt: new deepgram.STT({
         model: "nova-3",
         language: "en",
       }),
 
-      // TTS → ElevenLabs directly
-      tts: new elevenlabs.TTS({
-        model: "eleven_flash_v2_5",
-        voiceId: "21m00Tcm4TlvDq8ikWAM",
+
+      tts: new sarvam.TTS({
+        model: "bulbul:v3",
+        speaker: "shubh",
+        targetLanguageCode: "en-IN",
+        sampleRate: 22050,
       }),
+
 
       turnHandling: {
         // Turn detection determines when the user is speaking and when the agent should respond.
@@ -45,14 +49,14 @@ export default defineAgent({
         // backchannel like "mhm" or "right", so the agent keeps talking through the latter.
         interruption: { mode: 'adaptive' },
         // Allow the LLM to generate a response while waiting for the end of turn
-        preemptiveGeneration: { enabled: true },
+        preemptiveGeneration: { enabled: false },
       },
 
       // Expressive mode injects the TTS provider's markup guide into the LLM prompt, so the model
       // emits inline delivery tags (emotion, pacing, non-verbal sounds) that the TTS renders and
       // the transcript never shows. Requires a TTS model that supports markup, such as the Fish
       // Audio model above.
-      expressive: true,
+      expressive: false,
     });
 
     // Start the session, which initializes the voice pipeline and warms up the models
@@ -64,6 +68,10 @@ export default defineAgent({
         // Works for both WebRTC and telephony (SIP) participants
         noiseCancellation: audioEnhancement({ model: 'quailVfS' }),
       },
+    });
+
+    session.generateReply({
+      instructions: "Greet the user in a helpful and friendly manner.",
     });
 
     // // Add a virtual avatar to the session, if desired

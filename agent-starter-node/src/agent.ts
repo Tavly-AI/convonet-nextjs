@@ -1,5 +1,4 @@
 import { Agent, dedent } from '@livekit/agents';
-import * as openai from '@livekit/agents-plugin-openai';
 
 // Build a custom voice AI assistant with the functional `Agent.create` API
 export function createAgent() {
@@ -37,12 +36,6 @@ export function createAgent() {
         - For medical, legal, or financial topics, provide general information only and suggest consulting a qualified professional.
         - Protect privacy and minimize sensitive data.
       `,
-
-    // A Large Language Model (LLM) is your agent's brain, processing user input and generating a response
-    // See all available models at https://docs.livekit.io/agents/models/llm/
-    // Use Groq directly via GROQ_API_KEY rather than LiveKit Inference, whose
-    // gateway credits are independent of the provider account.
-    llm: openai.LLM.withGroq({ model: 'llama-3.3-70b-versatile' }),
 
     // To use a realtime model instead of a voice pipeline, replace the LLM
     // with a RealtimeModel and remove the STT/TTS from the AgentSession
