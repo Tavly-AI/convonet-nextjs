@@ -7,10 +7,20 @@ import { setupLiveKitNumber, updateLiveKitNumber } from "../../_lib/livekit-setu
 import { updateCurrentWorkspaceTelnyxSipTrunk } from "../../_lib/telnyx-subaccount-actions"
 import { updateCurrentWorkspaceTwilioSipTrunk } from "../../_lib/twillio-subaccount-actions"
 import type { PhoneNumberProvider } from "./filters"
-import { useSearchParams } from "next/navigation"
 
 type PurchasedNumber = {
     sid: string
+    orderId?: string | null
+}
+
+type TelnyxOrderPhoneNumber = {
+    phone_number?: string
+    requirements_met?: boolean
+    status?: "pending" | "success" | "failure"
+}
+
+type TelnyxOrderStatusResponse = {
+    phoneNumbers?: TelnyxOrderPhoneNumber[]
 }
 
 type SipTrunkSetup = {
@@ -34,11 +44,7 @@ type SipTrunkSetup = {
     }
 }
 
-export async function buyNumber(phoneNumber: string) {
-
-    const searchParams = useSearchParams()
-    const provider: PhoneNumberProvider = searchParams.get("provider") === "telnyx" ? "telnyx" : "twilio"
-
+export async function buyNumber(phoneNumber: string, provider: PhoneNumberProvider) {
 
     // TWILLIO PURCHASE NUMBER API
     let purchasedNumber: PurchasedNumber
@@ -58,6 +64,17 @@ export async function buyNumber(phoneNumber: string) {
     } catch (error) {
         toast.error(error instanceof Error ? error.message : `Failed to purchase ${provider === "telnyx" ? "Telnyx" : "Twilio"} number.`)
         return
+    }
+
+    if (provider === "telnyx") {
+        try {
+            if (!purchasedNumber.orderId) { throw new Error("Telnyx did not return a number order ID.") }
+
+            await waitForTelnyxNumberActivation(purchasedNumber.orderId, phoneNumber)
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : "Failed to confirm Telnyx number activation.")
+            return
+        }
     }
 
     // UPDATE TWILLIO SIP TRUNKING
@@ -116,5 +133,25 @@ export async function buyNumber(phoneNumber: string) {
         toast.error(
             error instanceof Error ? error.message : "Failed to setup LiveKit number."
         )
+    }
+}
+
+async function waitForTelnyxNumberActivation(orderId: string, phoneNumber: string) {
+    while (true) {
+        const response = await fetch(`/api/telnyx/check-number-status?${new URLSearchParams({ orderId }).toString()}`)
+
+        const data = await response.json() as TelnyxOrderStatusResponse & { error?: string }
+
+        if (!response.ok) { throw new Error(data.error ?? "Failed to check Telnyx number order status.") }
+
+        const purchasedNumber = data.phoneNumbers?.find((number) => number.phone_number === phoneNumber)
+
+        if (!purchasedNumber) { throw new Error("Telnyx number order does not include the purchased phone number.") }
+
+        if (purchasedNumber.status === "success" && purchasedNumber.requirements_met) { return }
+
+        if (purchasedNumber.status === "failure") { throw new Error("Telnyx failed to activate the purchased phone number.") }
+
+        await new Promise((resolve) => setTimeout(resolve, 2000))
     }
 }

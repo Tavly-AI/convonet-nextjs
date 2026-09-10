@@ -20,16 +20,17 @@ export async function POST(request: NextRequest) {
         const purchasedNumber = order.data?.phone_numbers?.[0]
 
         return NextResponse.json({
-            sid: purchasedNumber?.id ?? order.data?.id ?? null,
-            phoneNumber: purchasedNumber?.phone_number ?? phoneNumber,
-            friendlyName: purchasedNumber?.phone_number ?? phoneNumber,
+            orderId: order.data?.id ?? null,
+            sid: purchasedNumber?.id ?? null,
+            phoneNumber: purchasedNumber?.phone_number ?? null,
+            friendlyName: purchasedNumber?.phone_number ?? null,
             capabilities: {
                 voice: true,
                 SMS: false,
                 MMS: false,
                 fax: false,
             },
-            status: purchasedNumber?.status ?? order.data?.status ?? "pending",
+            status: purchasedNumber?.status ?? null,
         })
     } catch (error) {
         console.error("Failed to purchase Telnyx phone number:", error)
@@ -37,3 +38,5 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Failed to purchase Telnyx phone number" }, { status: 500 })
     }
 }
+
+// https://developers.telnyx.com/api-reference/phone-number-orders/create-a-number-order

@@ -1,15 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
 import Telnyx from "telnyx"
 
+import { getCurrentWorkspaceTelnyxManagedAccount } from "@/app/dashboard/phone-numbers/_lib/telnyx-subaccount-actions"
+
 type TelnyxNumberType = "local" | "toll_free"
 
-function getTelnyxClient() {
-    const apiKey = process.env.TELNYX_API_KEY
-
-    if (!apiKey) {
-        throw new Error("TELNYX_API_KEY is not configured")
-    }
-
+function getTelnyxClient(apiKey: string) {
     return new Telnyx({ apiKey })
 }
 
@@ -71,13 +67,19 @@ export async function GET(request: NextRequest) {
 
         if (!country) { return NextResponse.json({ error: "country is required" }, { status: 400 }) }
 
-        const client = getTelnyxClient()
+        // handle quick-ship-exception
+        const phoneNumberType = getPhoneNumberType(type)
+        const isUsTollFree = country === "US" && phoneNumberType === "toll_free"
+
+        const managedAccount = await getCurrentWorkspaceTelnyxManagedAccount()
+        const client = getTelnyxClient(managedAccount.apiKey)
         const numbers = await client.availablePhoneNumbers.list({
             filter: {
                 country_code: country,
                 phone_number_type: getPhoneNumberType(type),
                 features: ["voice"],
                 limit: 100,
+                ...(isUsTollFree ? { quickship: true } : {}),
                 ...(search?.trim() ? { phone_number: { contains: search.trim(), } } : {}),
             },
         })

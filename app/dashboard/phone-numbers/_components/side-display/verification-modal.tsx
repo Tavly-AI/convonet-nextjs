@@ -52,12 +52,12 @@ export async function VerificationModal() {
     subaccountAuthToken: twilioSubaccount.authToken,
   })
 
-  const telnyxManagedAccount = await getOrCreateTelnyxManagedAccount(user.workspace.id)
+  // const telnyxManagedAccount = await getOrCreateTelnyxManagedAccount(user.workspace.id)
 
-  await getOrCreateTelnyxSipTrunk({
-    workspaceId: user.workspace.id,
-    managedAccount: telnyxManagedAccount,
-  })
+  // await getOrCreateTelnyxSipTrunk({
+  //   workspaceId: user.workspace.id,
+  //   managedAccount: telnyxManagedAccount,
+  // })
 
   return (
     <Dialog>

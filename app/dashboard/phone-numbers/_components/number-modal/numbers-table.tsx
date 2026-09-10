@@ -15,6 +15,8 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { buyNumber } from "./buy-number-class"
+import { useSearchParams } from "next/navigation"
+import type { PhoneNumberProvider } from "./filters"
 
 export type AvailableNumber = {
   phoneNumber: string
@@ -51,12 +53,16 @@ export function NumbersTable({
 }) {
   const [isBuying, setIsBuying] = useState(false)
 
+  // resolve provider from params
+  const searchParams = useSearchParams()
+  const provider: PhoneNumberProvider = searchParams.get("provider") === "telnyx" ? "telnyx" : "twilio"
+
   async function handleBuyNumber(phoneNumber: string) {
     if (isBuying) return
     setIsBuying(true)
 
     try {
-      await buyNumber(phoneNumber)
+      await buyNumber(phoneNumber, provider)
     } finally {
       setIsBuying(false)
     }
