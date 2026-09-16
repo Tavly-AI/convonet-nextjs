@@ -3,10 +3,9 @@ import { audioEnhancement } from '@livekit/plugins-ai-coustics';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'node:url';
 import { createAgent } from './agent.ts';
-import * as openai from "@livekit/agents-plugin-openai"
-import * as deepgram from "@livekit/agents-plugin-deepgram"
-import * as elevenlabs from "@livekit/agents-plugin-elevenlabs"
-import * as sarvam from "@livekit/agents-plugin-sarvam"
+import { getAgentConfig, getAgentIdFromJob } from './ingestion/get-agent-config.ts';
+import { createVoiceStack } from './ingestion/configure-voice-stack.ts';
+import { registerSessionDataHooks } from './data-hooks/main.ts';
 
 // Load environment variables from a local file.
 // Make sure to set LIVEKIT_URL, LIVEKIT_API_KEY, and LIVEKIT_API_SECRET
@@ -15,28 +14,17 @@ dotenv.config({ path: '.env.local' });
 
 export default defineAgent({
   entry: async (ctx) => {
+
+    const agentId = getAgentIdFromJob(ctx);
+    const agentConfig = await getAgentConfig(agentId);
+
+    const { llm, stt, tts } = createVoiceStack();
+
     // Set up a voice AI pipeline using AssemblyAI, Fish Audio, and the LiveKit turn detector
     const session = new voice.AgentSession({
-      // Speech-to-text (STT) is your agent's ears, turning the user's speech into text that the LLM can understand
-      // See all available models at https://docs.livekit.io/agents/models/stt/
-      llm: openai.LLM.withGroq({
-        model: "openai/gpt-oss-120b",
-      }),
-
-      // STT → Deepgram directly
-      stt: new deepgram.STT({
-        model: "nova-3",
-        language: "en",
-      }),
-
-
-      tts: new sarvam.TTS({
-        model: "bulbul:v3",
-        speaker: "shubh",
-        targetLanguageCode: "en-IN",
-        sampleRate: 22050,
-      }),
-
+      llm,
+      stt,
+      tts,
 
       turnHandling: {
         // Turn detection determines when the user is speaking and when the agent should respond.
@@ -59,19 +47,23 @@ export default defineAgent({
       expressive: false,
     });
 
+    // add data hooks
+    registerSessionDataHooks({ ctx, session, agentId });
+
+    // define agent before using it in session
+    const agent = createAgent(agentConfig);
+
     // Start the session, which initializes the voice pipeline and warms up the models
     await session.start({
-      agent: createAgent(),
+      agent,
       room: ctx.room,
       inputOptions: {
+        // Delete the room when this session closes so every participant disconnects.
+        deleteRoomOnClose: true,
         // ai-coustics QUAIL audio enhancement for noise cancellation
         // Works for both WebRTC and telephony (SIP) participants
         noiseCancellation: audioEnhancement({ model: 'quailVfS' }),
       },
-    });
-
-    session.generateReply({
-      instructions: "Greet the user in a helpful and friendly manner.",
     });
 
     // // Add a virtual avatar to the session, if desired
@@ -88,7 +80,7 @@ export default defineAgent({
     // Join the room and connect to the user
     await ctx.connect();
 
-    // Greet the user on joining
+    // Greet the user on joining.
     session.generateReply({
       instructions: 'Greet the user in a helpful and friendly manner.',
     });

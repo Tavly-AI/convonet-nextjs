@@ -106,6 +106,7 @@ async function main(): Promise<void> {
         participantName: args.participantName,
         waitUntilAnswered: args.waitUntilAnswered,
         ...(args.sipNumber ? { sipNumber: args.sipNumber } : {}),
+        maxCallDuration: 60 * 15
       },
     );
 

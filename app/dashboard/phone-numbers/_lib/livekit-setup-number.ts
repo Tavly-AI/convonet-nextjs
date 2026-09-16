@@ -99,7 +99,7 @@ export async function setupLiveKitNumber({
             authUsername,
             authPassword,
             transport: toSipTransport(transport),
-            mediaEncryption: SIPMediaEncryption.SIP_MEDIA_ENCRYPT_REQUIRE,
+            mediaEncryption: SIPMediaEncryption.SIP_MEDIA_ENCRYPT_ALLOW,
         }
     )
 
@@ -108,7 +108,7 @@ export async function setupLiveKitNumber({
         phoneNumbers,
         {
             krispEnabled: true,
-            mediaEncryption: SIPMediaEncryption.SIP_MEDIA_ENCRYPT_REQUIRE,
+            mediaEncryption: SIPMediaEncryption.SIP_MEDIA_ENCRYPT_ALLOW,
         },
     )
 

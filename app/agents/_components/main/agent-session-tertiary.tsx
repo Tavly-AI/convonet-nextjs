@@ -1,5 +1,6 @@
 import { Card, CardHeader } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import AgentSessionTertiaryClient, { AgentSessionLlmClient } from "./agent-session-tertiary-client";
 
 export default function AgentSessionTertiaryTab() {
     return (
@@ -12,8 +13,12 @@ export default function AgentSessionTertiaryTab() {
                             <TabsTrigger value="llm">Test LLM</TabsTrigger>
                         </TabsList>
                     </CardHeader>
-                    <TabsContent value="audio" />
-                    <TabsContent value="llm" />
+                    <TabsContent value="audio" className="mt-0 min-h-0 flex-1">
+                        <AgentSessionTertiaryClient />
+                    </TabsContent>
+                    <TabsContent value="llm" className="mt-0 min-h-0 flex-1">
+                        <AgentSessionLlmClient />
+                    </TabsContent>
                 </Tabs>
             </Card>
 

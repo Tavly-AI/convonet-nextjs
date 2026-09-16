@@ -82,8 +82,8 @@ export async function setupTwilioSipTrunk({ subaccountSid, subaccountAuthToken }
         // SIP REFER + PSTN transfers
         transferMode: "enable-all",
 
-        // Set caller ID as Transferee
-        transferCallerId: "from-transferee",
+        // Set caller ID as Transferor
+        transferCallerId: "from-transferor",
     })
 
     // create credentials
