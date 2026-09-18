@@ -16,6 +16,7 @@ export default defineAgent({
   entry: async (ctx) => {
 
     const agentId = getAgentIdFromJob(ctx);
+    // const agentId = "cmtsm3f05000beew2z65tit98"
     const agentConfig = await getAgentConfig(agentId);
 
     const { llm, stt, tts } = createVoiceStack();

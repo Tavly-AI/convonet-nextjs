@@ -315,12 +315,14 @@ export const DEFAULT_POST_CALL_ANALYSIS_SETTINGS = {
 
 export type BeginMessageSettings = {
     start_speaker: "user" | "agent"
+    begin_after_user_silence_ms: number
     begin_message_delay_ms: number
     begin_message: string
 }
 
 export const DEFAULT_BEGIN_MESSAGE_SETTINGS = {
     start_speaker: "user",
+    begin_after_user_silence_ms: 2000,
     begin_message_delay_ms: 1000,
     begin_message: "Hey I am a virtual assistant calling from Retell Hospital.",
 } satisfies BeginMessageSettings
@@ -1098,6 +1100,37 @@ export function writeModel(model: string) {
     })
 
     return model
+}
+
+// =================================================================
+// ======================== BEGIN MESSAGE ==========================
+// =================================================================
+
+export function getBeginMessageSettings(): BeginMessageSettings {
+    return {
+        ...DEFAULT_BEGIN_MESSAGE_SETTINGS,
+        ...(getAgentSession()?.llmConfig ?? {}),
+    }
+}
+
+export function writeBeginMessageSettings(settings: Partial<BeginMessageSettings>) {
+    const agent = getAgentSession()
+    if (!agent) throw new Error("Agent session is not initialized.")
+
+    const nextSettings = {
+        ...getBeginMessageSettings(),
+        ...settings,
+    }
+
+    writeAgentSession({
+        ...agent,
+        llmConfig: {
+            ...agent.llmConfig,
+            ...nextSettings,
+        },
+    })
+
+    return nextSettings
 }
 
 // =================================================================

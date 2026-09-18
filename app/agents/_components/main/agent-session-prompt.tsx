@@ -32,7 +32,7 @@ export function GeneralPrompt() {
             value={prompt}
             onChange={event => changePrompt(event.target.value)}
             placeholder={PLACEHOLDER}
-            className="min-h-[28rem] flex-1 resize-none border-muted-foreground/20 p-4 leading-6 shadow-none"
+            className="min-h-[90%] flex-1 resize-none border-muted-foreground/20 p-4 leading-6 shadow-none"
         />
     )
 }

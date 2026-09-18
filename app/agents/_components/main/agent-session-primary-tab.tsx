@@ -13,6 +13,7 @@ import { AgentHandbookDialog } from "./agent-session-handbook"
 import { LanguageSelect } from "./agent-session-language"
 import { LLMModelSelect } from "./agent-session-model"
 import { GeneralPrompt } from "./agent-session-prompt"
+import { AgentSessionStartSpeaker } from "./agent-session-start-speaker"
 import { TimezoneSelect } from "./agent-session-timezone"
 
 
@@ -47,6 +48,7 @@ export function AgentSessionPrimaryTab() {
 
         <div className="flex min-h-0 flex-1 flex-col p-4">
           <GeneralPrompt />
+          <AgentSessionStartSpeaker />
         </div>
       </div>
     </Card>
