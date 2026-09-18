@@ -4,6 +4,7 @@ import { autoSaveAgentSession } from "@/app/agents/actions"
 import type { GeneralTool } from "@/app/agents/_lib/functions/general-tools"
 import type { McpConfig } from "@/app/agents/_lib/mcp/mcp"
 import { getAgentTemplates } from "../../_data/templates-data-list"
+import type { LlmModel } from "../../_components/main/agent-session-model"
 
 const SESSION_KEY = "agent-session"
 
@@ -395,7 +396,7 @@ export type AgentSessionConfig = AgentSessionBaseSettings & {
 }
 
 export type AgentSessionLlmConfig = Partial<BeginMessageSettings> & {
-    model: string
+    model: LlmModel
     generalPrompt: string
     mcps: McpConfig[]
 
@@ -1087,7 +1088,7 @@ export function getModel() {
     return getAgentSession()?.llmConfig.model ?? "gpt-4.1"
 }
 
-export function writeModel(model: string) {
+export function writeModel(model: LlmModel) {
     const agent = getAgentSession()
     if (!agent) throw new Error("Agent session is not initialized.")
 

@@ -7,13 +7,17 @@ import { createCustomFunctionTools } from './agent-config/general-tools/custom-t
 import { endCallTool } from './agent-config/general-tools/end-call.ts';
 import { createPressDigitTool } from './agent-config/general-tools/press-digit.ts';
 import type { RuntimeAgentConfig } from './ingestion/get-agent-config.ts';
+import { getProviderLanguages } from './ingestion/configure-voice-stack.ts';
 
 // Build a custom voice AI assistant with the functional `Agent.create` API
 export function createAgent(agentConfig: RuntimeAgentConfig) {
+  const languages = getProviderLanguages(agentConfig.config.language);
+
   return Agent.create({
-    instructions: dedent`
-        You are a friendly, reliable voice assistant that answers questions, explains topics, and completes tasks with available tools.
-      `,
+    instructions: dedent` 
+      ${agentConfig.llmConfig.generalPrompt.trim() || DEFAULT_GENERAL_PROMPT}
+      Always respond in ${languages.gpt}.
+    `,
 
     tools: [
       endCallTool,
@@ -66,3 +70,11 @@ export function createAgent(agentConfig: RuntimeAgentConfig) {
     // ],
   });
 }
+
+
+
+// MICS CODE
+
+const DEFAULT_GENERAL_PROMPT = dedent`
+  You are a friendly, reliable voice assistant that answers questions, explains topics, and completes tasks with available tools.
+`;

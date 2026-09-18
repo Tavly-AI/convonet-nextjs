@@ -8,33 +8,22 @@ import * as cartesia from "@livekit/agents-plugin-cartesia";
 import * as elevenlabs from "@livekit/agents-plugin-elevenlabs";
 import * as sarvam from "@livekit/agents-plugin-sarvam";
 
-import type { LlmModel } from "../../../app/agents/_components/main/agent-session-model.tsx";
-import { VOICES_UPDATED } from "../../../app/agents/_data/voices-updated.ts";
+import { VOICES_UPDATED, type Voice } from "../../../app/agents/_data/voices-updated.ts";
+import type { RuntimeAgentConfig } from "./get-agent-config.ts";
+import type { LlmProvider } from "../../../app/agents/_components/main/agent-session-model.tsx";
 
-// export function createVoiceStack(agentConfig: RuntimeAgentConfig) {
-export function createVoiceStack() {
-
-    // const { config, llmConfig } = agentConfig;
-
-    const model: LlmModel = "gpt-4.1";
-    const voiceId = "db6b0ed5-d5d3-463d-ae85-518a07d3c2b4";
+export function createVoiceStack(agentConfig: RuntimeAgentConfig) {
 
     // ============================================================
     // =========================== LLM ============================
     // ============================================================
 
+    const model = agentConfig.llmConfig.model.trim() || "gpt-4.1";
+
     let llm;
 
     if (model.startsWith("gpt-")) {
-        // Booking calls include multiple required arguments. Reserve enough output
-        // tokens for the function call and the follow-up voice response.
-        llm = new openai.responses.LLM({
-            model,
-            maxOutputTokens: 512,
-            // Keep runtime validation in our tools. Strict decoding can exhaust the
-            // response budget for the booking tool's multi-field input schema.
-            strictToolSchema: false,
-        });
+        llm = new openai.responses.LLM({ model, maxOutputTokens: 512, strictToolSchema: false });
     } else if (model.startsWith("claude-")) {
         llm = new anthropic.LLM({ model });
     } else if (model.startsWith("gemini-")) {
@@ -47,14 +36,18 @@ export function createVoiceStack() {
     // =========================== STT ============================
     // ============================================================
 
+    const languages = getProviderLanguages(agentConfig.config.language);
+
     const stt = new deepgram.STT({
         model: "nova-3",
-        language: "en",
+        language: languages.deepgram,
     });
 
     // ============================================================
     // =========================== TTS ============================
     // ============================================================
+
+    const voiceId = agentConfig.config.voiceId?.trim() || "db6b0ed5-d5d3-463d-ae85-518a07d3c2b4";
 
     const voice = VOICES_UPDATED.find((voice) => voice.voice_id === voiceId);
 
@@ -66,13 +59,13 @@ export function createVoiceStack() {
         tts = new cartesia.TTS({
             model: formatModelId(voice.model),
             voice: voice.voice_id,
-            language: voice.language ?? "en",
+            language: languages.cartesia,
         });
-
     } else if (voice.provider === "elevenlabs") {
         tts = new elevenlabs.TTS({
             modelID: voice.model,
             voiceId: voice.voice_id,
+            language: languages.elevenlabs,
         });
     } else {
         tts = new sarvam.TTS({
@@ -98,4 +91,27 @@ export function createVoiceStack() {
  */
 function formatModelId(model: string): string {
     return model.trim().replace(/\s+/g, "-");
+}
+
+
+type SpeechLanguageProvider = Voice["provider"] | "deepgram" | "sarvam";;
+type ProviderLanguages = Record<SpeechLanguageProvider | LlmProvider, string>;
+
+export function getProviderLanguages(language: RuntimeAgentConfig["config"]["language"]): ProviderLanguages {
+
+    const DEFAULT_AGENT_LANGUAGE = "en-US";
+
+    const primaryLanguage = Array.isArray(language) ? language[0] : language;
+    const locale = primaryLanguage?.trim().replaceAll("_", "-") || DEFAULT_AGENT_LANGUAGE;
+    const speechLanguage = locale.split("-")[0]!.toLowerCase();
+
+    return {
+        gpt: locale,
+        claude: locale,
+        gemini: locale,
+        deepgram: speechLanguage,
+        elevenlabs: speechLanguage,
+        cartesia: speechLanguage,
+        sarvam: locale,
+    };
 }

@@ -19,7 +19,7 @@ export default defineAgent({
     // const agentId = "cmtsm3f05000beew2z65tit98"
     const agentConfig = await getAgentConfig(agentId);
 
-    const { llm, stt, tts } = createVoiceStack();
+    const { llm, stt, tts } = createVoiceStack(agentConfig);
 
     // Set up a voice AI pipeline using AssemblyAI, Fish Audio, and the LiveKit turn detector
     const session = new voice.AgentSession({
