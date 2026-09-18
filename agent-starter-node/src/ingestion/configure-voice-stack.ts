@@ -36,6 +36,7 @@ export function createVoiceStack(agentConfig: RuntimeAgentConfig) {
     // =========================== STT ============================
     // ============================================================
 
+    // note: add sarvam in future for hindi
     const languages = getProviderLanguages(agentConfig.config.language);
 
     const stt = new deepgram.STT({

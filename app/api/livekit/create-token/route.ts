@@ -4,14 +4,13 @@ import { z } from "zod"
 
 import { getCurrentUserId } from "@/lib/auth"
 import { randomUUID } from "crypto"
+import { VOICE_RUNTIME_AGENT_NAME } from "@/lib/constants"
 
 export const runtime = "nodejs"
 
 const createTokenSchema = z.object({
     agentId: z.string().trim().min(1, "agentId is required"),
 })
-
-const VOICE_RUNTIME_AGENT_NAME = "my-agent-123123"
 
 export async function POST(request: Request) {
     const userId = await getCurrentUserId()

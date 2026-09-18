@@ -57,7 +57,7 @@ export async function getOrCreateTwilioSipTrunk({
             terminationUri: sipTrunkSetup.twilio.terminationUri,
             authUsername: sipTrunkSetup.twilio.authUsername,
             authPassword: sipTrunkSetup.twilio.authPassword,
-            transport: "tcp",
+            transport: "tls",
         },
     })
 }

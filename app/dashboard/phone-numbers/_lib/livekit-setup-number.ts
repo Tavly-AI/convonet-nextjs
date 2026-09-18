@@ -6,11 +6,14 @@ import {
     SIPDispatchRuleIndividual,
     SIPOutboundTrunkInfo,
     SIPTransport,
-    SIPMediaEncryption
+    SIPMediaEncryption,
+    RoomAgentDispatch,
+    RoomConfiguration,
 } from "@livekit/protocol"
 import { SipClient } from "livekit-server-sdk"
 
 import { prisma } from "@/lib/prisma"
+import { VOICE_RUNTIME_AGENT_NAME } from "@/lib/constants"
 
 export type LiveKitSetupNumberInput = {
     sipTrunkConnectionId: string
@@ -68,6 +71,29 @@ function createIndividualDispatchRule() {
     })
 }
 
+// used in /phone-numbers
+// to update the agent attached to a inbound-trunk
+// inbound trunk holds the phone number
+export async function updateLiveKitInboundAgentDispatch({ livekitDispatchRuleId, agentId, }: { livekitDispatchRuleId: string; agentId?: string }) {
+    const sipClient = getSipClient()
+    const [dispatchRule] = await sipClient.listSipDispatchRule({ dispatchRuleIds: [livekitDispatchRuleId], })
+
+    if (!dispatchRule) { throw new Error("LiveKit inbound dispatch rule was not found.") }
+
+    dispatchRule.roomConfig = new RoomConfiguration({
+        agents: agentId
+            ? [
+                new RoomAgentDispatch({
+                    agentName: VOICE_RUNTIME_AGENT_NAME,
+                    metadata: JSON.stringify({ agentId }),
+                }),
+            ]
+            : [],
+    })
+
+    await sipClient.updateSipDispatchRule(livekitDispatchRuleId, dispatchRule)
+}
+
 async function getSipTrunkPhoneNumbers(sipTrunkConnectionId: string, currentPhoneNumber: string) {
     const phoneNumbers = await prisma.phoneNumber.findMany({
         where: { sipTrunkConnectionId },
@@ -99,7 +125,7 @@ export async function setupLiveKitNumber({
             authUsername,
             authPassword,
             transport: toSipTransport(transport),
-            mediaEncryption: SIPMediaEncryption.SIP_MEDIA_ENCRYPT_ALLOW,
+            mediaEncryption: toSipMediaEncryption(transport),
         }
     )
 
@@ -108,7 +134,7 @@ export async function setupLiveKitNumber({
         phoneNumbers,
         {
             krispEnabled: true,
-            mediaEncryption: SIPMediaEncryption.SIP_MEDIA_ENCRYPT_ALLOW,
+            mediaEncryption: SIPMediaEncryption.SIP_MEDIA_ENCRYPT_REQUIRE,
         },
     )
 
@@ -166,6 +192,7 @@ export async function updateLiveKitNumber({
                 authUsername,
                 authPassword,
                 transport: toSipTransport(transport),
+                mediaEncryption: toSipMediaEncryption(transport),
             })
         ),
         sipClient.updateSipInboundTrunkFields(livekitInboundTrunkId, {
@@ -207,5 +234,54 @@ function toSipTransport(value?: string | null) {
             return SIPTransport.SIP_TRANSPORT_TLS
         default:
             return SIPTransport.SIP_TRANSPORT_TCP
+    }
+}
+
+// SIP media-encryption policy:
+//
+// OUTBOUND TRUNK
+// ----------------
+// Media encryption follows the selected SIP transport:
+//
+//   UDP -> DISABLE
+//          Use RTP only. SRTP is disabled.
+//
+//   TCP -> ALLOW
+//          SRTP is supported but not required.
+//          The call can use either RTP or SRTP.
+//
+//   TLS -> REQUIRE
+//          SRTP is required. The call fails if the provider does not support it.
+//
+// For managed Twilio and Telnyx numbers, we pass TLS as the transport,
+// so their LiveKit outbound trunks use REQUIRE.
+//
+// For BYOB trunks, the value depends on the transport selected by the user.
+//
+//
+// INBOUND TRUNK
+// ---------------
+// Inbound does NOT use this function.
+// It is always created with:
+//
+//   mediaEncryption: SIP_MEDIA_ENCRYPT_REQUIRE
+//
+// Therefore all inbound calls must use SRTP, regardless of the outbound
+// transport setting.
+//
+//
+// DISPATCH RULE
+// ---------------
+// The dispatch rule has no effect on SIP transport or media encryption.
+// It only routes inbound calls into `inbound-` rooms and dispatches the
+// configured agent.
+function toSipMediaEncryption(value?: string | null) {
+    switch (value) {
+        case "udp":
+            return SIPMediaEncryption.SIP_MEDIA_ENCRYPT_DISABLE
+        case "tls":
+            return SIPMediaEncryption.SIP_MEDIA_ENCRYPT_REQUIRE
+        default:
+            return SIPMediaEncryption.SIP_MEDIA_ENCRYPT_ALLOW
     }
 }

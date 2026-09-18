@@ -87,7 +87,7 @@ export async function getOrCreateTelnyxSipTrunk({ workspaceId, managedAccount }:
             terminationUri: setup.telnyx.terminationUri,
             authUsername: setup.telnyx.authUsername,
             authPassword: setup.telnyx.authPassword,
-            transport: "tcp",
+            transport: "tls",
         },
     })
 }

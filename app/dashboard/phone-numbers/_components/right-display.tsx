@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Separator } from "@/components/ui/separator"
 import { PhoneNumberForm } from "./main-display/phone-number-form"
+import { OutboundCallMaker } from "./main-display/outbound-call-maker"
 
 export async function RightDisplay({
   phoneNumberId,
@@ -124,6 +125,8 @@ export async function RightDisplay({
           fallbackNumber={phoneNumber.config?.fallbackNumber ?? ""}
           agents={agents}
         />
+
+        <OutboundCallMaker phoneNumberId={phoneNumber.id} />
 
 
         <AdvanceAddOnsUI />

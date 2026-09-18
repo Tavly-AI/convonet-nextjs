@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache"
 import { z } from "zod"
 
 import { getCurrentWorkspaceId } from "@/app/agents/_lib/helper-actions"
+import { updateLiveKitInboundAgentDispatch } from "@/app/dashboard/phone-numbers/_lib/livekit-setup-number"
 import { prisma } from "@/lib/prisma"
 
 const phoneNumberIdSchema = z.object({
@@ -65,6 +66,49 @@ export async function saveInboundPhoneNumberConfig(
 ) {
   const parsed = updateInboundPhoneNumberConfigSchema.parse(input)
   const phoneNumberId = await getPhoneNumberId(parsed.phoneNumberId)
+
+  // ======================================================
+  // ================ UPDATE AGENT ========================
+  // ======================================================
+
+  const workspaceId = await getCurrentWorkspaceId()
+  const inboundAgentId = parsed.inboundAgentId || undefined
+
+  if (inboundAgentId) {
+    const agent = await prisma.agent.findFirst({
+      where: {
+        id: inboundAgentId,
+        workspaceId,
+        channel: "voice",
+      },
+      select: { id: true },
+    })
+
+    if (!agent) { throw new Error("Inbound agent not found.") }
+  }
+
+  const phoneNumber = await prisma.phoneNumber.findFirst({
+    where: {
+      id: phoneNumberId,
+      workspaceId,
+    },
+    select: {
+      sipTrunkConnection: {
+        select: {
+          livekitDispatchRuleId: true,
+        },
+      },
+    },
+  })
+
+  const livekitDispatchRuleId = phoneNumber?.sipTrunkConnection?.livekitDispatchRuleId
+  if (livekitDispatchRuleId) { await updateLiveKitInboundAgentDispatch({ livekitDispatchRuleId, agentId: inboundAgentId, }) }
+
+
+  // ======================================================
+  // ================ UPDATE AGENT END ====================
+  // ======================================================
+
 
   await prisma.phoneNumberConfig.upsert({
     where: {

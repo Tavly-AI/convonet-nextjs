@@ -3,3 +3,5 @@ export const COMPANY_LOGO = `<svg code-path="src/components/brand/TavlyLogo.tsx:
 
 export const AGENT_CHANNELS = { VOICE: "voice", CHAT: "chat", } as const
 export type AgentChannel = (typeof AGENT_CHANNELS)[keyof typeof AGENT_CHANNELS]
+
+export const VOICE_RUNTIME_AGENT_NAME = "my-agent-123123"
