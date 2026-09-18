@@ -4,8 +4,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "create:sip-participant": "node src/create-sip-participant.ts",
     "typecheck": "tsc --noEmit",
+    "build": "tsup src/main.ts --format esm --target node24 --out-dir dist --clean --no-splitting",
+    "deploy:create": "pnpm typecheck && pnpm build && lk agent create .",
+    "deploy": "pnpm typecheck && pnpm build && lk agent deploy .",
     "lint": "eslint \"**/*.{ts,js}\"",
     "lint:fix": "eslint --fix \"**/*.{ts,js}\"",
     "format": "prettier --write \"**/*.{ts,js,json,md}\"",
@@ -13,7 +15,7 @@
     "test": "vitest --run",
     "test:watch": "vitest",
     "dev": "AGENT_PORT=8081 node src/main.ts dev",
-    "start": "AGENT_PORT=8081 node src/main.ts start"
+    "start": "node dist/main.js start"
   },
   "engines": {
     "node": ">=24.0.0",
@@ -26,6 +28,7 @@
     "eslint": "^9.39.4",
     "globals": "^16.5.0",
     "jiti": "^2.6.1",
+    "tsup": "^8.5.1",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.58.1",
     "vitest": "^4.1.4"

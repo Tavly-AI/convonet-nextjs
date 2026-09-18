@@ -19,38 +19,6 @@ RUN apt-get update -qq && apt-get install --no-install-recommends -y ca-certific
 # Pin pnpm version for reproducible builds
 RUN npm install -g pnpm@10
 
-# --- Build stage ---
-# Install dependencies, build the project, and prepare production assets
-FROM base AS build
-
-# Create a new directory for our application code
-# And set it as the working directory
-WORKDIR /app
-
-# Copy just the dependency files first, for more efficient layer caching
-COPY package.json pnpm-lock.yaml ./
-
-# Install dependencies using pnpm
-# --frozen-lockfile ensures we use exact versions from pnpm-lock.yaml for reproducible builds
-RUN pnpm install --frozen-lockfile
-
-# Pre-download any ML models or files the agent needs
-# This runs before COPY . . so the download layer is cached across code-only changes.
-# The standalone CLI discovers installed @livekit/agents-plugin-* packages without
-# loading your agent code.
-RUN npx livekit-agents download-files
-
-# Copy all remaining application files into the container
-# This includes source code, configuration files, and dependency specifications
-# (Excludes files specified in .dockerignore)
-COPY . .
-
-# Remove dev dependencies for a leaner production image
-RUN pnpm prune --prod
-
-# --- Production stage ---
-FROM base
-
 # Create a non-privileged user that the app will run under
 # See https://docs.docker.com/build/building/best-practices/#user
 ARG UID=10001
@@ -64,16 +32,21 @@ RUN adduser \
 
 WORKDIR /app
 
-# Copy the built application with correct ownership in a single layer
-# This avoids expensive recursive chown operations on node_modules
-COPY --from=build --chown=appuser:appuser /app /app
+# The TypeScript agent is typechecked and bundled before this build. The image
+# receives only the JavaScript bundle and production dependencies.
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile --prod
+
+# The standalone CLI discovers installed @livekit/agents-plugin-* packages
+# without loading the agent entrypoint.
+RUN npx livekit-agents download-files
+
+COPY --chown=appuser:appuser dist ./dist
 
 USER appuser
 
 # Set Node.js to production mode
 ENV NODE_ENV=production
 
-# Run the application
-# The "start" command tells the worker to connect to LiveKit and begin waiting for jobs.
-# Your package.json must contain a "start" script, such as `"start": "node src/main.ts start"`
-CMD [ "pnpm", "start" ]
+# Run the compiled worker. No TypeScript or Next.js source is present here.
+CMD [ "node", "dist/main.js", "start" ]

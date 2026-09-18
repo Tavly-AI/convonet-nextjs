@@ -287,7 +287,7 @@ export type CallSettings = {
 // =================================================================
 
 
-export type PostCallAnalysisModel = string
+export type PostCallAnalysisModel = LlmModel
 
 export type PostCallAnalysisData = {
     type: "string" | "number" | "boolean" | "enum" | "system-presets"
@@ -679,6 +679,7 @@ export function initializeAgentFromTemplate({ agentId, channel, template, agentT
     if (!(template in templates)) { return initializeAgentSession() }
 
     const templateData = templates[template as keyof typeof templates]
+    if (!templateData) { return initializeAgentSession() }
 
     // this only runs for voice-agents and there are no template-param in chat-agent
     return initializeAgentSession({

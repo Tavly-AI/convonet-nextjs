@@ -11,8 +11,10 @@ npm-debug.log
 yarn-error.log
 pnpm-debug.log
 
+# TypeScript source is compiled before the LiveKit Cloud upload.
+src/
+
 # Build outputs
-dist/
 build/
 coverage/
 

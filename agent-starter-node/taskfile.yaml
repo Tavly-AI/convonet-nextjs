@@ -20,7 +20,7 @@ tasks:
       - task: help_open_web_console
       - echo 'To deploy your agent to LiveKit cloud:'
       - echo ''
-      - echo '{{ indent .INDENT "lk agent deploy" }}'
+      - echo '{{ indent .INDENT "pnpm deploy" }}'
       - echo ''
       - task: set_agent_name_if_present
       - task: help_open_sandbox_if_present
