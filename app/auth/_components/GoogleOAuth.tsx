@@ -52,7 +52,7 @@ export function GoogleOAuth() {
         throw new Error(result.error || "Google login failed")
       }
 
-      router.replace("/dashboard")
+      router.replace("/dashboard/agents")
       router.refresh()
     } catch (error) {
       setIsRedirecting(false)
