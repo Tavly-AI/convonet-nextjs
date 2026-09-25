@@ -2,10 +2,9 @@
 
 import type { CallRecordDatabaseData } from "@/app/api/livekit/sessionReport/types"
 import type { CallRecord } from "@/generated/prisma/client"
-import { DownloadIcon, HeadphonesIcon, PhoneIcon } from "lucide-react"
+import { HeadphonesIcon, PhoneIcon } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useState } from "react"
@@ -49,12 +48,11 @@ export function CallHistorySidebar({ record: inputRecord }: { record: CallHistor
                 </section>
                 <section className="space-y-3 border-b p-6"><h2 className="text-xl font-medium">Summary</h2><p className="max-w-4xl leading-7 text-muted-foreground">{record.call_analysis?.call_summary}</p></section>
                 <Tabs defaultValue="transcript" className="gap-0">
-                    <TabsList variant="line" className="h-14 w-full justify-start gap-5 border-b px-6"><TabsTrigger value="transcript">Transcription</TabsTrigger><TabsTrigger value="data">Data</TabsTrigger><TabsTrigger value="logs">Detail logs</TabsTrigger></TabsList>
+                    <TabsList variant="line" className="h-14 w-full justify-start gap-5 border-b px-6"><TabsTrigger value="transcript">Transcription</TabsTrigger><TabsTrigger value="data">Data</TabsTrigger></TabsList>
                     <TabsContent value="transcript" className="space-y-4 p-6">
                         <TranscriptView transcriptObject={record.transcript_object} url={record.recording_multi_channel_url} />
                     </TabsContent>
                     <TabsContent value="data" className="space-y-4 p-6"><div className="grid gap-4 sm:grid-cols-2"><div><p className="mb-1 text-muted-foreground">Dynamic variables</p><pre className="overflow-x-auto rounded-lg bg-muted p-3 text-xs">{JSON.stringify(record.retell_llm_dynamic_variables, null, 2)}</pre></div><div><p className="mb-1 text-muted-foreground">Collected variables</p><pre className="overflow-x-auto rounded-lg bg-muted p-3 text-xs">{JSON.stringify(record.collected_dynamic_variables, null, 2)}</pre></div></div></TabsContent>
-                    <TabsContent value="logs" className="space-y-4 p-6"><div className="grid grid-cols-[auto_1fr] gap-x-5 gap-y-3 text-sm"><span className="text-muted-foreground">Twilio SID</span><span className="break-all">{record.telephony_identifier?.twilio_call_sid ?? "—"}</span><span className="text-muted-foreground">Storage</span><span>{record.data_storage_setting}</span><span className="text-muted-foreground">Transfer destination</span><span>{record.transfer_destination}</span><span className="text-muted-foreground">E2E latency p50</span><span>{record.latency?.e2e.p50} ms</span></div><Separator /><Button variant="outline" render={<a href={record.public_log_url ?? "#"} target="_blank" rel="noreferrer" />}><DownloadIcon /> Download public log</Button></TabsContent>
                 </Tabs>
             </SheetContent>
         </Sheet>

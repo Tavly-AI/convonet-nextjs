@@ -160,7 +160,7 @@ const data1 = {
   data: [
     {
       name: "Call History",
-      url: "#",
+      url: "/dashboard/call-history",
       icon: <HistoryIcon />,
     },
     {
