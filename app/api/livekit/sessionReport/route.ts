@@ -5,6 +5,7 @@ import { Prisma } from "@/generated/prisma/client"
 import { prisma } from "@/lib/prisma"
 import type { CallRecordDatabaseData, LiveKitSessionReportPayload } from "./types"
 import { calculateLatencyStats, checkIsSessionReportPayload } from "./helper-functions"
+import type { PostCallAnalysisSettings } from "@/app/agents/_lib/session-storage/agent-session"
 
 export async function POST(request: Request) {
   try {
@@ -13,7 +14,7 @@ export async function POST(request: Request) {
 
     const agent = await prisma.agent.findUnique({
       where: { id: body.agentId },
-      select: { workspaceId: true },
+      select: { workspaceId: true, config: true },
     })
     if (!agent) { return NextResponse.json({ error: "Agent not found" }, { status: 404 }) }
 
@@ -28,7 +29,7 @@ export async function POST(request: Request) {
       ...deriveRecording(body.report),
       latency: deriveLatency(chatHistory),
       llm_token_usage: deriveLlmTokenUsage(body.report.usage),
-      call_analysis: await deriveCallAnalysis(chatHistory),
+      call_analysis: await deriveCallAnalysis(chatHistory, agent.config as PostCallAnalysisSettings),
     } as Prisma.CallRecordUncheckedCreateInput
 
     await prisma.callRecord.upsert({
@@ -100,15 +101,15 @@ function deriveLlmTokenUsage(usage: LiveKitSessionReportPayload["report"]["usage
   return { values, average, num_requests }
 }
 
-async function deriveCallAnalysis(chatHistory: LiveKitSessionReportPayload["report"]["chat_history"]["items"]) {
-  const analysis = await completeCallAnalysis(chatHistory)
+async function deriveCallAnalysis(chatHistory: LiveKitSessionReportPayload["report"]["chat_history"]["items"], config: PostCallAnalysisSettings) {
+  const analysis = await completeCallAnalysis(chatHistory, config.post_call_analysis_data, config.post_call_analysis_model)
 
   return {
     call_summary: analysis.call_summary,
     in_voicemail: false,
     user_sentiment: analysis.user_sentiment,
     call_successful: analysis.call_successful,
-    custom_analysis_data: {},
+    custom_analysis_data: analysis.custom_analysis_data,
   }
 }
 

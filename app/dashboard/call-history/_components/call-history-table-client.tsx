@@ -1,15 +1,14 @@
 "use client"
 
 import { useState } from "react"
-import type { CallRecord } from "@/generated/prisma/client"
 import { PhoneIncomingIcon, PhoneOutgoingIcon } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { CallHistorySidebar } from "./call-history-sidebar"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import type { CallRecordDatabaseData } from "@/app/api/livekit/sessionReport/types"
 
-export function CallHistoryTableClient({ callRecords }: { callRecords: CallRecord[] }) {
-    const [selectedRecord, setSelectedRecord] = useState<CallRecord | null>(null)
+export function CallHistoryTableClient({ callRecords }: { callRecords: CallRecordDatabaseData[] }) {
+    const [selectedRecord, setSelectedRecord] = useState<CallRecordDatabaseData | null>(null)
 
     return (
         <section className="m-4 flex min-h-0 flex-1 flex-col gap-5 rounded-xl bg-card p-4 ring-1 ring-foreground/10 lg:m-6 lg:p-6">
@@ -64,11 +63,11 @@ function getSentimentBadgeClass(sentiment: string) {
 }
 
 
-export function callHistoryGetCallStatus(status: string | null | undefined): {
+export function callHistoryGetCallStatus(status: CallRecordDatabaseData["call_status"]): {
     label: string
     variant: "default" | "secondary" | "destructive" | "outline"
 } {
-    switch (status as CallRecordDatabaseData["call_status"]) {
+    switch (status) {
         case "registered":
             return {
                 label: "Starting",

@@ -151,7 +151,7 @@ export function PostCallAnalysisData() {
         <div className="space-y-3 border-t px-1 py-4">
             <div className="flex items-center justify-between gap-3">
                 <p className="text-sm text-muted-foreground">
-                    Extract structured data from completed calls.
+                    Extract structured data from completed calls. Required fields are collected before the call ends.
                 </p>
             </div>
 

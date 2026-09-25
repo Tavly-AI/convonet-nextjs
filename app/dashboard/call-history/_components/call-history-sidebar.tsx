@@ -1,7 +1,6 @@
 "use client"
 
 import type { CallRecordDatabaseData } from "@/app/api/livekit/sessionReport/types"
-import type { CallRecord } from "@/generated/prisma/client"
 import { HeadphonesIcon, PhoneIcon } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -10,16 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useState } from "react"
 import { callHistoryGetCallStatus } from "./call-history-table-client"
 
-type CallHistoryRecord = CallRecordDatabaseData & {
-    telephony_identifier?: { twilio_call_sid: string }
-    agent_name?: string
-    agent_tag?: string
-    scrubbed_recording_url?: string
-    scrubbed_recording_multi_channel_url?: string
-}
-
-export function CallHistorySidebar({ record: inputRecord, onOpenChange }: { record: CallHistoryRecord | CallRecord, onOpenChange: (open: boolean) => void }) {
-    const record = inputRecord as CallHistoryRecord
+export function CallHistorySidebar({ record, onOpenChange }: { record: CallRecordDatabaseData, onOpenChange: (open: boolean) => void }) {
 
     // derive some stuff for ui
     const startedAt = record.start_timestamp ? new Intl.DateTimeFormat("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(Number(record.start_timestamp))) : "—"
@@ -47,6 +37,19 @@ export function CallHistorySidebar({ record: inputRecord, onOpenChange }: { reco
                     </div>
                 </section>
                 <section className="space-y-3 border-b p-6"><h2 className="text-xl font-medium">Summary</h2><p className="max-w-4xl leading-7 text-muted-foreground">{record.call_analysis?.call_summary}</p></section>
+                {record.call_analysis && Object.keys(record.call_analysis.custom_analysis_data).length > 0 && (
+                    <section className="space-y-3 border-b p-6">
+                        <h2 className="text-xl font-medium">Collected data</h2>
+                        <dl className="grid gap-3 text-sm sm:grid-cols-2">
+                            {Object.entries(record.call_analysis.custom_analysis_data).map(([name, value]) => (
+                                <div key={name} className="space-y-1">
+                                    <dt className="text-muted-foreground">{name.replaceAll("_", " ")}</dt>
+                                    <dd>{value === null ? "—" : typeof value === "boolean" ? (value ? "Yes" : "No") : String(value)}</dd>
+                                </div>
+                            ))}
+                        </dl>
+                    </section>
+                )}
                 <Tabs defaultValue="transcript" className="gap-0">
                     <TabsList variant="line" className="h-14 w-full justify-start gap-5 border-b px-6"><TabsTrigger value="transcript">Transcription</TabsTrigger><TabsTrigger value="data">Data</TabsTrigger></TabsList>
                     <TabsContent value="transcript" className="space-y-4 p-6">

@@ -16,6 +16,7 @@ export function createAgent(agentConfig: RuntimeAgentConfig) {
   return Agent.create({
     instructions: dedent` 
       ${agentConfig.llmConfig.generalPrompt.trim() || DEFAULT_GENERAL_PROMPT}
+      ${getPostCallCollectionInstructions(agentConfig.config.post_call_analysis_data)}
       Always respond in ${languages.gpt}.
     `,
 
@@ -78,3 +79,15 @@ export function createAgent(agentConfig: RuntimeAgentConfig) {
 const DEFAULT_GENERAL_PROMPT = dedent`
   You are a friendly, reliable voice assistant that answers questions, explains topics, and completes tasks with available tools.
 `;
+
+export function getPostCallCollectionInstructions(fields: RuntimeAgentConfig["config"]["post_call_analysis_data"] = []) {
+  const fieldsToCollect = fields.filter((field) => field.type !== "system-presets" && field.name && field.description);
+
+  if (!fieldsToCollect.length) return "";
+
+  return `
+    ## Information to collect
+    Collect these details naturally during the conversation. Do not mention extraction or ask again for information the caller already provided. Ask for required details before ending the call; capture optional details when relevant. Never invent a value.
+    ${fieldsToCollect.map((field) => `- ${field.name}${field.required ? " (required)" : ""}: ${field.description}`).join("\n")}
+  `;
+}

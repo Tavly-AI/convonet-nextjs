@@ -1,5 +1,6 @@
 import { getCurrentUserId } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import type { CallRecordDatabaseData } from "@/app/api/livekit/sessionReport/types"
 import { CallHistoryTableClient } from "./call-history-table-client"
 
 export async function CallHistoryTable() {
@@ -11,5 +12,5 @@ export async function CallHistoryTable() {
         ? await prisma.callRecord.findMany({ where: { workspaceId: user.workspaceId }, orderBy: { start_timestamp: "desc" } })
         : []
 
-    return <CallHistoryTableClient callRecords={callRecords} />
+    return <CallHistoryTableClient callRecords={callRecords as CallRecordDatabaseData[]} />
 }
