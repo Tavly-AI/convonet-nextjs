@@ -305,7 +305,23 @@ export type PostCallAnalysisSettings = {
 }
 
 export const DEFAULT_POST_CALL_ANALYSIS_SETTINGS = {
-    post_call_analysis_data: [],
+    post_call_analysis_data: [
+        {
+            type: "system-presets",
+            name: "call_summary",
+            description: "Summarize the call in a few sentences.",
+        },
+        {
+            type: "system-presets",
+            name: "call_successful",
+            description: "Determine whether the call completed successfully.",
+        },
+        {
+            type: "system-presets",
+            name: "user_sentiment",
+            description: "Evaluate the user's sentiment based on the conversation.",
+        },
+    ],
     post_call_analysis_model: "gpt-4.1",
 } satisfies PostCallAnalysisSettings
 

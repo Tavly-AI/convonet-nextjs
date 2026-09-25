@@ -6,6 +6,7 @@ import { createAgent } from './agent.ts';
 import { getAgentConfig, getAgentIdFromJob } from './ingestion/get-agent-config.ts';
 import { createVoiceStack } from './ingestion/configure-voice-stack.ts';
 import { registerSessionDataHooks } from './data-hooks/main.ts';
+import { registerS3DualChannelRecording } from './egress/upload-s3-egress.ts';
 
 // Load environment variables from a local file.
 // Make sure to set LIVEKIT_URL, LIVEKIT_API_KEY, and LIVEKIT_API_SECRET
@@ -58,6 +59,7 @@ export default defineAgent({
     await session.start({
       agent,
       room: ctx.room,
+      record: { audio: false },
       inputOptions: {
         // Delete the room when this session closes so every participant disconnects.
         deleteRoomOnClose: true,
@@ -66,6 +68,9 @@ export default defineAgent({
         noiseCancellation: audioEnhancement({ model: 'quailVfS' }),
       },
     });
+
+    const egressRecording = registerS3DualChannelRecording(ctx);
+    await egressRecording.start();
 
     // // Add a virtual avatar to the session, if desired
     // // For other providers, see https://docs.livekit.io/agents/models/avatar/

@@ -226,7 +226,7 @@ export function PostCallAnalysisData() {
                     )}
 
                     <DialogFooter className="shrink-0 border-t px-6 py-4">
-                        {editingIndex !== null && (
+                        {editingIndex !== null && draft?.type !== "system-presets" && (
                             <Button
                                 type="button"
                                 variant="destructive"

@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { BookOpenIcon } from "lucide-react"
 
 import {
     getHandbookConfig,
@@ -52,6 +53,7 @@ export function AgentHandbookDialog() {
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
             <Button type="button" variant="outline" className="h-9" onClick={() => handleOpenChange(true)}>
+                <BookOpenIcon className="size-4" aria-hidden="true" />
                 Agent Handbook
             </Button>
 

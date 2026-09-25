@@ -30,6 +30,7 @@ model Workspace {
   users         User[]
   agents        Agent[]
   agentVersions AgentVersion[]
+  callRecords   CallRecord[]
   knowledgeBases KnowledgeBase[]
   twilioSubaccount TwilioSubaccount?
   telnyxManagedAccount TelnyxManagedAccount?
@@ -182,6 +183,56 @@ model AgentVersion {
   @@unique([agentId, version])
   @@index([workspaceId])
   @@index([agentId])
+}
+
+model CallRecord {
+  id          String    @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  call_type                    String?
+  from_number                  String?
+  to_number                    String?
+  direction                    String?
+  call_id                      String    @unique
+  agent_id                     String?
+  agent_version                Int?
+  call_status                  String    @default("registered")
+
+  metadata                     Json?
+  retell_llm_dynamic_variables Json?
+  collected_dynamic_variables  Json?
+  custom_sip_headers           Json?
+  data_storage_setting          String?
+  opt_in_signed_url            Boolean?
+  start_timestamp              BigInt?
+  end_timestamp                BigInt?
+  transfer_end_timestamp       BigInt?
+  duration_ms                  Int?
+  transcript                   String?
+
+  transcript_object            Json?
+  transcript_with_tool_calls   Json?
+  
+  recording_url                         String?
+  recording_multi_channel_url           String?
+  public_log_url                         String?
+  knowledge_base_retrieved_contents_url  String?
+
+  latency                               Json?
+
+  disconnection_reason                   String?
+  transfer_destination                   String?
+  
+  call_analysis                          Json?
+  call_cost                              Json?
+  llm_token_usage                        Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([workspaceId, start_timestamp])
+  @@index([call_status])
 }
 
 model KnowledgeBase {
