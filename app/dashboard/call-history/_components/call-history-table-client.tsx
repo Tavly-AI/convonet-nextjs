@@ -24,6 +24,7 @@ export function CallHistoryTableClient({ callRecords }: { callRecords: CallRecor
                                 const contact = isInbound ? record.from_number : record.to_number
                                 const duration = record.duration_ms ? `${Math.floor(record.duration_ms / 60000)}m ${Math.floor((record.duration_ms % 60000) / 1000)}s` : "—"
                                 const startedAt = record.start_timestamp ? new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(Number(record.start_timestamp))) : "—"
+                                const sentiment = getUserSentiment(record.call_analysis)
 
                                 return <TableRow key={record.call_id} onClick={() => setSelectedRecord(record)} className="cursor-pointer">
                                     <TableCell className="h-14 pl-4 font-medium"><div className="flex flex-col gap-0.5"><span>{contact ?? "Web caller"}</span><span className="font-normal text-xs text-muted-foreground">{record.call_type === "webrtc" ? "Web call" : "Phone call"}</span></div></TableCell>
@@ -34,14 +35,14 @@ export function CallHistoryTableClient({ callRecords }: { callRecords: CallRecor
                                             {callHistoryGetCallStatus(record.call_status).label}
                                         </Badge>
                                     </TableCell>
-                                    <TableCell><Badge variant="outline">{getUserSentiment(record.call_analysis)}</Badge></TableCell><TableCell className="pr-4 text-muted-foreground">{startedAt}</TableCell>
+                                    <TableCell><Badge variant="outline" className={getSentimentBadgeClass(sentiment)}>{sentiment}</Badge></TableCell><TableCell className="pr-4 text-muted-foreground">{startedAt}</TableCell>
                                 </TableRow>
                             })}
                             {callRecords.length === 0 && <TableRow><TableCell colSpan={7} className="h-24 text-center text-muted-foreground">No calls yet.</TableCell></TableRow>}
                         </TableBody>
                     </Table>
                 </div>
-                {selectedRecord && <CallHistorySidebar record={selectedRecord} />}
+                {selectedRecord && <CallHistorySidebar record={selectedRecord} onOpenChange={(open) => !open && setSelectedRecord(null)} />}
             </div>
         </section>
     )
@@ -51,6 +52,15 @@ function getUserSentiment(callAnalysis: unknown) {
     if (!callAnalysis || typeof callAnalysis !== "object" || Array.isArray(callAnalysis)) return "—"
     const sentiment = (callAnalysis as Record<string, unknown>).user_sentiment
     return typeof sentiment === "string" ? sentiment : "—"
+}
+
+function getSentimentBadgeClass(sentiment: string) {
+    switch (sentiment.toLowerCase()) {
+        case "positive": return "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/15 dark:text-emerald-300"
+        case "negative": return "border-destructive/30 bg-destructive/10 text-destructive"
+        case "neutral": return "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/15 dark:text-amber-300"
+        default: return "text-muted-foreground"
+    }
 }
 
 

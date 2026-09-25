@@ -18,7 +18,7 @@ type CallHistoryRecord = CallRecordDatabaseData & {
     scrubbed_recording_multi_channel_url?: string
 }
 
-export function CallHistorySidebar({ record: inputRecord }: { record: CallHistoryRecord | CallRecord }) {
+export function CallHistorySidebar({ record: inputRecord, onOpenChange }: { record: CallHistoryRecord | CallRecord, onOpenChange: (open: boolean) => void }) {
     const record = inputRecord as CallHistoryRecord
 
     // derive some stuff for ui
@@ -26,7 +26,7 @@ export function CallHistorySidebar({ record: inputRecord }: { record: CallHistor
     const callStatus = callHistoryGetCallStatus(record.call_status)
 
     return (
-        <Sheet defaultOpen>
+        <Sheet open onOpenChange={onOpenChange}>
             <SheetContent className="w-full gap-0 overflow-y-auto p-0 sm:max-w-3xl min-w-2xl">
                 <SheetHeader className="border-b p-6 pr-14">
                     <div className="flex flex-wrap items-center gap-3">
@@ -91,7 +91,7 @@ function TranscriptView({ transcriptObject, url }: { transcriptObject?: CallReco
             {messages.map((message, index) => (
                 <div
                     key={index}
-                    onClick={() => playThatAudio(url, message.start_timestamp, message.end_timestamp)}
+                    onClick={() => playThatAudio(url, message.start_timestamp)}
                     className="cursor-pointer rounded-lg bg-muted p-4 leading-6"
                 >
                     <div className="mb-1 text-xs font-medium text-muted-foreground">
@@ -107,7 +107,7 @@ function TranscriptView({ transcriptObject, url }: { transcriptObject?: CallReco
 
 // note: add audio_recording_started_at: null 
 // to complete the feature
-async function playThatAudio(recordingUrl: string | null | undefined, start: number, end: number) {
+async function playThatAudio(recordingUrl: string | null | undefined, start: number) {
 
     if (!recordingUrl) return
     const res = await fetch(`/api/aws/presigned-s3?url=${encodeURIComponent(recordingUrl)}`)
