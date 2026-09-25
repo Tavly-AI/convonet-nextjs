@@ -134,7 +134,7 @@ export async function setupLiveKitNumber({
         phoneNumbers,
         {
             krispEnabled: true,
-            mediaEncryption: SIPMediaEncryption.SIP_MEDIA_ENCRYPT_REQUIRE,
+            mediaEncryption: toSipMediaEncryption(transport),
         },
     )
 
@@ -198,6 +198,7 @@ export async function updateLiveKitNumber({
         sipClient.updateSipInboundTrunkFields(livekitInboundTrunkId, {
             name: `inbound-${sipTrunkConnectionId}`,
             numbers: setList(phoneNumbers),
+            mediaEncryption: toSipMediaEncryption(transport),
         }),
         sipClient.updateSipDispatchRuleFields(livekitDispatchRuleId, {
             name: `dispatch-${sipTrunkConnectionId}`,
@@ -261,13 +262,12 @@ function toSipTransport(value?: string | null) {
 //
 // INBOUND TRUNK
 // ---------------
-// Inbound does NOT use this function.
-// It is always created with:
+// Inbound trunks use the same policy as their outbound counterpart. This
+// keeps the negotiated RTP/SRTP mode consistent in both directions:
 //
-//   mediaEncryption: SIP_MEDIA_ENCRYPT_REQUIRE
-//
-// Therefore all inbound calls must use SRTP, regardless of the outbound
-// transport setting.
+//   UDP -> DISABLE
+//   TCP -> ALLOW
+//   TLS -> REQUIRE
 //
 //
 // DISPATCH RULE
