@@ -1,8 +1,5 @@
 import type { JobContext, SessionReport } from '@livekit/agents';
 import { voice } from '@livekit/agents';
-import { appendFile, mkdir } from 'node:fs/promises';
-import { dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import type { CallRecordDatabaseData } from '../../../app/api/livekit/sessionReport/types.ts';
 
 type SessionDataHooksOptions = {
@@ -13,42 +10,15 @@ type SessionDataHooksOptions = {
 
 export function registerSessionDataHooks({ ctx, session, agentId }: SessionDataHooksOptions) {
 
-    const sessionLogPath = fileURLToPath(new URL(`../logs/${ctx.job.id}.jsonl`, import.meta.url));
-
-    async function writeSessionLog(entry: Record<string, unknown>) {
-        await mkdir(dirname(sessionLogPath), { recursive: true });
-        await appendFile(sessionLogPath, `${JSON.stringify({ timestamp: new Date().toISOString(), agentId, roomName: ctx.room.name, ...entry, })}\n`);
-    }
-
-    function writeSessionLogSafely(entry: Record<string, unknown>) {
-        void writeSessionLog(entry).catch((error) => { console.error('Failed to write LiveKit session log', error); });
-    }
-
-    // https://docs.livekit.io/deploy/observability/data/#conversation-history
-    session.on(voice.AgentSessionEventTypes.ConversationItemAdded, (event) => {
-        if (event.item.type !== 'message' || event.item.role !== 'assistant') return;
-
-        const { e2eLatency, llmNodeTtft, ttsNodeTtfb, playbackLatency } = event.item.metrics;
-        if (e2eLatency === undefined) return;
-
-        writeSessionLogSafely({ event: 'livekit_turn_metrics', metrics: { e2eLatency, llmNodeTtft, ttsNodeTtfb, playbackLatency } });
-    });
-
     // https://docs.livekit.io/deploy/observability/data/#session-reports
     ctx.addShutdownCallback(async () => {
         try {
             const report: SessionReport = ctx.makeSessionReport(session);
             const reportJson = voice.sessionReportToJSON(report);
 
-            await writeSessionLog({ event: 'livekit_session_report', report: reportJson, });
             await sendSessionReport(reportJson, agentId, ctx);
         } catch (error) {
-
-            try {
-                await writeSessionLog({ event: 'livekit_session_report_failed', error: error instanceof Error ? error.message : String(error), });
-            } catch (logError) {
-                console.error('Failed to write LiveKit session report', logError);
-            }
+            console.error('Failed to send LiveKit session report to Next.js', error);
         }
     });
 }
@@ -64,11 +34,13 @@ async function sendSessionReport(report: Record<string, unknown>, agentId: strin
     const callType = deriveCallType(ctx);
     const { fromNumber, toNumber } = derivePhoneNumbers(ctx, callType);
 
+    console.info("Sending session report to Next.js", { jobId: ctx.job.id, room: ctx.room.name, });
     const response = await fetch(`${baseUrl}/api/livekit/sessionReport`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', },
         body: JSON.stringify({ agentId, report, callType, fromNumber, toNumber }),
     });
+    console.info("Session report response from Next.js", { jobId: ctx.job.id, status: response.status, });
 
     if (!response.ok) { throw new Error(`Observability ingestion failed (${response.status}): ${await response.text()}`); }
 }

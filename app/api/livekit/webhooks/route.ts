@@ -22,7 +22,7 @@ export async function POST(request: Request) {
         const disconnectReason = deriveDisconnectReason(event)
 
         if ((callStatus || disconnectReason) && event.room?.name) {
-            await prisma.callRecord.updateMany({
+            const update = await prisma.callRecord.updateMany({
                 where: {
                     call_id: event.room.name,
                     call_status: { in: ["registered", "ongoing"] },
@@ -32,6 +32,26 @@ export async function POST(request: Request) {
                     ...(disconnectReason && { disconnection_reason: disconnectReason }),
                 },
             })
+
+            // marks callstatus as "ongoing" for inbound/outbound phone-calls
+            // this is equivaltent to callstatus "registered" while create-web-token for webrtc
+            if (update.count === 0 && event.participant) {
+                const trunkPhoneNumber = event.participant.attributes["sip.trunkPhoneNumber"]
+                const phoneNumber = trunkPhoneNumber ? await prisma.phoneNumber.findUnique({ where: { phoneNumber: trunkPhoneNumber }, select: { workspaceId: true } }) : null
+
+                if (phoneNumber) {
+                    await prisma.callRecord.upsert({
+                        where: { call_id: event.room.name },
+                        create: {
+                            workspaceId: phoneNumber.workspaceId,
+                            call_id: event.room.name,
+                            call_status: callStatus ?? "ongoing",
+                            disconnection_reason: disconnectReason,
+                        },
+                        update: {},
+                    })
+                }
+            }
         }
 
         return NextResponse.json({ received: true })
@@ -45,6 +65,7 @@ function deriveCallStatus(event: WebhookEvent): NonNullable<CallRecordDatabaseDa
 
     // https://docs.livekit.io/intro/basics/rooms-participants-tracks/webhooks-events/#webhook-events
     if (event.event === "room_started") return "ongoing"
+    if (event.event === "participant_joined" && event.participant?.kind === ParticipantInfo_Kind.SIP) return "ongoing"
     if (event.event === "participant_connection_aborted") return "error"
     if (event.event === "room_finished") return "ended"
 
