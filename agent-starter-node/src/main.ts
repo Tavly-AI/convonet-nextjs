@@ -49,9 +49,6 @@ export default defineAgent({
       expressive: false,
     });
 
-    // add data hooks
-    registerSessionDataHooks({ ctx, session, agentId });
-
     // define agent before using it in session
     const agent = createAgent(agentConfig);
 
@@ -85,6 +82,9 @@ export default defineAgent({
 
     // Join the room and connect to the user
     await ctx.connect();
+
+    // Capture caller details before the SIP participant can disconnect.
+    registerSessionDataHooks({ ctx, session, agentId });
 
     // Greet the user on joining.
     session.generateReply({

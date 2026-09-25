@@ -10408,24 +10408,24 @@ var DEFAULT_GENERAL_PROMPT = dedent`
 // src/data-hooks/main.ts
 import { voice } from "@livekit/agents";
 function registerSessionDataHooks({ ctx, session, agentId }) {
+  const callType = deriveCallType(ctx);
+  const { fromNumber, toNumber } = derivePhoneNumbers(ctx, callType);
   ctx.addShutdownCallback(async () => {
     try {
       const report = ctx.makeSessionReport(session);
       const reportJson = voice.sessionReportToJSON(report);
-      await sendSessionReport(reportJson, agentId, ctx);
+      await sendSessionReport(reportJson, agentId, ctx, callType, fromNumber, toNumber);
     } catch (error) {
       console.error("Failed to send LiveKit session report to Next.js", error);
     }
   });
 }
-async function sendSessionReport(report, agentId, ctx) {
+async function sendSessionReport(report, agentId, ctx, callType, fromNumber, toNumber) {
   const baseUrl = process.env.NEXTJS_APP_URL;
   if (!baseUrl) {
     console.warn("Observability report was not sent because NEXTJS_APP_URL is missing.");
     return;
   }
-  const callType = deriveCallType(ctx);
-  const { fromNumber, toNumber } = derivePhoneNumbers(ctx, callType);
   console.info("Sending session report to Next.js", { jobId: ctx.job.id, room: ctx.room.name });
   const response = await fetch(`${baseUrl}/api/livekit/sessionReport`, {
     method: "POST",
@@ -13286,7 +13286,6 @@ var main_default = defineAgent({
       // Audio model above.
       expressive: false
     });
-    registerSessionDataHooks({ ctx, session, agentId });
     const agent = createAgent(agentConfig);
     await session.start({
       agent,
@@ -13303,6 +13302,7 @@ var main_default = defineAgent({
     const egressRecording = registerS3DualChannelRecording(ctx);
     await egressRecording.start();
     await ctx.connect();
+    registerSessionDataHooks({ ctx, session, agentId });
     session.generateReply({
       instructions: "Greet the user in a helpful and friendly manner."
     });

@@ -10,13 +10,17 @@ type SessionDataHooksOptions = {
 
 export function registerSessionDataHooks({ ctx, session, agentId }: SessionDataHooksOptions) {
 
+    // get values before shutdown-init
+    const callType = deriveCallType(ctx);
+    const { fromNumber, toNumber } = derivePhoneNumbers(ctx, callType);
+
     // https://docs.livekit.io/deploy/observability/data/#session-reports
     ctx.addShutdownCallback(async () => {
         try {
             const report: SessionReport = ctx.makeSessionReport(session);
             const reportJson = voice.sessionReportToJSON(report);
 
-            await sendSessionReport(reportJson, agentId, ctx);
+            await sendSessionReport(reportJson, agentId, ctx, callType, fromNumber, toNumber);
         } catch (error) {
             console.error('Failed to send LiveKit session report to Next.js', error);
         }
@@ -26,13 +30,11 @@ export function registerSessionDataHooks({ ctx, session, agentId }: SessionDataH
 
 
 // send to nextjs 
-async function sendSessionReport(report: Record<string, unknown>, agentId: string, ctx: JobContext) {
+async function sendSessionReport(report: Record<string, unknown>, agentId: string, ctx: JobContext, callType: CallRecordDatabaseData["call_type"], fromNumber: string | null, toNumber: string | null) {
     const baseUrl = process.env.NEXTJS_APP_URL;
 
     if (!baseUrl) { console.warn('Observability report was not sent because NEXTJS_APP_URL is missing.'); return; }
 
-    const callType = deriveCallType(ctx);
-    const { fromNumber, toNumber } = derivePhoneNumbers(ctx, callType);
 
     console.info("Sending session report to Next.js", { jobId: ctx.job.id, room: ctx.room.name, });
     const response = await fetch(`${baseUrl}/api/livekit/sessionReport`, {
