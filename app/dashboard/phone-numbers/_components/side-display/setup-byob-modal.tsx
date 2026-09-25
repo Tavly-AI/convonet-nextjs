@@ -3,7 +3,6 @@ import { saveByobDetails } from "@/app/dashboard/phone-numbers/_lib/setup-byob-m
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
-  DialogClose,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -14,6 +13,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { prisma } from "@/lib/prisma"
+import { ByobSaveActions } from "./byob-save-actions"
 
 type SetupByobModalProps = {
   phoneNumber?: string
@@ -132,12 +132,7 @@ export async function SetupByobModal({ phoneNumber }: SetupByobModalProps) {
               </select>
             </div>
 
-            <div className="flex gap-2">
-              <DialogClose render={<Button variant="outline" />}>
-                Cancel
-              </DialogClose>
-              <Button type="submit">Save</Button>
-            </div>
+            <ByobSaveActions />
           </DialogFooter>
         </form>
       </DialogContent>
