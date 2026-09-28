@@ -392,7 +392,6 @@ export type AgentSessionConfig = AgentSessionBaseSettings & {
     agentType: string
     voiceId: string | null
     language: AgentLanguage
-    phoneNumber: string | null
     generalTools: GeneralTool[]
     webhook_url: string | null
     webhook_events: WebhookEvent[]
@@ -458,7 +457,6 @@ const EMPTY_AGENT: AgentSessionAgent = {
         agentType: "single_prompt",
         voiceId: null,
         language: "en-US",
-        phoneNumber: null,
         generalTools: [],
     },
     llmConfig: {
@@ -495,7 +493,6 @@ const EMPTY_CHAT_AGENT: AgentSessionAgent = {
         agentType: "single_prompt",
         voiceId: null,
         language: "en-US",
-        phoneNumber: null,
         generalTools: [],
 
     },

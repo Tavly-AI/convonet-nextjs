@@ -115,7 +115,7 @@ export async function saveInboundPhoneNumberConfig(
       phoneNumberId,
     },
     update: {
-      inboundAgents: parseAgents(parsed.inboundAgentId) as Prisma.InputJsonValue,
+      inboundAgentId: parsed.inboundAgentId || null,
       allowedInboundCountryList: parseCountryList(
         parsed.allowedInboundCountries
       ) as Prisma.InputJsonValue,
@@ -124,7 +124,7 @@ export async function saveInboundPhoneNumberConfig(
     },
     create: {
       phoneNumberId,
-      inboundAgents: parseAgents(parsed.inboundAgentId) as Prisma.InputJsonValue,
+      inboundAgentId: parsed.inboundAgentId || null,
       allowedInboundCountryList: parseCountryList(
         parsed.allowedInboundCountries
       ) as Prisma.InputJsonValue,
@@ -147,14 +147,14 @@ export async function saveOutboundPhoneNumberConfig(
       phoneNumberId,
     },
     update: {
-      outboundAgents: parseAgents(parsed.outboundAgentId) as Prisma.InputJsonValue,
+      outboundAgentId: parsed.outboundAgentId || null,
       allowedOutboundCountryList: parseCountryList(
         parsed.allowedOutboundCountries
       ) as Prisma.InputJsonValue,
     },
     create: {
       phoneNumberId,
-      outboundAgents: parseAgents(parsed.outboundAgentId) as Prisma.InputJsonValue,
+      outboundAgentId: parsed.outboundAgentId || null,
       allowedOutboundCountryList: parseCountryList(
         parsed.allowedOutboundCountries
       ) as Prisma.InputJsonValue,
@@ -201,18 +201,6 @@ function parseCountryList(value?: string) {
         .filter(Boolean)
     )
   )
-}
-
-function parseAgents(agentId?: string) {
-  if (!agentId) return []
-
-  return [
-    {
-      agent_id: agentId,
-      weight: 1,
-      agent_version: "latest_published",
-    },
-  ]
 }
 
 async function getPhoneNumberId(phoneNumberId: string) {

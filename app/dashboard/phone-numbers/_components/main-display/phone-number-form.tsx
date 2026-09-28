@@ -13,13 +13,7 @@ import { Card } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { WebsiteCustomDropdown } from "@/components/custom/website-custom-dropdown"
 import { CountriesDropdown } from "./countries-dropdown"
 
 type PhoneNumberFormProps = {
@@ -160,6 +154,7 @@ function AgentSettingsCard({
   const [webhookUrl, setWebhookUrl] = useState(initialWebhookUrl ?? "")
   const [fallbackNumber, setFallbackNumber] = useState(initialFallbackNumber ?? "")
   const title = type === "inbound" ? "Inbound Call Agent" : "Outbound Call Agent"
+  const agentNameCounts = agents.reduce<Map<string, number>>((counts, agent) => { counts.set(agent.name, (counts.get(agent.name) ?? 0) + 1); return counts }, new Map())
 
   function saveInbound() {
     startTransition(async () => {
@@ -200,19 +195,24 @@ function AgentSettingsCard({
         <div className="space-y-4">
           <div className="space-y-2">
             <Label>Call Agent</Label>
-            <Select value={selectedAgentId} onValueChange={(value) => setSelectedAgentId(value ?? "none")}>
-              <SelectTrigger className="h-10 w-full">
-                <SelectValue placeholder="None" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">None</SelectItem>
-                {agents.map((agent) => (
-                  <SelectItem key={agent.id} value={agent.id}>
-                    {agent.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <WebsiteCustomDropdown
+              value={selectedAgentId}
+              onValueChange={setSelectedAgentId}
+              emptyOption={{
+                value: "none",
+                label: "None",
+                description: "Do not assign an agent",
+              }}
+              label="Voice agents"
+              options={agents.map((agent) => ({
+                value: agent.id,
+                label: agent.name,
+                description:
+                  agentNameCounts.get(agent.name)! > 1
+                    ? `ID: ${agent.id.slice(-6)}`
+                    : undefined,
+              }))}
+            />
           </div>
 
           {initialWebhookEnabled !== undefined && (

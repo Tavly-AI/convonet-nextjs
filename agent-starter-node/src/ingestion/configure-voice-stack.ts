@@ -12,7 +12,9 @@ import { VOICES_UPDATED, type Voice } from "../../../app/agents/_data/voices-upd
 import type { RuntimeAgentConfig } from "./get-agent-config.ts";
 import type { LlmProvider } from "../../../app/agents/_components/main/agent-session-model.tsx";
 
-export function createVoiceStack(agentConfig: RuntimeAgentConfig) {
+type TtsVoice = Pick<Voice, "provider" | "voice_id" | "model">;
+
+export async function createVoiceStack(agentId: string, agentConfig: RuntimeAgentConfig) {
 
     // ============================================================
     // =========================== LLM ============================
@@ -50,19 +52,19 @@ export function createVoiceStack(agentConfig: RuntimeAgentConfig) {
 
     const voiceId = agentConfig.config.voiceId?.trim() || "db6b0ed5-d5d3-463d-ae85-518a07d3c2b4";
 
-    const voice = VOICES_UPDATED.find((voice) => voice.voice_id === voiceId);
+    let voice: TtsVoice | undefined = VOICES_UPDATED.find((voice) => voice.voice_id === voiceId);
 
-    if (!voice) { throw new Error(`Voice not found: ${voiceId}`); }
+    if (!voice) { voice = await solveCustomVoice(agentId, voiceId) }
 
     let tts;
 
-    if (voice.provider === "cartesia") {
+    if (voice?.provider === "cartesia") {
         tts = new cartesia.TTS({
             model: formatModelId(voice.model),
             voice: voice.voice_id,
             language: languages.cartesia,
         });
-    } else if (voice.provider === "elevenlabs") {
+    } else if (voice?.provider === "elevenlabs") {
         tts = new elevenlabs.TTS({
             modelID: voice.model,
             voiceId: voice.voice_id,
@@ -114,5 +116,28 @@ export function getProviderLanguages(language: RuntimeAgentConfig["config"]["lan
         elevenlabs: speechLanguage,
         cartesia: speechLanguage,
         sarvam: locale,
+    };
+}
+
+async function solveCustomVoice(agentId: string, voiceId: string): Promise<TtsVoice | undefined> {
+
+    const baseUrl = process.env.NEXTJS_APP_URL ?? "http://localhost:3000";
+    const params = new URLSearchParams({ agentId, voiceId });
+
+    const customVoice = await fetch(`${baseUrl}/api/agent/get-custom-voice-config?${params}`)
+        .then(async (response) => response.ok ? await response.json() as { provider?: Voice["provider"] } : null)
+        .catch(() => null);
+
+    if (!customVoice?.provider) return undefined;
+
+    const modelByProvider: Record<Voice["provider"], Voice["model"]> = {
+        cartesia: "sonic 3.5",
+        elevenlabs: "eleven_flash_v2_5",
+    };
+
+    return {
+        provider: customVoice.provider,
+        voice_id: voiceId,
+        model: modelByProvider[customVoice.provider],
     };
 }

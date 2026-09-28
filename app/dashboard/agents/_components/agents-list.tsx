@@ -45,7 +45,6 @@ export type AgentListItem = {
   type: string
   channel: AgentChannel
   voice: { name: string; avatarUrl: string } | null
-  phone: string
   updatedAt: string
 }
 
@@ -116,7 +115,6 @@ export function AgentsList({ agents }: { agents: AgentListItem[] }) {
               <TableHead className="h-12 pl-4">Agent Name</TableHead>
               <TableHead>Agent Type</TableHead>
               <TableHead>Voice</TableHead>
-              <TableHead>Phone</TableHead>
               <TableHead>Last edited</TableHead>
               <TableHead className="w-12">
                 <span className="sr-only">Actions</span>
@@ -158,7 +156,6 @@ export function AgentsList({ agents }: { agents: AgentListItem[] }) {
                     <span className="text-muted-foreground">-</span>
                   )}
                 </TableCell>
-                <TableCell>{agent.phone}</TableCell>
                 <TableCell className="text-muted-foreground">
                   {agent.updatedAt}
                 </TableCell>
@@ -193,7 +190,7 @@ export function AgentsList({ agents }: { agents: AgentListItem[] }) {
             ))}
             {!visibleAgents.length && (
               <TableRow>
-                <TableCell colSpan={6} className="h-56 text-center">
+                <TableCell colSpan={5} className="h-56 text-center">
                   <div className="mx-auto flex max-w-sm flex-col items-center gap-2">
                     <span className="flex size-10 items-center justify-center rounded-full bg-muted text-muted-foreground">
                       <BotIcon className="size-5" />

@@ -68,7 +68,6 @@ export default async function Page() {
         : customVoice && "name" in customVoice
           ? { name: String(customVoice.name), avatarUrl: "" }
           : null,
-      phone: String(config.phone ?? config.phoneNumber ?? "-"),
       updatedAt: new Intl.DateTimeFormat("en-US", {
         year: "numeric",
         month: "2-digit",

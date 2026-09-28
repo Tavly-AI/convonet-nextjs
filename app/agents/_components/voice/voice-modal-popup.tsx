@@ -162,7 +162,7 @@ export function VoiceModalPopup({
             onValueChange={(value) => setProvider(value as Provider)}
             className="gap-4"
           >
-            <TabsList className="grid h-auto w-full grid-cols-2 sm:grid-cols-5">
+            <TabsList className="grid h-auto w-full grid-cols-2">
               {PROVIDERS.map((item) => (
                 <TabsTrigger key={item.value} value={item.value}>
                   {item.label}
@@ -246,14 +246,13 @@ export function VoiceModalPopup({
                           <Button
                             type="button"
                             size="sm"
-                            className="pointer-events-none opacity-0 transition-none group-hover:pointer-events-auto group-hover:opacity-100"
+                            className={selectedVoiceId === voice.voice_id ? "" : "pointer-events-none opacity-0 transition-none group-hover:pointer-events-auto group-hover:opacity-100"}
                             onClick={() => {
                               writeVoiceId(voice.voice_id);
                               window.dispatchEvent(new Event("voice-changed"))
                             }}
                           >
-                            {selectedVoiceId === voice.voice_id ? "Selected" : "Select"
-                            }
+                            {selectedVoiceId === voice.voice_id ? "Selected" : "Select"}
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -418,7 +417,7 @@ function VoiceFilters({
         value={gender}
         onValueChange={(value) => onGenderChange(value as GenderFilter)}
       >
-        <SelectTrigger size="default" className="h-9 w-full">
+        <SelectTrigger size="default" className="min-h-9 w-full">
           <SelectValue>
             {gender === "all" ? "Gender" : gender === "female" ? "Female" : "Male"}
           </SelectValue>
@@ -431,7 +430,7 @@ function VoiceFilters({
       </Select>
 
       <Select value={accent} onValueChange={(value) => onAccentChange(value ?? "all")}>
-        <SelectTrigger size="default" className="h-9 w-full">
+        <SelectTrigger size="default" className="min-h-9 w-full">
           <SelectValue>{accent === "all" ? "Accent" : accent}</SelectValue>
         </SelectTrigger>
         <SelectContent>

@@ -278,6 +278,7 @@ function toSipTransport(value?: string | null) {
 function toSipMediaEncryption(value?: string | null) {
     switch (value) {
         case "udp":
+            // https://docs.livekit.io/reference/telephony/sip-api/#sipmediaencryption
             return SIPMediaEncryption.SIP_MEDIA_ENCRYPT_DISABLE
         case "tls":
             return SIPMediaEncryption.SIP_MEDIA_ENCRYPT_REQUIRE

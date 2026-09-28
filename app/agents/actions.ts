@@ -23,7 +23,6 @@ const publishAgentSchema = z.object({
     .object({
       agentType: z.string().trim().min(1),
       voiceId: z.string().nullable(),
-      phoneNumber: z.string().nullable(),
       generalTools: z.array(z.json()),
     })
     .catchall(z.json()),

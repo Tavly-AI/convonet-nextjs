@@ -24,8 +24,7 @@ export function getAgentTemplates(): Record<string, AgentTemplateData> {
                 ...DEFAULT_POST_CALL_ANALYSIS_SETTINGS,
 
                 agentType: "single_prompt",
-                voiceId: null,
-                phoneNumber: null,
+                voiceId: "db6b0ed5-d5d3-463d-ae85-518a07d3c2b4",
                 // Retell template overrides
                 language: "en-US",
                 webhook_timeout_ms: 30000,
@@ -716,9 +715,8 @@ If the caller insists on speaking with a human, Call \`transfer_to_staff\` immed
                 ...DEFAULT_POST_CALL_ANALYSIS_SETTINGS,
 
                 agentType: "single_prompt",
-                voiceId: null,
+                voiceId: "db6b0ed5-d5d3-463d-ae85-518a07d3c2b4",
                 language: "en-US",
-                phoneNumber: null,
                 // Template-specific call settings
                 max_call_duration_ms: 3600000,
                 interruption_sensitivity: 0.9,
@@ -1018,9 +1016,8 @@ Call \`end_call\``,
                 ...DEFAULT_POST_CALL_ANALYSIS_SETTINGS,
 
                 agentType: "single_prompt",
-                voiceId: "retell-Grace",
+                voiceId: "db6b0ed5-d5d3-463d-ae85-518a07d3c2b4",
                 language: "en-US",
-                phoneNumber: null,
                 // Template-specific call settings
                 max_call_duration_ms: 3600000,
                 interruption_sensitivity: 0.9,
@@ -1589,9 +1586,8 @@ NO_RESPONSE_NEEDED`,
                 ...DEFAULT_POST_CALL_ANALYSIS_SETTINGS,
 
                 agentType: "single_prompt",
-                voiceId: "retell-Grace",
+                voiceId: "db6b0ed5-d5d3-463d-ae85-518a07d3c2b4",
                 language: "en-US",
-                phoneNumber: null,
                 // Template-specific call settings
                 max_call_duration_ms: 3600000,
                 interruption_sensitivity: 0.9,
@@ -2029,9 +2025,8 @@ NO_RESPONSE_NEEDED
                 ...DEFAULT_POST_CALL_ANALYSIS_SETTINGS,
 
                 agentType: "single_prompt",
-                voiceId: "retell-Cimo",
+                voiceId: "db6b0ed5-d5d3-463d-ae85-518a07d3c2b4",
                 language: "en-US",
-                phoneNumber: null,
                 // Template-specific call settings
                 max_call_duration_ms: 3600000,
                 interruption_sensitivity: 0.9,
@@ -2446,9 +2441,8 @@ If asked whether you are a robot, respond exactly with:
                 ...DEFAULT_POST_CALL_ANALYSIS_SETTINGS,
 
                 agentType: "single_prompt",
-                voiceId: "retell-Della",
+                voiceId: "db6b0ed5-d5d3-463d-ae85-518a07d3c2b4",
                 language: "en-US",
-                phoneNumber: null,
                 // Template-specific call settings
                 max_call_duration_ms: 1800000,
                 interruption_sensitivity: 0.87,
@@ -2966,7 +2960,7 @@ Do not retry the same failed path. Do not guess missing information.`,
                 ...DEFAULT_POST_CALL_ANALYSIS_SETTINGS,
 
                 agentType: "single_prompt",
-                voiceId: null,
+                voiceId: "db6b0ed5-d5d3-463d-ae85-518a07d3c2b4",
                 language: [
                     "en-US",
                     "es-ES",
@@ -2979,7 +2973,6 @@ Do not retry the same failed path. Do not guess missing information.`,
                     "it-IT",
                     "nl-NL"
                 ],
-                phoneNumber: null,
 
                 generalTools: [
                     {
@@ -3278,9 +3271,8 @@ If the caller says "Hold on," "One moment," "Please wait," "Espera," or "Un mome
                 ...DEFAULT_POST_CALL_ANALYSIS_SETTINGS,
 
                 agentType: "single_prompt",
-                voiceId: "retell-Grace",
+                voiceId: "db6b0ed5-d5d3-463d-ae85-518a07d3c2b4",
                 language: "en-US",
-                phoneNumber: null,
 
                 generalTools: [
                     {
@@ -3526,7 +3518,7 @@ If the caller says "Hold on," "One moment," or "Please wait," respond exactly wi
                 ...DEFAULT_POST_CALL_ANALYSIS_SETTINGS,
 
                 agentType: "single_prompt",
-                voiceId: "retell-Cimo",
+                voiceId: "db6b0ed5-d5d3-463d-ae85-518a07d3c2b4",
                 language: [
                     "en-US",
                     "es-ES",
@@ -3539,7 +3531,6 @@ If the caller says "Hold on," "One moment," or "Please wait," respond exactly wi
                     "it-IT",
                     "nl-NL"
                 ],
-                phoneNumber: null,
 
                 generalTools: [
                     {
@@ -4138,9 +4129,8 @@ After collecting the number, provide a natural variation of:
                 ...DEFAULT_POST_CALL_ANALYSIS_SETTINGS,
 
                 agentType: "single_prompt",
-                voiceId: "retell-Grace",
+                voiceId: "db6b0ed5-d5d3-463d-ae85-518a07d3c2b4",
                 language: "en-US",
-                phoneNumber: null,
 
                 generalTools: [
                     {
@@ -4467,9 +4457,8 @@ A: The sales team can discuss options.`,
                 ...DEFAULT_POST_CALL_ANALYSIS_SETTINGS,
 
                 agentType: "single_prompt",
-                voiceId: "retell-Della",
+                voiceId: "db6b0ed5-d5d3-463d-ae85-518a07d3c2b4",
                 language: "en-US",
-                phoneNumber: null,
 
                 generalTools: [
                     {
@@ -5059,9 +5048,8 @@ Call \`end_call\` if:
                 ...DEFAULT_POST_CALL_ANALYSIS_SETTINGS,
 
                 agentType: "single_prompt",
-                voiceId: "retell-Merritt",
+                voiceId: "db6b0ed5-d5d3-463d-ae85-518a07d3c2b4",
                 language: "en-US",
-                phoneNumber: null,
 
                 generalTools: [
                     {
@@ -5313,9 +5301,8 @@ If the caller says "Hold on," "One moment," or "Please wait," respond exactly wi
                 ...DEFAULT_POST_CALL_ANALYSIS_SETTINGS,
 
                 agentType: "single_prompt",
-                voiceId: "retell-Grace",
+                voiceId: "db6b0ed5-d5d3-463d-ae85-518a07d3c2b4",
                 language: "en-US",
-                phoneNumber: null,
 
                 generalTools: [
                     {
@@ -5727,9 +5714,8 @@ NO_RESPONSE_NEEDED
                 ...DEFAULT_POST_CALL_ANALYSIS_SETTINGS,
 
                 agentType: "single_prompt",
-                voiceId: "11labs-Nico",
+                voiceId: "db6b0ed5-d5d3-463d-ae85-518a07d3c2b4",
                 language: "en-US",
-                phoneNumber: null,
 
                 generalTools: [
                     {
@@ -6115,9 +6101,8 @@ NO_RESPONSE_NEEDED\n`,
                 ...DEFAULT_POST_CALL_ANALYSIS_SETTINGS,
 
                 agentType: "single_prompt",
-                voiceId: "retell-Cimo",
+                voiceId: "db6b0ed5-d5d3-463d-ae85-518a07d3c2b4",
                 language: "en-US",
-                phoneNumber: null,
 
                 generalTools: [
                     {
@@ -6470,9 +6455,8 @@ NO_RESPONSE_NEEDED\n`,
                 ...DEFAULT_POST_CALL_ANALYSIS_SETTINGS,
 
                 agentType: "single_prompt",
-                voiceId: "retell-Cimo",
+                voiceId: "db6b0ed5-d5d3-463d-ae85-518a07d3c2b4",
                 language: "en-US",
-                phoneNumber: null,
 
                 generalTools: [
                     {
@@ -6913,9 +6897,8 @@ If asked whether the call is automated, respond exactly with:
                 ...DEFAULT_POST_CALL_ANALYSIS_SETTINGS,
 
                 agentType: "single_prompt",
-                voiceId: "retell-Cimo",
+                voiceId: "db6b0ed5-d5d3-463d-ae85-518a07d3c2b4",
                 language: "en-US",
-                phoneNumber: null,
 
                 generalTools: [
                     {
@@ -7323,9 +7306,8 @@ If asked whether you are automated, respond exactly with:
                 ...DEFAULT_POST_CALL_ANALYSIS_SETTINGS,
 
                 agentType: "single_prompt",
-                voiceId: "retell-Cimo",
+                voiceId: "db6b0ed5-d5d3-463d-ae85-518a07d3c2b4",
                 language: "en-US",
-                phoneNumber: null,
 
                 generalTools: [
                     {
@@ -7810,9 +7792,8 @@ If asked whether Maya is a real person or automated, provide a natural variation
                 ...DEFAULT_POST_CALL_ANALYSIS_SETTINGS,
 
                 agentType: "single_prompt",
-                voiceId: "retell-Cimo",
+                voiceId: "db6b0ed5-d5d3-463d-ae85-518a07d3c2b4",
                 language: "en-US",
-                phoneNumber: null,
 
                 generalTools: [
                     {
@@ -8250,9 +8231,8 @@ Remain silent until they return.
                 ...DEFAULT_POST_CALL_ANALYSIS_SETTINGS,
 
                 agentType: "single_prompt",
-                voiceId: "retell-Cimo",
+                voiceId: "db6b0ed5-d5d3-463d-ae85-518a07d3c2b4",
                 language: "en-US",
-                phoneNumber: null,
 
                 generalTools: [
                     {
@@ -8554,9 +8534,8 @@ If the customer expresses interest in speaking with a specialist or agrees to le
                 ...DEFAULT_POST_CALL_ANALYSIS_SETTINGS,
 
                 agentType: "single_prompt",
-                voiceId: "retell-Cimo",
+                voiceId: "db6b0ed5-d5d3-463d-ae85-518a07d3c2b4",
                 language: "en-US",
-                phoneNumber: null,
 
                 generalTools: [
                     {
@@ -8823,9 +8802,8 @@ A: Each account must use its own email address and phone number. If you're arran
                 ...DEFAULT_POST_CALL_ANALYSIS_SETTINGS,
 
                 agentType: "single_prompt",
-                voiceId: "retell-Cimo",
+                voiceId: "db6b0ed5-d5d3-463d-ae85-518a07d3c2b4",
                 language: "en-US",
-                phoneNumber: null,
 
                 generalTools: [
                     {
@@ -9026,9 +9004,8 @@ A: Open the **Recycle Bin**, locate the file, right-click it, and select **Resto
                 ...DEFAULT_POST_CALL_ANALYSIS_SETTINGS,
 
                 agentType: "single_prompt",
-                voiceId: "retell-Cimo",
+                voiceId: "db6b0ed5-d5d3-463d-ae85-518a07d3c2b4",
                 language: "en-US",
-                phoneNumber: null,
 
                 generalTools: [
                     {
@@ -9395,9 +9372,8 @@ Provide a natural variation of:
                 ...DEFAULT_POST_CALL_ANALYSIS_SETTINGS,
 
                 agentType: "single_prompt",
-                voiceId: "retell-Chloe",
+                voiceId: "db6b0ed5-d5d3-463d-ae85-518a07d3c2b4",
                 language: "en-US",
-                phoneNumber: null,
 
                 generalTools: [
                     {
@@ -9762,7 +9738,7 @@ Agent: What about [Y]?
                 ...DEFAULT_POST_CALL_ANALYSIS_SETTINGS,
 
                 agentType: "single_prompt",
-                voiceId: "retell-Andrea",
+                voiceId: "db6b0ed5-d5d3-463d-ae85-518a07d3c2b4",
                 language: [
                     "en-US",
                     "es-ES",
@@ -9775,7 +9751,6 @@ Agent: What about [Y]?
                     "it-IT",
                     "nl-NL",
                 ],
-                phoneNumber: null,
 
                 generalTools: [
                     {
@@ -10033,9 +10008,8 @@ Your role is **translation only**.
                 ...DEFAULT_POST_CALL_ANALYSIS_SETTINGS,
 
                 agentType: "single_prompt",
-                voiceId: "retell-Cimo",
+                voiceId: "db6b0ed5-d5d3-463d-ae85-518a07d3c2b4",
                 language: "en-US",
-                phoneNumber: null,
 
                 generalTools: [
                     {
@@ -10298,9 +10272,8 @@ If the caller says "Hold on," "One moment," or "Please wait," respond exactly wi
                 ...DEFAULT_POST_CALL_ANALYSIS_SETTINGS,
 
                 agentType: "single_prompt",
-                voiceId: "retell-Cimo",
+                voiceId: "db6b0ed5-d5d3-463d-ae85-518a07d3c2b4",
                 language: "en-US",
-                phoneNumber: null,
 
                 generalTools: [
                     {
