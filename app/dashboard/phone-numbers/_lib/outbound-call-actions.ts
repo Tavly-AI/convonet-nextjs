@@ -27,7 +27,7 @@ export async function startOutboundTestCall(input: { phoneNumberId: string; dest
       phoneNumber: true,
       config: {
         select: {
-          outboundAgentId: true,
+          outboundAgents: true,
         },
       },
       sipTrunkConnection: {
@@ -42,7 +42,7 @@ export async function startOutboundTestCall(input: { phoneNumberId: string; dest
     throw new Error("Phone number not found.")
   }
 
-  const agentId = phoneNumber.config?.outboundAgentId
+  const agentId = readAgentId(phoneNumber.config?.outboundAgents)
   if (!agentId) { throw new Error("Select an outbound call agent before placing a test call.") }
 
   const agent = await prisma.agent.findFirst({
@@ -98,4 +98,13 @@ export async function startOutboundTestCall(input: { phoneNumberId: string; dest
     if (error instanceof SipCallError) { throw new Error(`Call failed: ${error.sipStatusCode} ${error.sipStatus}`) }
     throw error
   }
+}
+
+function readAgentId(value: unknown) {
+  if (!Array.isArray(value)) return ""
+
+  const agent = value[0]
+  if (!agent || typeof agent !== "object" || !("agent_id" in agent)) return ""
+
+  return typeof agent.agent_id === "string" ? agent.agent_id : ""
 }

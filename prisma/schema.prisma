@@ -130,23 +130,18 @@ model PhoneNumberConfig {
   id            String      @id @default(cuid())
   phoneNumberId String      @unique
   phoneNumber   PhoneNumber @relation(fields: [phoneNumberId], references: [id], onDelete: Cascade)
-  inboundAgentId  String?
-  inboundAgent    Agent?      @relation("InboundPhoneNumberAgent", fields: [inboundAgentId], references: [id], onDelete: SetNull)
-  outboundAgentId String?
-  outboundAgent   Agent?      @relation("OutboundPhoneNumberAgent", fields: [outboundAgentId], references: [id], onDelete: SetNull)
 
   nickname                   String?
   allowedInboundCountryList  Json?
   allowedOutboundCountryList Json?
+  inboundAgents              Json?
+  outboundAgents             Json?
   inboundWebhookUrl          String?
   inboundSmsWebhookUrl       String?
   fallbackNumber             String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  @@index([inboundAgentId])
-  @@index([outboundAgentId])
 }
 
 model Agent {
@@ -159,8 +154,6 @@ model Agent {
   config             Json
   llmConfig          Json
   versions           AgentVersion[]
-  inboundPhoneNumberConfigs  PhoneNumberConfig[] @relation("InboundPhoneNumberAgent")
-  outboundPhoneNumberConfigs PhoneNumberConfig[] @relation("OutboundPhoneNumberAgent")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

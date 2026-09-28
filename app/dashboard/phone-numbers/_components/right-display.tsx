@@ -117,8 +117,8 @@ export async function RightDisplay({
         <PhoneNumberForm
           phoneNumberId={phoneNumber.id}
           nickname={phoneNumber.config?.nickname ?? ""}
-          inboundAgentId={phoneNumber.config?.inboundAgentId ?? ""}
-          outboundAgentId={phoneNumber.config?.outboundAgentId ?? ""}
+          inboundAgentId={readAgentId(phoneNumber.config?.inboundAgents)}
+          outboundAgentId={readAgentId(phoneNumber.config?.outboundAgents)}
           allowedInboundCountries={readCountryList(phoneNumber.config?.allowedInboundCountryList)}
           allowedOutboundCountries={readCountryList(phoneNumber.config?.allowedOutboundCountryList)}
           inboundWebhookUrl={phoneNumber.config?.inboundWebhookUrl ?? ""}
@@ -178,6 +178,15 @@ function AdvanceAddOnsUI() {
 }
 
 // MISC CODE
+
+function readAgentId(value: unknown) {
+  if (!Array.isArray(value)) return ""
+
+  const agent = value[0]
+  if (!agent || typeof agent !== "object" || !("agent_id" in agent)) return ""
+
+  return typeof agent.agent_id === "string" ? agent.agent_id : ""
+}
 
 function readCountryList(value: unknown) {
   if (!Array.isArray(value)) return ""
