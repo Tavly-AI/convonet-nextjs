@@ -1,7 +1,6 @@
 import {
   ClipboardIcon,
   EllipsisIcon,
-  UserRoundIcon,
 } from "lucide-react"
 
 import { getCurrentWorkspaceId } from "@/app/agents/_lib/helper-actions"
@@ -22,8 +21,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Separator } from "@/components/ui/separator"
+import {
+  DeletePhoneNumber,
+  DeletePhoneNumberTrigger,
+} from "./main-display/delete-phone-number"
 import { PhoneNumberForm } from "./main-display/phone-number-form"
 import { OutboundCallMaker } from "./main-display/outbound-call-maker"
+
+export const releasableNumberProviders = ["twilio", "custom"] as const
 
 export async function RightDisplay({
   phoneNumberId,
@@ -76,6 +81,8 @@ export async function RightDisplay({
 
   const name = phoneNumber.config?.nickname?.trim() || phoneNumber.phoneNumber
 
+  const canReleasePhoneNumber = releasableNumberProviders.includes(phoneNumber.providerType as typeof releasableNumberProviders[number])
+
   return (
     <Card className="gap-5 p-5">
       <CardHeader className="items-center px-0 md:grid-cols-[1fr_auto_auto]">
@@ -91,23 +98,28 @@ export async function RightDisplay({
         </div>
 
         <CardAction className="flex items-center gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              render={
-                <Button
-                  variant="outline"
-                  size="icon-lg"
-                  aria-label="Phone number actions"
-                />
-              }
-            >
-              <EllipsisIcon />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem>Rename</DropdownMenuItem>
-              <DropdownMenuItem>Release number</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <DeletePhoneNumber
+            phoneNumberId={phoneNumber.id}
+            phoneNumber={phoneNumber.phoneNumber}
+          >
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={
+                  <Button
+                    variant="outline"
+                    size="icon-lg"
+                    aria-label="Phone number actions"
+                  />
+                }
+              >
+                <EllipsisIcon />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem>Rename</DropdownMenuItem>
+                {canReleasePhoneNumber && <DeletePhoneNumberTrigger />}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </DeletePhoneNumber>
         </CardAction>
       </CardHeader>
 

@@ -44,40 +44,37 @@ type SipTrunkSetup = {
     }
 }
 
-export async function buyNumber(phoneNumber1: string, provider: PhoneNumberProvider) {
-    const phoneNumber = "+16562360692"
+export async function buyNumber(phoneNumber: string, provider: PhoneNumberProvider) {
     // TWILLIO PURCHASE NUMBER API
-    let purchasedNumber: PurchasedNumber = {
-        sid: "PN2b7a5bc43c857a2a4c85edbc6905ce71"
+    let purchasedNumber: PurchasedNumber
+
+    try {
+        const route = provider === "telnyx" ? "/api/telnyx/purchase-number" : "/api/twillio/purchase-number"
+        const response = await fetch(route, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ phoneNumber }),
+        })
+        const data = await response.json()
+
+        if (!response.ok) { throw new Error(data.error ?? `Failed to purchase ${provider === "telnyx" ? "Telnyx" : "Twilio"} number.`) }
+
+        purchasedNumber = data
+    } catch (error) {
+        toast.error(error instanceof Error ? error.message : `Failed to purchase ${provider === "telnyx" ? "Telnyx" : "Twilio"} number.`)
+        return
     }
 
-    // try {
-    //     const route = provider === "telnyx" ? "/api/telnyx/purchase-number" : "/api/twillio/purchase-number"
-    //     const response = await fetch(route, {
-    //         method: "POST",
-    //         headers: { "Content-Type": "application/json" },
-    //         body: JSON.stringify({ phoneNumber }),
-    //     })
-    //     const data = await response.json()
+    if (provider === "telnyx") {
+        try {
+            if (!purchasedNumber.orderId) { throw new Error("Telnyx did not return a number order ID.") }
 
-    //     if (!response.ok) { throw new Error(data.error ?? `Failed to purchase ${provider === "telnyx" ? "Telnyx" : "Twilio"} number.`) }
-
-    //     purchasedNumber = data
-    // } catch (error) {
-    //     toast.error(error instanceof Error ? error.message : `Failed to purchase ${provider === "telnyx" ? "Telnyx" : "Twilio"} number.`)
-    //     return
-    // }
-
-    // if (provider === "telnyx") {
-    //     try {
-    //         if (!purchasedNumber.orderId) { throw new Error("Telnyx did not return a number order ID.") }
-
-    //         await waitForTelnyxNumberActivation(purchasedNumber.orderId, phoneNumber)
-    //     } catch (error) {
-    //         toast.error(error instanceof Error ? error.message : "Failed to confirm Telnyx number activation.")
-    //         return
-    //     }
-    // }
+            await waitForTelnyxNumberActivation(purchasedNumber.orderId, phoneNumber)
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : "Failed to confirm Telnyx number activation.")
+            return
+        }
+    }
 
     // UPDATE TWILLIO SIP TRUNKING
     let sipTrunkSetup: SipTrunkSetup
