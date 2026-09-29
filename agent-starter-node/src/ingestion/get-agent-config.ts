@@ -22,17 +22,13 @@ export async function getAgentConfig(agentId: string) {
 
   const response = await fetch(`${baseUrl}/api/agent/list-config?agentId=${encodeURIComponent(agentId)}`);
 
-  if (!response.ok) {
-    const body = await response.text();
-    throw new Error(`Failed to fetch agent config (${response.status}): ${body}`);
-  }
+  if (!response.ok) { const body = await response.text(); throw new Error(`Failed to fetch agent config (${response.status}): ${body}`); }
 
   const agent = (await response.json()) as RuntimeAgentConfig
 
   // console.log("========== AGENT CONFIG ==========");
   // console.dir(agent, { depth: null });
   // console.log("==================================");
-
 
   return agent
 }

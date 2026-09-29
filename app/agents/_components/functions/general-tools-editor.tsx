@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useSearchParams } from "next/navigation"
 import {
   ArrowRightLeftIcon,
   BracesIcon,
@@ -11,14 +12,12 @@ import {
   HashIcon,
   MessageSquareTextIcon,
   MoreHorizontalIcon,
-  PhoneForwardedIcon,
   PhoneOffIcon,
-  PlusIcon,
   Trash2Icon,
-  XCircleIcon,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { WebsiteCustomDropdown } from "@/components/custom/website-custom-dropdown"
 import {
   Dialog,
   DialogClose,
@@ -28,16 +27,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import type {
   BookAppointmentCalTool,
-  BridgeTransferTool,
-  CancelTransferTool,
   CheckAvailabilityCalTool,
   CodeTool,
   CustomFunctionTool,
@@ -56,6 +47,7 @@ import {
   writeGeneralTools,
 } from "@/app/agents/_lib/session-storage/agent-session"
 import { GeneralToolForm } from "./general-tool-form"
+import { isChatAgentSession } from "../main/agent-session-start-speaker"
 
 const TOOL_OPTIONS = [
   {
@@ -63,70 +55,71 @@ const TOOL_OPTIONS = [
     label: "End Call",
     description: "End the conversation when its conditions are met.",
     icon: PhoneOffIcon,
+    channels: ["voice"],
   },
   {
     type: "transfer_call" as const,
     label: "Call Transfer",
     description: "Route the caller to a person or external number.",
     icon: ArrowRightLeftIcon,
+    channels: ["voice"],
   },
   {
     type: "check_availability_cal" as const,
     label: "Check Availability",
     description: "Check Cal.com availability for an event type.",
     icon: CalendarDaysIcon,
+    channels: ["voice", "chat"],
   },
   {
     type: "book_appointment_cal" as const,
     label: "Book Appointment",
     description: "Book a Cal.com appointment for an event type.",
     icon: CalendarCheckIcon,
+    channels: ["voice", "chat"],
   },
   {
     type: "press_digit" as const,
     label: "Press Digit",
     description: "Send DTMF digits while navigating an IVR.",
     icon: HashIcon,
-  },
-  {
-    type: "bridge_transfer" as const,
-    label: "Bridge Transfer",
-    description: "Bridge an agentic warm transfer to the target.",
-    icon: PhoneForwardedIcon,
-  },
-  {
-    type: "cancel_transfer" as const,
-    label: "Cancel Transfer",
-    description: "Cancel an agentic warm transfer and return to the main agent.",
-    icon: XCircleIcon,
+    channels: ["voice"],
   },
   {
     type: "code" as const,
     label: "Code",
     description: "Run JavaScript in Retell's sandbox during the conversation.",
     icon: Code2Icon,
+    channels: ["voice", "chat"],
   },
   {
     type: "extract_dynamic_variable" as const,
     label: "Extract Dynamic Variable",
     description: "Extract values from the conversation into dynamic variables.",
     icon: FileInputIcon,
+    channels: ["voice", "chat"],
   },
   {
     type: "send_sms" as const,
     label: "Send SMS",
     description: "Send an SMS message during the phone call.",
     icon: MessageSquareTextIcon,
+    channels: [""],
   },
   {
     type: "custom" as const,
     label: "Custom Function",
     description: "Call your own API during the conversation.",
     icon: BracesIcon,
+    channels: ["voice", "chat"],
   },
 ]
 
+type AvailableToolType = (typeof TOOL_OPTIONS)[number]["type"]
+
 export function GeneralToolsEditor() {
+  const isChatAgent = isChatAgentSession(useSearchParams())
+
   const [tools, setTools] = React.useState(getGeneralTools)
   const [draft, setDraft] = React.useState<GeneralTool | null>(null)
   const [editingIndex, setEditingIndex] = React.useState<number | null>(null)
@@ -138,10 +131,15 @@ export function GeneralToolsEditor() {
     setTools(nextTools)
   }
 
-  function openNew(type: GeneralTool["type"]) {
+  function openNew(type: AvailableToolType) {
     setEditingIndex(null)
     setError("")
     setDraft(createTool(type))
+  }
+
+  function selectTool(type: string) {
+    const option = TOOL_OPTIONS.find((item) => item.type === type)
+    if (option) openNew(option.type)
   }
 
   function openEdit(index: number) {
@@ -176,24 +174,22 @@ export function GeneralToolsEditor() {
         <p className="text-sm text-muted-foreground">
           Tools the agent can use during any conversation.
         </p>
-        <DropdownMenu>
-          <DropdownMenuTrigger render={<Button size="sm" variant="outline" />}>
-            <PlusIcon data-icon="inline-start" />
-            Add
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            {TOOL_OPTIONS.map(({ type, label, icon: Icon }) => (
-              <DropdownMenuItem
-                key={type}
-                disabled={type === "end_call" && tools.some((tool) => tool.type === type)}
-                onClick={() => openNew(type)}
-              >
-                <Icon />
-                {label}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="w-56">
+          <WebsiteCustomDropdown
+            value=""
+            onValueChange={selectTool}
+            placeholder="Add a function"
+            label="Functions"
+            options={TOOL_OPTIONS.filter(
+              ({ type, channels }) => channels.includes(isChatAgent ? "chat" : "voice")
+            ).map(({ type, label, description, icon }) => ({
+              value: type,
+              label,
+              description,
+              icon,
+            }))}
+          />
+        </div>
       </div>
 
       {tools.length === 0 ? (
@@ -301,7 +297,7 @@ export function GeneralToolsEditor() {
   )
 }
 
-function createTool(type: GeneralTool["type"]): GeneralTool {
+function createTool(type: AvailableToolType): GeneralTool {
   if (type === "end_call") {
     return {
       type,
@@ -366,28 +362,6 @@ function createTool(type: GeneralTool["type"]): GeneralTool {
       description: "Press a digit to navigate an IVR menu.",
       delay_ms: 1000,
     } satisfies PressDigitTool
-  }
-
-  if (type === "bridge_transfer") {
-    return {
-      type,
-      name: "bridge_transfer",
-      description: "Bridge the original caller to the transfer target.",
-      speak_during_execution: false,
-      execution_message_type: "prompt",
-      execution_message_description: "",
-    } satisfies BridgeTransferTool
-  }
-
-  if (type === "cancel_transfer") {
-    return {
-      type,
-      name: "cancel_transfer",
-      description: "Cancel the transfer and return the caller to the main agent.",
-      speak_during_execution: false,
-      execution_message_type: "prompt",
-      execution_message_description: "",
-    } satisfies CancelTransferTool
   }
 
   if (type === "code") {
@@ -559,9 +533,7 @@ function validateTool(tool: GeneralTool, tools: GeneralTool[], editingIndex: num
 function normalizeTool(tool: GeneralTool): GeneralTool {
   if (
     tool.type === "end_call" ||
-    tool.type === "transfer_call" ||
-    tool.type === "bridge_transfer" ||
-    tool.type === "cancel_transfer"
+    tool.type === "transfer_call"
   ) {
     const normalizedExecutionTool = {
       ...tool,

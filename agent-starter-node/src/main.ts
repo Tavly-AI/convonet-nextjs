@@ -2,101 +2,75 @@ import { ServerOptions, cli, defineAgent, inference, voice } from '@livekit/agen
 import { audioEnhancement } from '@livekit/plugins-ai-coustics';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'node:url';
-import { createAgent } from './agent.ts';
-import { getAgentConfig, getAgentIdFromJob } from './ingestion/get-agent-config.ts';
-import { createVoiceStack } from './ingestion/configure-voice-stack.ts';
+import { createAgentDefinition } from './agent.ts';
+import { getAgentConfig, getAgentIdFromJob, type RuntimeAgentConfig } from './ingestion/get-agent-config.ts';
+import { createVoiceStack, type VoiceStack } from './ingestion/configure-voice-stack.ts';
 import { registerSessionDataHooks } from './data-hooks/main.ts';
 import { registerS3DualChannelRecording } from './egress/upload-s3-egress.ts';
 
-// Load environment variables from a local file.
-// Make sure to set LIVEKIT_URL, LIVEKIT_API_KEY, and LIVEKIT_API_SECRET
-// when running locally or self-hosting your agent server.
 dotenv.config({ path: '.env.local' });
 
 export default defineAgent({
   entry: async (ctx) => {
 
     const agentId = getAgentIdFromJob(ctx);
-    // const agentId = "cmtsm3f05000beew2z65tit98"
     const agentConfig = await getAgentConfig(agentId);
 
     const { llm, stt, tts } = await createVoiceStack(agentId, agentConfig);
+    const agent = createAgentDefinition(agentConfig);
 
-    // Set up a voice AI pipeline using AssemblyAI, Fish Audio, and the LiveKit turn detector
-    const session = new voice.AgentSession({
-      llm,
-      stt,
-      tts,
+    const session = createSession({ llm, stt, tts, channel: agentConfig.channel, });
+    await session.start({ agent, room: ctx.room, ...getSessionStartOptions(agentConfig.channel) });
 
-      turnHandling: {
-        // Turn detection determines when the user is speaking and when the agent should respond.
-        // The LiveKit audio turn detector is a multimodal model that encodes the user's audio
-        // directly to predict end of turn. It's built into the SDK (no extra plugin) and
-        // AgentSession supplies the required VAD automatically.
-        // See more at https://docs.livekit.io/agents/logic/turns/turn-detector/
-        turnDetection: new inference.TurnDetector(),
-        // Adaptive interruptions use the turn detector to tell a real interruption from a
-        // backchannel like "mhm" or "right", so the agent keeps talking through the latter.
-        interruption: { mode: 'adaptive' },
-        // Allow the LLM to generate a response while waiting for the end of turn
-        preemptiveGeneration: { enabled: false },
-      },
+    if (agentConfig.channel === 'voice') {
+      const egressRecording = registerS3DualChannelRecording(ctx);
+      await egressRecording.start();
+    }
 
-      // Expressive mode injects the TTS provider's markup guide into the LLM prompt, so the model
-      // emits inline delivery tags (emotion, pacing, non-verbal sounds) that the TTS renders and
-      // the transcript never shows. Requires a TTS model that supports markup, such as the Fish
-      // Audio model above.
-      expressive: false,
-    });
-
-    // define agent before using it in session
-    const agent = createAgent(agentConfig);
-
-    // Start the session, which initializes the voice pipeline and warms up the models
-    await session.start({
-      agent,
-      room: ctx.room,
-      record: { audio: false },
-      inputOptions: {
-        // Delete the room when this session closes so every participant disconnects.
-        deleteRoomOnClose: true,
-        // ai-coustics QUAIL audio enhancement for noise cancellation
-        // Works for both WebRTC and telephony (SIP) participants
-        noiseCancellation: audioEnhancement({ model: 'quailVfS' }),
-      },
-    });
-
-    const egressRecording = registerS3DualChannelRecording(ctx);
-    await egressRecording.start();
-
-    // // Add a virtual avatar to the session, if desired
-    // // For other providers, see https://docs.livekit.io/agents/models/avatar/
-    // const avatar = new anam.AvatarSession({
-    //   personaConfig: {
-    //     name: '...',
-    //     avatarId: '...', // See https://docs.livekit.io/agents/models/avatar/plugins/anam
-    //   },
-    // });
-    // // Start the avatar and wait for it to join
-    // await avatar.start(session, ctx.room);
-
-    // Join the room and connect to the user
     await ctx.connect();
-
-    // Capture caller details before the SIP participant can disconnect.
     registerSessionDataHooks({ ctx, session, agentId });
-
-    // Greet the user on joining.
-    session.generateReply({
-      instructions: 'Greet the user in a helpful and friendly manner.',
-    });
   },
 });
 
-// Run the agent server
 cli.runApp(
   new ServerOptions({
     agent: fileURLToPath(import.meta.url),
     agentName: 'my-agent-123123',
   }),
 );
+
+
+
+// MISC STATIC CODE
+
+function createSession({ llm, stt, tts, channel }: VoiceStack & { channel: RuntimeAgentConfig["channel"] }) {
+  const isChat = channel === 'chat';
+
+  return new voice.AgentSession({
+    llm,
+    ...(isChat
+      ? { vad: null, turnHandling: { turnDetection: null } }
+      : {
+        stt, tts, expressive: false,
+        turnHandling: {
+          turnDetection: new inference.TurnDetector(),
+          interruption: { mode: 'adaptive' },
+          preemptiveGeneration: { enabled: false },
+        },
+      }),
+  });
+}
+
+function getSessionStartOptions(channel: RuntimeAgentConfig["channel"]) {
+  const isChat = channel === 'chat';
+
+  return {
+    record: { audio: false },
+    inputOptions: isChat
+      ? { textEnabled: true, audioEnabled: false, deleteRoomOnClose: true }
+      : { deleteRoomOnClose: true, noiseCancellation: audioEnhancement({ model: 'quailVfS' }) },
+    ...(isChat && {
+      outputOptions: { transcriptionEnabled: true, audioEnabled: false, syncTranscription: false },
+    }),
+  };
+}

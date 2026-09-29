@@ -29,10 +29,14 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover"
 
+export function isChatAgentSession(searchParams: Pick<URLSearchParams, "get">): boolean {
+    return searchParams.get("channel") === "chat"
+}
+
 export function AgentSessionStartSpeaker() {
 
     const searchParams = useSearchParams()
-    const isChat = searchParams.get("channel") === "chat"
+    const isChat = isChatAgentSession(searchParams)
     const [settings, setSettings] = React.useState(getBeginMessageSettings)
 
     if (isChat) return null

@@ -13,6 +13,7 @@ import type { RuntimeAgentConfig } from "./get-agent-config.ts";
 import type { LlmProvider } from "../../../app/agents/_components/main/agent-session-model.tsx";
 
 type TtsVoice = Pick<Voice, "provider" | "voice_id" | "model">;
+export type VoiceStack = Awaited<ReturnType<typeof createVoiceStack>>;
 
 export async function createVoiceStack(agentId: string, agentConfig: RuntimeAgentConfig) {
 
@@ -83,19 +84,6 @@ export async function createVoiceStack(agentId: string, agentConfig: RuntimeAgen
 }
 
 
-// MISC CODE
-
-/**
- * Converts a display-friendly model name into a provider-compatible model ID.
- *
- * Example:
- * "sonic 3.5" -> "sonic-3.5"
- * "sonic 3"   -> "sonic-3"
- */
-function formatModelId(model: string): string {
-    return model.trim().replace(/\s+/g, "-");
-}
-
 
 type SpeechLanguageProvider = Voice["provider"] | "deepgram" | "sarvam";;
 type ProviderLanguages = Record<SpeechLanguageProvider | LlmProvider, string>;
@@ -140,4 +128,17 @@ async function solveCustomVoice(agentId: string, voiceId: string): Promise<TtsVo
         voice_id: voiceId,
         model: modelByProvider[customVoice.provider],
     };
+}
+
+// MISC STATIC CODE
+
+/**
+ * Converts a display-friendly model name into a provider-compatible model ID.
+ *
+ * Example:
+ * "sonic 3.5" -> "sonic-3.5"
+ * "sonic 3"   -> "sonic-3"
+ */
+function formatModelId(model: string): string {
+    return model.trim().replace(/\s+/g, "-");
 }

@@ -43,6 +43,8 @@ import { VOICES_FAKE_DATA } from "../../_data/voices-fake-data"
 import { getVoiceId, writeVoiceId } from "../../_lib/session-storage/agent-session"
 import { CustomVoiceModal } from "./custom-voice-modal"
 import { getWorkspaceVoices, type WorkspaceVoice } from "./voices-actions"
+import { useSearchParams } from "next/navigation"
+import { isChatAgentSession } from "../main/agent-session-start-speaker"
 
 export type VoiceModalPopupProps = {
   open: boolean
@@ -69,6 +71,10 @@ export function VoiceModalPopup({
   const [gender, setGender] = React.useState<GenderFilter>("all")
   const [accent, setAccent] = React.useState("all")
   const [search, setSearch] = React.useState("")
+
+  const searchParams = useSearchParams()
+  const isChatAgent = isChatAgentSession(searchParams)
+  if (isChatAgent) return null
 
   // ================================================================
   // ==================== NORMAL VOICE LOGIC ========================

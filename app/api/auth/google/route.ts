@@ -4,11 +4,11 @@ import { OAuth2Client } from "google-auth-library"
 import jwt from "jsonwebtoken"
 import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
+import { AUTH_TOKEN } from "@/lib/constants"
 
 const ONE_MONTH_SECONDS = 60 * 60 * 24 * 30
 const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
 const jwtSecret = process.env.JWT_SECRET
-const AUTH_TOKEN_V1 = "token"
 
 export async function POST(request: Request) {
     if (!googleClientId || !jwtSecret) {
@@ -43,7 +43,7 @@ export async function POST(request: Request) {
 
         const cookieStore = await cookies()
         cookieStore.set({
-            name: AUTH_TOKEN_V1,
+            name: AUTH_TOKEN,
             value: token,
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",

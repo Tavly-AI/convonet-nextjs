@@ -1,10 +1,9 @@
 import jwt from "jsonwebtoken"
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
+import { AUTH_TOKEN } from "./constants"
 
 type SessionToken = jwt.JwtPayload & { userId: number }
-
-const AUTH_TOKEN = "token"
 
 export async function getCurrentUserId() {
   const token = (await cookies()).get(AUTH_TOKEN)?.value

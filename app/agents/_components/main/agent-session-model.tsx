@@ -81,7 +81,7 @@ export function LLMModelDropdown({
             value={value}
             onValueChange={(value) => { if (value !== null) { onValueChange(value as LlmModel) } }}
         >
-            <SelectTrigger className={`h-9 ${className}`}>
+            <SelectTrigger className={`h-9! ${className}`}>
                 <span
                     className="size-4 shrink-0 [&>svg]:size-4"
                     dangerouslySetInnerHTML={{
@@ -90,7 +90,9 @@ export function LLMModelDropdown({
                             CHATGPT_SVG,
                     }}
                 />
-                <SelectValue />
+                <SelectValue>
+                    {LLM_MODELS.find(([model]) => model === value)?.[1]}
+                </SelectValue>
             </SelectTrigger>
 
             <SelectContent className="max-h-96 w-96">

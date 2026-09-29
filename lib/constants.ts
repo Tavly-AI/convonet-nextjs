@@ -5,3 +5,4 @@ export const AGENT_CHANNELS = { VOICE: "voice", CHAT: "chat", } as const
 export type AgentChannel = (typeof AGENT_CHANNELS)[keyof typeof AGENT_CHANNELS]
 
 export const VOICE_RUNTIME_AGENT_NAME = "my-agent-123123"
+export const AUTH_TOKEN = "token-convonet"

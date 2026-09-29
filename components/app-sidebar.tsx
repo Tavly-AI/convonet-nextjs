@@ -165,7 +165,7 @@ const data1 = {
     },
     {
       name: "Chat History",
-      url: "#",
+      url: "/dashboard/chat-history",
       icon: <MessageCircleIcon />,
     },
     {
