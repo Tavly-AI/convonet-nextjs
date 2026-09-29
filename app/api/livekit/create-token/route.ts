@@ -72,11 +72,18 @@ async function appendDataBaseCallRecord(userId: number, roomName: string, agentI
     })
     if (!user?.workspaceId) { throw new Error("Workspace not found") }
 
+    const agent = await prisma.agent.findFirst({
+        where: { id: agentId, workspaceId: user.workspaceId },
+        select: { channel: true },
+    })
+    if (!agent) { throw new Error("Agent not found in the current workspace") }
+
     return prisma.callRecord.create({
         data: {
             workspaceId: user.workspaceId,
             call_id: roomName,
             agent_id: agentId,
+            channel: agent.channel === "chat" ? "chat" : "voice",
             call_status: "registered" as CallRecordDatabaseData["call_status"],
         },
     })

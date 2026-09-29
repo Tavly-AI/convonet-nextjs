@@ -8,26 +8,12 @@ export default async function Page() {
     const user = userId
         ? await prisma.user.findUnique({ where: { id: userId }, select: { workspaceId: true } })
         : null
-    const records = user?.workspaceId
+    const callRecords = user?.workspaceId
         ? await prisma.callRecord.findMany({
-            where: { workspaceId: user.workspaceId },
+            where: { workspaceId: user.workspaceId, channel: "voice" },
             orderBy: { start_timestamp: "desc" },
         })
-        : []
-    const agents = user?.workspaceId
-        ? await prisma.agent.findMany({
-            where: { workspaceId: user.workspaceId },
-            select: { id: true, channel: true },
-        })
-        : []
-    const agentChannelById = new Map(agents.map((agent) => [agent.id, agent.channel]))
+        : [] as CallRecordDatabaseData[]
 
-    // Keep records for deleted or unassigned agents visible here; their channel can no longer be determined.
-    // The chat history applies the same fallback so no historical records are silently hidden.
-    const callRecords = records.filter((record) => {
-        const channel = agentChannelById.get(record.agent_id ?? "")
-        return channel === "voice" || channel === undefined
-    }) as CallRecordDatabaseData[]
-
-    return <CallHistoryTableClient callRecords={callRecords} />
+    return <CallHistoryTableClient callRecords={callRecords as CallRecordDatabaseData[]} />
 }

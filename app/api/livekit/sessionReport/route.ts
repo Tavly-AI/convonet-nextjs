@@ -14,7 +14,7 @@ export async function POST(request: Request) {
 
     const agent = await prisma.agent.findUnique({
       where: { id: body.agentId },
-      select: { workspaceId: true, config: true },
+      select: { workspaceId: true, channel: true, config: true },
     })
     if (!agent) { return NextResponse.json({ error: "Agent not found" }, { status: 404 }) }
 
@@ -22,6 +22,7 @@ export async function POST(request: Request) {
     const data = {
       workspaceId: agent.workspaceId,
       call_id: body.report.room,
+      channel: agent.channel === "chat" ? "chat" : "voice",
       ...deriveDirectData(body),
       ...deriveTranscript(chatHistory),
       ...deriveHardcodedFields(),
@@ -46,12 +47,11 @@ export async function POST(request: Request) {
 
 //derive
 
-function deriveDirectData(body: LiveKitSessionReportPayload,): Pick<CallRecordDatabaseData, "agent_id" | "agent_version" | "call_type" | "direction" | "from_number" | "to_number"> {
+function deriveDirectData(body: LiveKitSessionReportPayload,): Pick<CallRecordDatabaseData, "agent_id" | "agent_version" | "call_type" | "from_number" | "to_number"> {
   return {
     agent_id: body.agentId,
     agent_version: null,
     call_type: body.callType,
-    direction: body.callType === "inbound" ? "inbound" : body.callType === "outbound" ? "outbound" : null,
     from_number: body.fromNumber,
     to_number: body.toNumber,
   }

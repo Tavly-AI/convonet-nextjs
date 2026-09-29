@@ -20,7 +20,7 @@ export function CallHistoryTableClient({ callRecords }: { callRecords: CallRecor
             <div className="flex min-h-0 flex-1 flex-col gap-5 xl:flex-row">
                 <div className="min-h-0 flex-1 overflow-hidden rounded-xl border">
                     <Table className="min-w-[1750px]">
-                        <TableHeader className="bg-muted/60"><TableRow className="hover:bg-transparent"><TableHead className="h-12 pl-4">Time</TableHead><TableHead>Duration</TableHead><TableHead>Channel Type</TableHead><TableHead>End Reason</TableHead><TableHead>Session Status</TableHead><TableHead>User Sentiment</TableHead><TableHead>From</TableHead><TableHead>To</TableHead><TableHead>Direction</TableHead><TableHead>Session Outcome</TableHead><TableHead className="pr-4">End to End Latency</TableHead></TableRow></TableHeader>
+                        <TableHeader className="bg-muted/60"><TableRow className="hover:bg-transparent"><TableHead className="h-12 pl-4">Time</TableHead><TableHead>Duration</TableHead><TableHead>Call Type</TableHead><TableHead>End Reason</TableHead><TableHead>Session Status</TableHead><TableHead>User Sentiment</TableHead><TableHead>From</TableHead><TableHead>To</TableHead><TableHead>Channel</TableHead><TableHead>Session Outcome</TableHead><TableHead className="pr-4">End to End Latency</TableHead></TableRow></TableHeader>
                         <TableBody>
                             {callRecords.map((record) => {
                                 const duration = formatDuration(record.duration_ms)
@@ -37,7 +37,7 @@ export function CallHistoryTableClient({ callRecords }: { callRecords: CallRecor
                                     <TableCell><StatusValue label={sentiment} tone={getSentimentTone(sentiment)} /></TableCell>
                                     <TableCell>{record.from_number ?? "—"}</TableCell>
                                     <TableCell>{record.to_number ?? "—"}</TableCell>
-                                    <TableCell>{formatLabel(record.direction)}</TableCell>
+                                    <TableCell>{formatChannel(record.channel)}</TableCell>
                                     <TableCell><StatusValue label={outcome.label} tone={outcome.tone} /></TableCell>
                                     <TableCell className="pr-4">{formatLatency(record.latency?.e2e)}</TableCell>
                                 </TableRow>
@@ -141,6 +141,9 @@ function formatDuration(durationMs: number | null) {
 function formatChannelType(callType: CallRecordDatabaseData["call_type"]) {
     if (callType === "webrtc") return "web_call"
     return callType ?? "—"
+}
+function formatChannel(channel: CallRecordDatabaseData["channel"]) {
+    return channel === "chat" ? "Chat" : "Voice"
 }
 function formatLabel(value: string | null) {
     return value ? value.replaceAll("_", " ") : "—"

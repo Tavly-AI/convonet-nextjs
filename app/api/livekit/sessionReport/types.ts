@@ -1,7 +1,7 @@
 import type { CallRecord, Prisma } from "@/generated/prisma/client"
 
 type CallRecordCallType = "inbound" | "outbound" | "webrtc"
-type CallRecordDirection = "inbound" | "outbound"
+type CallRecordChannel = "voice" | "chat"
 type CallRecordStatus = "registered" | "not_connected" | "ongoing" | "ended" | "error"
 
 type CallRecordDisconnectionReason =
@@ -56,10 +56,10 @@ type CallRecordLlmTokenUsage = { values: number[]; average: number; num_requests
 /** Prisma's generated CallRecord model with JSON columns narrowed for this app's readers. */
 export type CallRecordDatabaseData = Omit<
     CallRecord,
-    "call_type" | "direction" | "call_status" | "disconnection_reason" | "transcript_object" | "latency" | "call_analysis" | "call_cost" | "llm_token_usage"
+    "call_type" | "channel" | "call_status" | "disconnection_reason" | "transcript_object" | "latency" | "call_analysis" | "call_cost" | "llm_token_usage"
 > & {
     call_type: CallRecordCallType | null
-    direction: CallRecordDirection | null
+    channel: CallRecordChannel
     call_status: CallRecordStatus
     disconnection_reason: CallRecordDisconnectionReason | null
     transcript_object: CallRecordTranscriptItem[] | null

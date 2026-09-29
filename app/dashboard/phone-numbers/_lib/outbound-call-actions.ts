@@ -91,6 +91,27 @@ export async function startOutboundTestCall(input: { phoneNumberId: string; dest
       }
     )
 
+    await prisma.callRecord.upsert({
+      where: { call_id: roomName },
+      create: {
+        workspaceId,
+        call_id: roomName,
+        agent_id: agent.id,
+        channel: "voice",
+        call_type: "outbound",
+        from_number: phoneNumber.phoneNumber,
+        to_number: parsed.destinationNumber,
+        call_status: "registered",
+      },
+      update: {
+        agent_id: agent.id,
+        channel: "voice",
+        call_type: "outbound",
+        from_number: phoneNumber.phoneNumber,
+        to_number: parsed.destinationNumber,
+      },
+    })
+
     return { roomName, participantIdentity: participant.participantIdentity, sipCallId: participant.sipCallId, }
   } catch (error) {
     await livekit.agentDispatch.deleteDispatch(dispatch.id, roomName).catch(() => undefined)

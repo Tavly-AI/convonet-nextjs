@@ -193,10 +193,10 @@ model CallRecord {
   call_type                    String?
   from_number                  String?
   to_number                    String?
-  direction                    String?
   call_id                      String    @unique
   agent_id                     String?
   agent_version                Int?
+  channel                      String    @default("voice")
   call_status                  String    @default("registered")
 
   metadata                     Json?
@@ -232,6 +232,7 @@ model CallRecord {
   updatedAt DateTime @updatedAt
 
   @@index([workspaceId, start_timestamp])
+  @@index([workspaceId, channel, start_timestamp])
   @@index([call_status])
 }
 
