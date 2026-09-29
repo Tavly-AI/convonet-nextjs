@@ -33,6 +33,7 @@ export function CallHistorySidebar({ record, onOpenChange }: { record: CallRecor
                         <div className="flex items-center justify-between"><span className="text-muted-foreground">Call successful</span><Badge variant={record.call_analysis?.call_successful ? "secondary" : "destructive"}>{record.call_analysis?.call_successful ? "Successful" : "Unsuccessful"}</Badge></div>
                         <div className="flex items-center justify-between"><span className="text-muted-foreground">Call status</span><span>{record.call_status}</span></div>
                         <div className="flex items-center justify-between"><span className="text-muted-foreground">User sentiment</span><span>{record.call_analysis?.user_sentiment}</span></div>
+                        <div className="flex items-center justify-between"><span className="text-muted-foreground">E2E latency</span><span>{record.latency?.e2e?.num ? `${record.latency.e2e.p50}ms` : "—"}</span></div>
                         <div className="flex items-center justify-between"><span className="text-muted-foreground">End reason</span><span>{record.disconnection_reason?.replaceAll("_", " ")}</span></div>
                     </div>
                 </section>

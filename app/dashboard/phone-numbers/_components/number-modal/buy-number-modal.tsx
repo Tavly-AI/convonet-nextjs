@@ -70,7 +70,6 @@ export function BuyNumberModal() {
             <DialogClose render={<Button variant="outline" />}>
               Cancel
             </DialogClose>
-            <Button>Save</Button>
           </div>
         </DialogFooter>
       </DialogContent>

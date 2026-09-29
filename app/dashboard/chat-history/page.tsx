@@ -1,7 +1,7 @@
 import type { CallRecordDatabaseData } from "@/app/api/livekit/sessionReport/types"
 import { getCurrentUserId } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { CallHistoryTableClient } from "./_components/call-history-table-client"
+import { ChatHistoryTableClient } from "./_components/chat-history-table-client"
 
 export default async function Page() {
     const userId = await getCurrentUserId()
@@ -24,10 +24,10 @@ export default async function Page() {
 
     // Keep records for deleted or unassigned agents visible here; their channel can no longer be determined.
     // The chat history applies the same fallback so no historical records are silently hidden.
-    const callRecords = records.filter((record) => {
+    const chatRecords = records.filter((record) => {
         const channel = agentChannelById.get(record.agent_id ?? "")
-        return channel === "voice" || channel === undefined
+        return channel === "chat" || channel === undefined
     }) as CallRecordDatabaseData[]
 
-    return <CallHistoryTableClient callRecords={callRecords} />
+    return <ChatHistoryTableClient chatRecords={chatRecords} />
 }

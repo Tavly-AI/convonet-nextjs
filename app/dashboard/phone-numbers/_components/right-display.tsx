@@ -93,7 +93,7 @@ export async function RightDisplay({
           <CardDescription className="flex flex-wrap items-center gap-1">
             ID: {phoneNumber.phoneNumber}
             <ClipboardIcon className="size-3.5" />
-            <span>· Provider: Twilio</span>
+            <span>· Provider: {phoneNumber.providerType}</span>
           </CardDescription>
         </div>
 
