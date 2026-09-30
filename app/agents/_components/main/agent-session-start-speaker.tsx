@@ -39,8 +39,6 @@ export function AgentSessionStartSpeaker() {
     const isChat = isChatAgentSession(searchParams)
     const [settings, setSettings] = React.useState(getBeginMessageSettings)
 
-    if (isChat) return null
-
     function updateSettings(patch: Partial<BeginMessageSettings>) {
         const nextSettings = { ...settings, ...patch }
         setSettings(nextSettings)
@@ -77,7 +75,7 @@ export function AgentSessionStartSpeaker() {
                     <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                    <SelectItem value="user">User speaks first</SelectItem>
+                    {!isChat && <SelectItem value="user">User speaks first</SelectItem>}
                     <SelectItem value="agent">AI speaks first</SelectItem>
                 </SelectContent>
             </Select>

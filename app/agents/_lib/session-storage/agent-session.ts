@@ -338,7 +338,7 @@ export type BeginMessageSettings = {
 }
 
 export const DEFAULT_BEGIN_MESSAGE_SETTINGS = {
-    start_speaker: "user",
+    start_speaker: "agent",
     begin_after_user_silence_ms: 2000,
     begin_message_delay_ms: 1000,
     begin_message: "Hey I am a virtual assistant calling from Retell Hospital.",
