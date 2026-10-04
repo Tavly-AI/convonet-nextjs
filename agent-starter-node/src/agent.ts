@@ -4,6 +4,7 @@ import { createCallTransferTool } from './agent-config/general-tools/call-transf
 import { createCheckAvailabilityTool } from './agent-config/general-tools/check-availability.ts';
 import { createCodeExecutionTools } from './agent-config/general-tools/code-execution.ts';
 import { createCustomFunctionTools } from './agent-config/general-tools/custom-tool.ts';
+import { createAwarenessTools } from './agent-config/general-tools/current-time.ts';
 import { endCallTool } from './agent-config/general-tools/end-call.ts';
 import { createPressDigitTool } from './agent-config/general-tools/press-digit.ts';
 import type { RuntimeAgentConfig } from './ingestion/get-agent-config.ts';
@@ -11,16 +12,21 @@ import { getProviderLanguages } from './ingestion/configure-voice-stack.ts';
 
 export function createAgentDefinition(agentConfig: RuntimeAgentConfig) {
   const languages = getProviderLanguages(agentConfig.config.language);
+  const timezone = agentConfig.config.timezone?.trim() || 'UTC';
 
   return Agent.create({
     instructions: dedent` 
       ${agentConfig.llmConfig.generalPrompt.trim() || DEFAULT_GENERAL_PROMPT}
+
+      ## Timezone & Date Guidelines
+      You operate in the ${timezone} timezone. Whenever the caller asks about the current time, today's date, or day of the week, call the \`get_current_datetime\` tool to provide an accurate answer.
       ${getPostCallCollectionInstructions(agentConfig.config.post_call_analysis_data)}
       Always respond in ${languages.gpt}.
     `,
 
     tools: [
       endCallTool,
+      createAwarenessTools(agentConfig),
       createCheckAvailabilityTool(agentConfig),
       createBookAppointmentTool(agentConfig),
       ...createCodeExecutionTools(agentConfig),
