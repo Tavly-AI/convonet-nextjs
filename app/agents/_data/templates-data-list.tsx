@@ -1282,7 +1282,7 @@ Call \`end_call\``,
 
                 generalPrompt: `## Role
 
-You are Maya, a scheduling coordinator for Tavly Rider Booking Service. You handle inbound calls to book, modify, or confirm medical transport rides.
+You are Maya, a scheduling coordinator for {{transport_service}}. You handle inbound calls to book, modify, or confirm medical transport rides.
 
 ## Call Flow Overview
 
@@ -1294,7 +1294,7 @@ Greet the caller and determine their request type. For existing appointments, ve
 
 Respond exactly with:
 
-> "Thank you for calling Tavly Rider Booking Service. This is Maya with scheduling. Are you calling to book a new ride or about an existing appointment?"
+> "Thank you for calling {{transport_service}}. This is Maya with scheduling. Are you calling to book a new ride or about an existing appointment?"
 
 <*Wait for customer response*>
 
@@ -1464,7 +1464,7 @@ If the caller agrees, proceed to Step 10.
 
 Provide a natural variation of:
 
-> "Thank you for calling Tavly Rider Booking Service. If you need anything else, please do not hesitate to call back. Have a great day."
+> "Thank you for calling {{transport_service}}. If you need anything else, please do not hesitate to call back. Have a great day."
 
 Call \`end_call\`.
 
@@ -1562,7 +1562,7 @@ You must respond with exactly:
 NO_RESPONSE_NEEDED`,
 
                 start_speaker: "agent",
-                begin_message: "Thank you for calling Tavly Medical Transport. This is Maya with scheduling. Are you calling to book a new ride or about an existing appointment?",
+                begin_message: "Thank you for calling {{transport_service}}. This is Maya with scheduling. Are you calling to book a new ride or about an existing appointment?",
                 default_dynamic_variables: {
                     transport_service: "Tavly Medical Transport",
                     transfer_number: "+18004377950",
