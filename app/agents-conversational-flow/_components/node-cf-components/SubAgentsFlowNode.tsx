@@ -1,17 +1,27 @@
+import { useEffect, useState } from "react"
 import type { NodeProps } from "@xyflow/react"
 import { Bot, MoreHorizontal, Pencil, Plus } from "lucide-react"
 
 import type { CF } from "../../_types/global-cf-types"
-import { EdgeRow, FlowNodeCard, InputHandle, NodeHeader } from "./FlowNodePrimitives"
+import { FlowNodeCard, InputHandle, NodeHeader } from "./FlowNodePrimitives"
+import { getFlowNodeData, subscribeToFlowNodeData, updateFlowNodeData } from "../../_lib/flow-sessionStorage"
+import { TransitionEditor } from "./TransitionEditor"
 
-export function FlowSubAgentsNodeType({ data, selected }: NodeProps<CF["Nodes"]["subagent"]>) {
+export function FlowSubAgentsNodeType({ id, data, selected }: NodeProps<CF["Nodes"]["subagent"]>) {
+    const [savedNode, setSavedNode] = useState(() => getFlowNodeData("subagent", id) ?? data)
+    const update = (fn: (node: CF["Data"]["subagent"]) => CF["Data"]["subagent"]) => updateFlowNodeData("subagent", id, fn)
+
+    useEffect(() => subscribeToFlowNodeData(() => {
+        const updatedNode = getFlowNodeData("subagent", id)
+        if (updatedNode) setSavedNode(updatedNode)
+    }), [id])
     return (
         <FlowNodeCard selected={selected} color="green" className="w-[480px] bg-[#172318] transition-colors">
             <InputHandle color="green" top={28} />
 
             <NodeHeader
                 icon={<Bot className="size-5" />}
-                title={data.name}
+                title={savedNode.name}
                 color="green"
                 className="h-12 px-4"
                 titleClassName="text-base"
@@ -24,17 +34,20 @@ export function FlowSubAgentsNodeType({ data, selected }: NodeProps<CF["Nodes"][
                 <div className="rounded-xl bg-[#1c1c21]">
                     <div className="nodrag flex items-center justify-between px-3 pt-3">
                         <span className="rounded-md bg-green-500/10 px-2 py-1 text-xs font-medium text-green-300">
-                            {data.instruction.type === "static_text" ? "Static sentence" : "Prompt"}
+                            Prompt
                         </span>
                         <span className="text-xs text-zinc-500">
-                            {data.skippable ? "Optional" : "Required"}
+                            {savedNode.skippable ? "Optional" : "Required"}
                         </span>
                     </div>
                     <textarea
-                        value={data.instruction.text}
+                        value={savedNode.instruction.text}
+                        onChange={event => update(node => ({
+                            ...node,
+                            instruction: { ...node.instruction, text: event.target.value },
+                        }))}
                         placeholder="Define the steps and tasks for this subagent. Type / to add functions and {{ to insert dynamic variables."
                         className="nodrag nowheel h-32 w-full resize-none bg-transparent px-3 py-3 text-sm text-zinc-200 outline-none placeholder:text-zinc-500"
-                        readOnly
                     />
                 </div>
             </div>
@@ -52,26 +65,7 @@ export function FlowSubAgentsNodeType({ data, selected }: NodeProps<CF["Nodes"][
                 </button>
             </div>
 
-            <div className="flex items-center justify-between px-4 pb-3">
-                <span className="text-sm font-medium text-green-400">
-                    Transition
-                </span>
-
-                <button
-                    type="button"
-                    className="nodrag text-green-400/70 transition-colors hover:text-green-300"
-                >
-                    <Plus className="size-4" />
-                </button>
-            </div>
-
-            <div className="space-y-1">
-                {data.edges?.map((edge) => (
-                    <EdgeRow key={edge.id} edge={edge} color="green" label={edge.transition_condition.prompt || "Describe the transition condition"} />
-                ))}
-
-                {!data.edges?.length && <EdgeRow edge={{ id: "default-transition", transition_condition: { type: "else" } }} color="green" label="Describe the transition condition" />}
-            </div>
+            <TransitionEditor node={savedNode} onUpdate={update} color="green" />
         </FlowNodeCard>
     )
 }

@@ -22,8 +22,8 @@ export function InputHandle({ color, top = 25 }: { color: keyof typeof palette; 
     return <Handle type="target" position={Position.Left} className={`!size-4 !border-2 !border-white ${palette[color].handle}`} style={{ top }} />
 }
 
-export function EdgeRow({ edge, color, label, onLabelChange }: { edge: CF["Edge"]; color: keyof typeof palette; label?: string; onLabelChange?: (label: string) => void }) {
-    const edgeLabel = label ?? edge.transition_condition.prompt ?? "Else"
+export function EdgeRow({ edge, color, label, onLabelChange, onClick, actions }: { edge: CF["Edge"]; color: keyof typeof palette; label?: string; onLabelChange?: (label: string) => void; onClick?: () => void; actions?: ReactNode }) {
+    const edgeLabel = label ?? (edge.transition_condition.type === "prompt" ? edge.transition_condition.prompt : "Set a condition")
 
     return <div className="relative px-1 pb-1">
         <div className="nodrag flex min-h-10 items-center gap-2 rounded-xl bg-[#121216] px-3 text-sm text-zinc-300">
@@ -35,7 +35,8 @@ export function EdgeRow({ edge, color, label, onLabelChange }: { edge: CF["Edge"
                     aria-label="Transition condition"
                     className="nodrag nowheel min-w-0 flex-1 bg-transparent outline-none placeholder:text-zinc-500"
                 />
-            ) : <span className="truncate">{edgeLabel}</span>}
+            ) : <button type="button" onClick={onClick} className={onClick ? "min-w-0 flex-1 truncate text-left" : "min-w-0 flex-1 truncate text-left"}>{edgeLabel}</button>}
+            {actions}
         </div>
         <Handle id={edge.id} type="source" position={Position.Right} className={`!size-4 !border-2 !border-white ${palette[color].handle}`} style={{ top: "50%" }} />
     </div>

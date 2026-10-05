@@ -1,19 +1,26 @@
+import { useEffect, useState } from "react"
 import type { NodeProps } from "@xyflow/react"
-import { GitBranch, Plus } from "lucide-react"
+import { GitBranch } from "lucide-react"
 
 import type { CF } from "../../_types/global-cf-types"
-import { EdgeRow, FlowNodeCard, InputHandle, NodeHeader } from "./FlowNodePrimitives"
+import { FlowNodeCard, InputHandle, NodeHeader } from "./FlowNodePrimitives"
+import { getFlowNodeData, subscribeToFlowNodeData, updateFlowNodeData } from "../../_lib/flow-sessionStorage"
+import { TransitionEditor } from "./TransitionEditor"
 
-export function LogicSplitFlowNode({ data, selected }: NodeProps<CF["Nodes"]["branch"]>) {
+export function LogicSplitFlowNode({ id, data, selected }: NodeProps<CF["Nodes"]["branch"]>) {
+    const [savedNode, setSavedNode] = useState(() => getFlowNodeData("branch", id) ?? data)
+    const update = (fn: (node: CF["Data"]["branch"]) => CF["Data"]["branch"]) => updateFlowNodeData("branch", id, fn)
+
+    useEffect(() => subscribeToFlowNodeData(() => {
+        const updatedNode = getFlowNodeData("branch", id)
+        if (updatedNode) setSavedNode(updatedNode)
+    }), [id])
+
     return (
         <FlowNodeCard selected={selected} color="blue" className="bg-[#182443]">
             <InputHandle color="blue" />
-            <NodeHeader icon={<GitBranch className="size-4" />} title={data.name} color="blue" />
-            <div className="flex items-center justify-between px-3 pb-3 text-sm font-medium text-blue-400">
-                Transition <Plus className="size-4" />
-            </div>
-            {data.edges.map((edge) => <EdgeRow key={edge.id} edge={edge} color="blue" />)}
-            <EdgeRow edge={data.else_edge} color="blue" label="Else" />
+            <NodeHeader icon={<GitBranch className="size-4" />} title={savedNode.name} color="blue" />
+            <TransitionEditor node={savedNode} onUpdate={update} color="blue" excludedTransitionTypes={["else", "always"]} />
         </FlowNodeCard>
     )
 }

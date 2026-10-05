@@ -1,13 +1,9 @@
-import { Handle, type Node, type NodeProps, Position } from "@xyflow/react";
-import { CircleDot, Equal, MessageSquareText, Plus } from "lucide-react";
+import { Handle, type NodeProps, Position } from "@xyflow/react"
+import { CircleDot } from "lucide-react"
 
-type FlowNodeData = {
-    title: string
-}
+import type { CF } from "../../_types/global-cf-types"
 
-type FlowNode = Node<FlowNodeData>
-
-export function FlowBeginNodeType({ data, selected }: NodeProps<FlowNode>) {
+export function FlowBeginNodeType({ data, selected }: NodeProps<CF["Nodes"]["begin"]>) {
     return (
         <div className={`w-56 rounded-xl border bg-zinc-950 p-3 shadow-2xl ${selected ? "border-violet-400 ring-2 ring-violet-500/30" : "border-zinc-700"}`}>
             <div className="flex items-center gap-2">
@@ -16,11 +12,11 @@ export function FlowBeginNodeType({ data, selected }: NodeProps<FlowNode>) {
                 </span>
 
                 <span className="text-sm font-semibold text-zinc-100">
-                    {data.title}
+                    {data.name}
                 </span>
             </div>
 
-            <Handle type="source" position={Position.Right} className="!size-3 !border-2 !border-zinc-950 !bg-violet-400" />
+            <Handle id={data.edge.id} type="source" position={Position.Right} className="!size-3 !border-2 !border-zinc-950 !bg-violet-400" />
         </div >
     )
 }

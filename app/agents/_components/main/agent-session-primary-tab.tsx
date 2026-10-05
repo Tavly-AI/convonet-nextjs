@@ -17,19 +17,22 @@ import { AgentSessionStartSpeaker } from "./agent-session-start-speaker"
 import { TimezoneSelect } from "./agent-session-timezone"
 
 
-export function AgentSessionPrimaryTab() {
+export function AgentSessionPrimaryTab({ isConversationalFlow }: { isConversationalFlow: boolean }) {
 
   const [voiceOpen, setVoiceOpen] = React.useState(false)
 
   return (
     <Card className="max-h-[91vh] min-h-0 overflow-y-auto gap-0 py-0">
       <div className="flex min-h-full flex-col">
-        <div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-b px-4 py-3 text-xs">
-          <Metric label="Agent Details" />
-          <Metric label="Cost" value="$0.115/min" icon={WalletCardsIcon} />
-          <Metric label="Latency" value="1620-2100ms" icon={GaugeIcon} />
-          <Metric label="Tokens" value="816 - 3k" icon={SquareStackIcon} />
-        </div>
+
+        {!isConversationalFlow &&
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-b px-4 py-3 text-xs">
+            <Metric label="Agent Details" />
+            <Metric label="Cost" value="$0.115/min" icon={WalletCardsIcon} />
+            <Metric label="Latency" value="1620-2100ms" icon={GaugeIcon} />
+            <Metric label="Tokens" value="816 - 3k" icon={SquareStackIcon} />
+          </div>
+        }
 
         <div className="flex flex-wrap items-center gap-2 px-4 py-3">
 

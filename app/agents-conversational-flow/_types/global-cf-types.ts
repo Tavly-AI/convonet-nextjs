@@ -1,16 +1,28 @@
 import type { Node, XYPosition } from "@xyflow/react"
 
-type Instruction = {
-    type: "prompt" | "static_text"
-    text: string
-}
+type Instruction =
+    | {
+        type: "prompt"
+        text: string
+    }
+    | {
+        type: "static_text"
+        text: string
+    }
+
+export type EquationOperator = "==" | "!=" | ">" | ">=" | "<" | "<="
+
+export type TransitionCondition =
+    | { type: "prompt"; prompt: string }
+    | {
+        type: "equation"
+        operator: "&&" | "||"
+        equations: Array<{ left: string; operator: EquationOperator; right: string }>
+    }
 
 type Edge = {
     id: string
-    transition_condition: {
-        type: "prompt" | "else"
-        prompt?: string
-    }
+    transition_condition: TransitionCondition
     destination_node_id?: string
 }
 
@@ -23,15 +35,26 @@ type Base<T extends string> = {
 }
 
 type Data = {
+    begin: Base<"begin"> & {
+        edge: Edge
+    }
+
     conversation: Base<"conversation"> & {
         start_speaker?: "agent" | "user"
         instruction: Instruction
         edges?: Edge[]
+        else_edge?: Edge
+        always_edge?: Edge
     }
 
     subagent: Base<"subagent"> & {
-        instruction: Instruction
+        instruction: {
+            type: "prompt"
+            text: string
+        }
         edges?: Edge[]
+        else_edge?: Edge
+        always_edge?: Edge
     }
 
     transfer_call: Base<"transfer_call"> & {
@@ -53,6 +76,7 @@ type Data = {
         instruction: Instruction
         delay_ms: number
         edges?: Edge[]
+        else_edge?: Edge
     }
 
     branch: Base<"branch"> & {

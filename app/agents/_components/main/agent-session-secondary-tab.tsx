@@ -125,7 +125,7 @@ export function AgentSessionTabSecondary() {
 // MISC
 
 function filterTabs(tab: SecondaryTab, channel: string | null) {
-  if (channel === null) return;
+  if (channel === null) return true
 
   if (channel === "voice") {
     return tab.id !== "chat-settings"

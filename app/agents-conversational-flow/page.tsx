@@ -1,7 +1,8 @@
 "use client"
 
-import { Background, BackgroundVariant, ReactFlow, ReactFlowProvider, useNodesState, useReactFlow, type Connection, type Edge, type Node } from "@xyflow/react"
+import { Background, BackgroundVariant, ReactFlow, ReactFlowProvider, useNodesState, useReactFlow, type Connection, type Edge } from "@xyflow/react"
 import { FlowLeftSidePanel } from "./_components/panels/flow-left-side-panel"
+import { FlowRightSidePanel } from "./_components/panels/flow-right-side-panel"
 import { FlowConversationNodeType } from "./_components/node-cf-components/ConversationFlowNode"
 import { FlowSubAgentsNodeType } from "./_components/node-cf-components/SubAgentsFlowNode"
 import { createCFNode } from "./_lib/flow-node-factory"
@@ -15,22 +16,12 @@ import { CodeFlowNode } from "./_components/node-cf-components/CodeFlowNode"
 import { EndFlowNode } from "./_components/node-cf-components/EndFlowNode"
 import { useEffect } from "react"
 import type { CF } from "./_types/global-cf-types"
-import { setFlowNodeData } from "./_lib/flow-sessionStorage"
+import { getFlowNodeData, setFlowNodeData } from "./_lib/flow-sessionStorage"
 
 
-type BeginNode = Node<{ title: string }, "begin">
-type FlowNode = BeginNode | CF["Node"]
+type FlowNode = CF["Node"]
 
-const initialNodes: FlowNode[] = [
-    {
-        id: "begin",
-        type: "begin",
-        position: { x: 0, y: 0 },
-        data: {
-            title: "Begin",
-        },
-    },
-]
+const initialNodes: FlowNode[] = []
 
 const nodeTypes = {
     begin: FlowBeginNodeType,
@@ -49,7 +40,8 @@ function getEdges(data: CF["Node"]["data"]): CF["Edge"][] {
     return [
         ...("edges" in data ? data.edges ?? [] : []),
         ...("edge" in data ? [data.edge] : []),
-        ...("else_edge" in data ? [data.else_edge] : []),
+        ...("else_edge" in data && data.else_edge ? [data.else_edge] : []),
+        ...("always_edge" in data && data.always_edge ? [data.always_edge] : []),
         ...("success_edge" in data ? [data.success_edge] : []),
         ...("failed_edge" in data ? [data.failed_edge] : []),
     ]
@@ -68,7 +60,8 @@ function setDestination(
             ...data,
             ...("edges" in data && { edges: data.edges?.map(update) }),
             ...("edge" in data && { edge: update(data.edge) }),
-            ...("else_edge" in data && { else_edge: update(data.else_edge) }),
+            ...("else_edge" in data && data.else_edge ? { else_edge: update(data.else_edge) } : {}),
+            ...("always_edge" in data && data.always_edge ? { always_edge: update(data.always_edge) } : {}),
             ...("success_edge" in data && { success_edge: update(data.success_edge) }),
             ...("failed_edge" in data && { failed_edge: update(data.failed_edge) }),
         },
@@ -80,12 +73,11 @@ function FlowCanvas() {
     const [nodes, setNodes, onNodesChange] = useNodesState<FlowNode>(initialNodes)
     const { screenToFlowPosition } = useReactFlow()
 
-    const edges: Edge[] = nodes.flatMap((node) =>
-        node.type === "begin"
-            ? []
-            : getEdges(node.data)
-                .filter((edge) => edge.destination_node_id)
-                .map((edge) => ({ id: edge.id, source: node.id, sourceHandle: edge.id, target: edge.destination_node_id!, type: "smoothstep", })))
+    const edges: Edge[] = nodes.flatMap(node =>
+        getEdges(node.data)
+            .filter((edge) => edge.destination_node_id)
+            .map(edge => ({ id: edge.id, source: node.id, sourceHandle: edge.id, target: edge.destination_node_id!, type: "smoothstep" }))
+    )
 
 
     function onDrop(e: React.DragEvent) {
@@ -104,24 +96,22 @@ function FlowCanvas() {
 
 
     function onConnect({ source, sourceHandle, target }: Connection) {
-        if (!source || !sourceHandle || !target || source === "begin") return
+        if (!source || !sourceHandle || !target) return
 
-        setNodes((nodes) =>
-            nodes.map((node) =>
-                node.id === source && node.type !== "begin"
-                    ? setDestination(node, sourceHandle, target)
-                    : node
-            )
-        )
+        const sourceNode = nodes.find(node => node.id === source)
+        if (!sourceNode) return
+
+        const data = getFlowNodeData(sourceNode.type, sourceNode.id) ?? sourceNode.data
+        const updatedNode = setDestination({ ...sourceNode, data } as CF["Node"], sourceHandle, target)
+        setFlowNodeData(updatedNode.data)
+        setNodes(current => current.map(node => node.id === source ? updatedNode : node))
     }
 
     useEffect(() => {
-        const flowNodes = nodes
-            .filter((node) => node.type !== "begin")
-            .map((node) => ({
-                ...node.data,
-                display_position: node.position,
-            }))
+        const flowNodes = nodes.map(node => ({
+            ...node.data,
+            display_position: node.position,
+        }))
 
         console.log(
             "nodes:",
@@ -132,6 +122,7 @@ function FlowCanvas() {
     return (
         <div className="size-full">
             <FlowLeftSidePanel />
+            <FlowRightSidePanel />
             <ReactFlow
                 nodes={nodes}
                 edges={edges}

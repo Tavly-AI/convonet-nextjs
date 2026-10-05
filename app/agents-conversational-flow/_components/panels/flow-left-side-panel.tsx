@@ -1,5 +1,6 @@
 import {
     Bot,
+    CircleDot,
     // Braces,
     Code2,
     GitBranch,
@@ -13,6 +14,12 @@ import {
 } from "lucide-react"
 
 const nodeItems = [
+    {
+        type: "begin",
+        label: "Begin",
+        icon: CircleDot,
+        iconClass: "bg-violet-500/15 text-violet-400",
+    },
     {
         type: "conversation",
         label: "Conversation",
@@ -104,13 +111,13 @@ export function FlowLeftSidePanel() {
     }
 
     return (
-        <aside className="absolute left-3 top-3 z-10 w-[230px] rounded-2xl border border-zinc-800 bg-[#1c1c21] p-2 shadow-xl">
-            <div className="mb-3 grid grid-cols-2 rounded-xl bg-[#242429] p-1">
-                <button className="rounded-lg bg-[#2c2c32] px-3 py-1.5 text-sm font-medium text-zinc-200">
+        <aside className="absolute left-3 top-3 z-10 w-[230px] rounded-2xl border border-border bg-card p-2 text-card-foreground shadow-xl">
+            <div className="mb-3 grid grid-cols-2 rounded-xl bg-muted p-1">
+                <button className="rounded-lg bg-background px-3 py-1.5 text-sm font-medium text-foreground shadow-sm">
                     Node
                 </button>
 
-                <button className="rounded-lg px-3 py-1.5 text-sm text-zinc-500 transition hover:text-zinc-300">
+                <button className="rounded-lg px-3 py-1.5 text-sm text-muted-foreground transition hover:text-foreground">
                     Subflows
                 </button>
             </div>
@@ -121,13 +128,13 @@ export function FlowLeftSidePanel() {
                         key={label}
                         draggable
                         onDragStart={(event) => onDragStart(event, type)}
-                        className="flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left transition hover:bg-zinc-800/70"
+                        className="flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left transition hover:bg-muted"
                     >
                         <span className={`grid size-7 shrink-0 place-items-center rounded-md ${iconClass}`}>
                             <Icon className="size-4" />
                         </span>
 
-                        <span className="text-[13px] font-medium text-zinc-300">
+                        <span className="text-[13px] font-medium text-foreground">
                             {label}
                         </span>
                     </button>

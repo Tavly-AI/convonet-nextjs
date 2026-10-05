@@ -4,6 +4,18 @@ import type { CF } from "../_types/global-cf-types"
 type NodeFactoryMap = Record<CF["Type"], (id: string, position: XYPosition) => CF["Node"]["data"]>
 
 const nodeFactories: NodeFactoryMap = {
+    begin: (id, position) => ({
+        id,
+        type: "begin",
+        name: "Begin",
+        skippable: false,
+        edge: {
+            id: crypto.randomUUID(),
+            transition_condition: { type: "prompt", prompt: "Start" },
+        },
+        display_position: position,
+    }),
+
     conversation: (id, position) => ({
         id,
         type: "conversation",
