@@ -4,15 +4,15 @@ import { Bot, MoreHorizontal, Pencil, Plus } from "lucide-react"
 
 import type { CF } from "../../_types/global-cf-types"
 import { FlowNodeCard, InputHandle, NodeHeader } from "./FlowNodePrimitives"
-import { getFlowNodeData, subscribeToFlowNodeData, updateFlowNodeData } from "../../_lib/flow-sessionStorage"
+import { conversational_flow_session_storage } from "../../_lib/flow-sessionStorage"
 import { TransitionEditor } from "./TransitionEditor"
 
 export function FlowSubAgentsNodeType({ id, data, selected }: NodeProps<CF["Nodes"]["subagent"]>) {
-    const [savedNode, setSavedNode] = useState(() => getFlowNodeData("subagent", id) ?? data)
-    const update = (fn: (node: CF["Data"]["subagent"]) => CF["Data"]["subagent"]) => updateFlowNodeData("subagent", id, fn)
+    const [savedNode, setSavedNode] = useState(() => conversational_flow_session_storage.get("subagent", id) ?? data)
+    const update = (fn: (node: CF["Data"]["subagent"]) => CF["Data"]["subagent"]) => conversational_flow_session_storage.update("subagent", id, fn)
 
-    useEffect(() => subscribeToFlowNodeData(() => {
-        const updatedNode = getFlowNodeData("subagent", id)
+    useEffect(() => conversational_flow_session_storage.subscribe(() => {
+        const updatedNode = conversational_flow_session_storage.get("subagent", id)
         if (updatedNode) setSavedNode(updatedNode)
     }), [id])
     return (

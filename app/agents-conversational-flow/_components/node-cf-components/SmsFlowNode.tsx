@@ -4,14 +4,14 @@ import { MessageSquareText } from "lucide-react"
 
 import type { CF } from "../../_types/global-cf-types"
 import { EdgeRow, FlowNodeCard, InputHandle, NodeHeader } from "./FlowNodePrimitives"
-import { getFlowNodeData, subscribeToFlowNodeData, updateFlowNodeData } from "../../_lib/flow-sessionStorage"
+import { conversational_flow_session_storage } from "../../_lib/flow-sessionStorage"
 
 export function SmsFlowNode({ id, data, selected }: NodeProps<CF["Nodes"]["sms"]>) {
-    const [savedNode, setSavedNode] = useState(() => getFlowNodeData("sms", id) ?? data)
-    const update = (fn: (node: CF["Data"]["sms"]) => CF["Data"]["sms"]) => updateFlowNodeData("sms", id, fn)
+    const [savedNode, setSavedNode] = useState(() => conversational_flow_session_storage.get("sms", id) ?? data)
+    const update = (fn: (node: CF["Data"]["sms"]) => CF["Data"]["sms"]) => conversational_flow_session_storage.update("sms", id, fn)
 
-    useEffect(() => subscribeToFlowNodeData(() => {
-        const updatedNode = getFlowNodeData("sms", id)
+    useEffect(() => conversational_flow_session_storage.subscribe(() => {
+        const updatedNode = conversational_flow_session_storage.get("sms", id)
         if (updatedNode) setSavedNode(updatedNode)
     }), [id])
 

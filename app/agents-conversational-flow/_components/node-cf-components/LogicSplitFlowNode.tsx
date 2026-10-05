@@ -4,15 +4,15 @@ import { GitBranch } from "lucide-react"
 
 import type { CF } from "../../_types/global-cf-types"
 import { FlowNodeCard, InputHandle, NodeHeader } from "./FlowNodePrimitives"
-import { getFlowNodeData, subscribeToFlowNodeData, updateFlowNodeData } from "../../_lib/flow-sessionStorage"
+import { conversational_flow_session_storage } from "../../_lib/flow-sessionStorage"
 import { TransitionEditor } from "./TransitionEditor"
 
 export function LogicSplitFlowNode({ id, data, selected }: NodeProps<CF["Nodes"]["branch"]>) {
-    const [savedNode, setSavedNode] = useState(() => getFlowNodeData("branch", id) ?? data)
-    const update = (fn: (node: CF["Data"]["branch"]) => CF["Data"]["branch"]) => updateFlowNodeData("branch", id, fn)
+    const [savedNode, setSavedNode] = useState(() => conversational_flow_session_storage.get("branch", id) ?? data)
+    const update = (fn: (node: CF["Data"]["branch"]) => CF["Data"]["branch"]) => conversational_flow_session_storage.update("branch", id, fn)
 
-    useEffect(() => subscribeToFlowNodeData(() => {
-        const updatedNode = getFlowNodeData("branch", id)
+    useEffect(() => conversational_flow_session_storage.subscribe(() => {
+        const updatedNode = conversational_flow_session_storage.get("branch", id)
         if (updatedNode) setSavedNode(updatedNode)
     }), [id])
 

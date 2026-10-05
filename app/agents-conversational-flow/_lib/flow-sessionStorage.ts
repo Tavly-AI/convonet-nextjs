@@ -3,36 +3,42 @@ import type { CF } from "../_types/global-cf-types"
 const KEY = "flow-node-data", EVENT = `${KEY}:change`
 type Store = Record<string, CF["Node"]["data"]>
 
-const getStore = (): Store => {
-    try { return JSON.parse(sessionStorage.getItem(KEY) || "{}") }
-    catch { return {} }
+const EMPTY_CONVERSATIONAL_FLOW = {
+    begin: {
+        id: "begin",
+        type: "begin",
+        name: "Begin",
+        skippable: false,
+        display_position: { x: 0, y: 0 },
+        edge: { id: "begin-edge", transition_condition: { type: "prompt", prompt: "Start" } },
+    },
+} satisfies Store
+
+const read = (): Store => {
+    try { return JSON.parse(sessionStorage.getItem(KEY) || JSON.stringify(EMPTY_CONVERSATIONAL_FLOW)) }
+    catch { return EMPTY_CONVERSATIONAL_FLOW }
 }
 
-const setStore = (store: Store) => {
+const write = (store: Store) => {
     sessionStorage.setItem(KEY, JSON.stringify(store))
     window.dispatchEvent(new Event(EVENT))
 }
 
-export const getFlowNodeData = <T extends CF["Type"]>(type: T, id: string) => {
-    const node = getStore()[id]
-    return node?.type === type ? node as CF["Data"][T] : undefined
-}
+export const conversational_flow_session_storage = {
+    get<T extends CF["Type"]>(type: T, id: string) {
+        const node = read()[id]
+        return node?.type === type ? node as CF["Data"][T] : undefined
+    },
 
-export const setFlowNodeData = (data: CF["Node"]["data"]) =>
-    setStore({ ...getStore(), [data.id]: data })
+    set(data: CF["Node"]["data"]) { write({ ...read(), [data.id]: data }) },
 
-export const updateFlowNodeData = <T extends CF["Type"]>(type: T, id: string, fn: (node: CF["Data"][T]) => CF["Data"][T]) => {
-    const node = getFlowNodeData(type, id)
-    if (node) setFlowNodeData(fn(node))
-}
+    update<T extends CF["Type"]>(type: T, id: string, fn: (node: CF["Data"][T]) => CF["Data"][T]) {
+        const node = this.get(type, id)
+        if (node) this.set(fn(node))
+    },
 
-export const deleteFlowNodeData = (id: string) => {
-    const store = getStore()
-    delete store[id]
-    setStore(store)
-}
-
-export const subscribeToFlowNodeData = (fn: () => void) => {
-    window.addEventListener(EVENT, fn)
-    return () => window.removeEventListener(EVENT, fn)
+    subscribe(fn: () => void) {
+        window.addEventListener(EVENT, fn)
+        return () => window.removeEventListener(EVENT, fn)
+    },
 }

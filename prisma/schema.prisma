@@ -30,6 +30,7 @@ model Workspace {
   users         User[]
   agents        Agent[]
   agentVersions AgentVersion[]
+  conversationalFlows ConversationalFlow[]
   callRecords   CallRecord[]
   knowledgeBases KnowledgeBase[]
   twilioSubaccount TwilioSubaccount?
@@ -154,11 +155,32 @@ model Agent {
   config             Json
   llmConfig          Json
   versions           AgentVersion[]
+  conversationalFlow ConversationalFlow?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([workspaceId])
+}
+
+model ConversationalFlow {
+  id            String    @id @default(cuid())
+
+  workspaceId   String
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  agentId       String    @unique
+  agent         Agent     @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  name          String
+  nodes         Json
+  viewport      Json?
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([workspaceId])
+  @@index([workspaceId, name])
 }
 
 model AgentVersion {

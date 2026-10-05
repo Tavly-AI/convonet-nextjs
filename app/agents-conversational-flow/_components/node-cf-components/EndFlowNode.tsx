@@ -4,14 +4,14 @@ import { PhoneOff } from "lucide-react"
 
 import type { CF } from "../../_types/global-cf-types"
 import { FlowNodeCard, InputHandle, NodeHeader } from "./FlowNodePrimitives"
-import { getFlowNodeData, subscribeToFlowNodeData, updateFlowNodeData } from "../../_lib/flow-sessionStorage"
+import { conversational_flow_session_storage } from "../../_lib/flow-sessionStorage"
 
 export function EndFlowNode({ id, data, selected }: NodeProps<CF["Nodes"]["end"]>) {
-    const [savedNode, setSavedNode] = useState(() => getFlowNodeData("end", id) ?? data)
-    const update = (fn: (node: CF["Data"]["end"]) => CF["Data"]["end"]) => updateFlowNodeData("end", id, fn)
+    const [savedNode, setSavedNode] = useState(() => conversational_flow_session_storage.get("end", id) ?? data)
+    const update = (fn: (node: CF["Data"]["end"]) => CF["Data"]["end"]) => conversational_flow_session_storage.update("end", id, fn)
 
-    useEffect(() => subscribeToFlowNodeData(() => {
-        const updatedNode = getFlowNodeData("end", id)
+    useEffect(() => conversational_flow_session_storage.subscribe(() => {
+        const updatedNode = conversational_flow_session_storage.get("end", id)
         if (updatedNode) setSavedNode(updatedNode)
     }), [id])
 

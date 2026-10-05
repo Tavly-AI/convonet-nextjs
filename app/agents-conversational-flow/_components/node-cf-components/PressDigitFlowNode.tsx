@@ -4,15 +4,15 @@ import { Hash } from "lucide-react"
 
 import type { CF } from "../../_types/global-cf-types"
 import { FlowNodeCard, InputHandle, NodeHeader } from "./FlowNodePrimitives"
-import { getFlowNodeData, subscribeToFlowNodeData, updateFlowNodeData } from "../../_lib/flow-sessionStorage"
+import { conversational_flow_session_storage } from "../../_lib/flow-sessionStorage"
 import { TransitionEditor } from "./TransitionEditor"
 
 export function PressDigitFlowNode({ id, data, selected }: NodeProps<CF["Nodes"]["press_digit"]>) {
-    const [savedNode, setSavedNode] = useState(() => getFlowNodeData("press_digit", id) ?? data)
-    const update = (fn: (node: CF["Data"]["press_digit"]) => CF["Data"]["press_digit"]) => updateFlowNodeData("press_digit", id, fn)
+    const [savedNode, setSavedNode] = useState(() => conversational_flow_session_storage.get("press_digit", id) ?? data)
+    const update = (fn: (node: CF["Data"]["press_digit"]) => CF["Data"]["press_digit"]) => conversational_flow_session_storage.update("press_digit", id, fn)
 
-    useEffect(() => subscribeToFlowNodeData(() => {
-        const updatedNode = getFlowNodeData("press_digit", id)
+    useEffect(() => conversational_flow_session_storage.subscribe(() => {
+        const updatedNode = conversational_flow_session_storage.get("press_digit", id)
         if (updatedNode) setSavedNode(updatedNode)
     }), [id])
 

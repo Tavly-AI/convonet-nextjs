@@ -4,17 +4,17 @@ import { MessageSquareText } from "lucide-react"
 
 import type { CF } from "../../_types/global-cf-types"
 import { FlowNodeCard, InputHandle, NodeHeader } from "./FlowNodePrimitives"
-import { getFlowNodeData, subscribeToFlowNodeData, updateFlowNodeData } from "../../_lib/flow-sessionStorage"
+import { conversational_flow_session_storage } from "../../_lib/flow-sessionStorage"
 import { TransitionEditor } from "./TransitionEditor"
 
 type ConversationNodeProps = Pick<NodeProps<CF["Nodes"]["conversation"]>, "id" | "data" | "selected">
 
 export function FlowConversationNodeType({ id, data: node, selected }: ConversationNodeProps) {
-    const [savedNode, setSavedNode] = useState(() => getFlowNodeData("conversation", id) ?? node)
-    const update = (fn: (node: CF["Data"]["conversation"]) => CF["Data"]["conversation"]) => updateFlowNodeData("conversation", id, fn)
+    const [savedNode, setSavedNode] = useState(() => conversational_flow_session_storage.get("conversation", id) ?? node)
+    const update = (fn: (node: CF["Data"]["conversation"]) => CF["Data"]["conversation"]) => conversational_flow_session_storage.update("conversation", id, fn)
 
-    useEffect(() => subscribeToFlowNodeData(() => {
-        const updatedNode = getFlowNodeData("conversation", id)
+    useEffect(() => conversational_flow_session_storage.subscribe(() => {
+        const updatedNode = conversational_flow_session_storage.get("conversation", id)
         if (updatedNode) setSavedNode(updatedNode)
     }), [id])
 

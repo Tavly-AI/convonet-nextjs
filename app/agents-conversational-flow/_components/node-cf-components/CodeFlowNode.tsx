@@ -4,15 +4,15 @@ import { Code2 } from "lucide-react"
 
 import type { CF } from "../../_types/global-cf-types"
 import { FlowNodeCard, InputHandle, NodeHeader } from "./FlowNodePrimitives"
-import { getFlowNodeData, subscribeToFlowNodeData, updateFlowNodeData } from "../../_lib/flow-sessionStorage"
+import { conversational_flow_session_storage } from "../../_lib/flow-sessionStorage"
 import { TransitionEditor } from "./TransitionEditor"
 
 export function CodeFlowNode({ id, data, selected }: NodeProps<CF["Nodes"]["code"]>) {
-    const [savedNode, setSavedNode] = useState(() => getFlowNodeData("code", id) ?? data)
-    const update = (fn: (node: CF["Data"]["code"]) => CF["Data"]["code"]) => updateFlowNodeData("code", id, fn)
+    const [savedNode, setSavedNode] = useState(() => conversational_flow_session_storage.get("code", id) ?? data)
+    const update = (fn: (node: CF["Data"]["code"]) => CF["Data"]["code"]) => conversational_flow_session_storage.update("code", id, fn)
 
-    useEffect(() => subscribeToFlowNodeData(() => {
-        const updatedNode = getFlowNodeData("code", id)
+    useEffect(() => conversational_flow_session_storage.subscribe(() => {
+        const updatedNode = conversational_flow_session_storage.get("code", id)
         if (updatedNode) setSavedNode(updatedNode)
     }), [id])
 

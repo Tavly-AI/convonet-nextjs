@@ -16,7 +16,7 @@ import { CodeFlowNode } from "./_components/node-cf-components/CodeFlowNode"
 import { EndFlowNode } from "./_components/node-cf-components/EndFlowNode"
 import { useEffect } from "react"
 import type { CF } from "./_types/global-cf-types"
-import { getFlowNodeData, setFlowNodeData } from "./_lib/flow-sessionStorage"
+import { conversational_flow_session_storage } from "./_lib/flow-sessionStorage"
 
 
 type FlowNode = CF["Node"]
@@ -89,7 +89,7 @@ function FlowCanvas() {
         const position = screenToFlowPosition({ x: e.clientX, y: e.clientY })
         const data = createCFNode(type, position)
 
-        setFlowNodeData(data)
+        conversational_flow_session_storage.set(data)
 
         setNodes(nodes => [...nodes, { id: data.id, type, position, data } as CF["Node"],])
     }
@@ -101,9 +101,9 @@ function FlowCanvas() {
         const sourceNode = nodes.find(node => node.id === source)
         if (!sourceNode) return
 
-        const data = getFlowNodeData(sourceNode.type, sourceNode.id) ?? sourceNode.data
+        const data = conversational_flow_session_storage.get(sourceNode.type, sourceNode.id) ?? sourceNode.data
         const updatedNode = setDestination({ ...sourceNode, data } as CF["Node"], sourceHandle, target)
-        setFlowNodeData(updatedNode.data)
+        conversational_flow_session_storage.set(updatedNode.data)
         setNodes(current => current.map(node => node.id === source ? updatedNode : node))
     }
 
