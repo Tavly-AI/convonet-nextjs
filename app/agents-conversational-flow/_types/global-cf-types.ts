@@ -48,10 +48,7 @@ type Data = {
     }
 
     subagent: Base<"subagent"> & {
-        instruction: {
-            type: "prompt"
-            text: string
-        }
+        instruction: Extract<Instruction, { type: "prompt" }>
         edges?: Edge[]
         else_edge?: Edge
         always_edge?: Edge

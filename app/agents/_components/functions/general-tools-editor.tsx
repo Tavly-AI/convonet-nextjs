@@ -97,7 +97,7 @@ const TOOL_OPTIONS = [
     label: "Extract Dynamic Variable",
     description: "Extract values from the conversation into dynamic variables.",
     icon: FileInputIcon,
-    channels: ["voice", "chat"],
+    channels: ["", ""],
   },
   {
     type: "send_sms" as const,

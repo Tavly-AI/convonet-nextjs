@@ -12,6 +12,7 @@ import { Prisma } from "@/generated/prisma/client"
 import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
+import type { AgentChannel } from "@/lib/constants"
 
 export type { AgentSessionResult } from "@/app/agents/_lib/helper-actions"
 
@@ -29,6 +30,8 @@ const publishAgentSchema = z.object({
   llmConfig: z.record(z.string(), z.json()),
 })
 
+const conversationalFlowNodesSchema = z.record(z.string(), z.json())
+
 const publishAgentVersionSchema = z.object({
   title: z.string().trim().min(1, "Version title is required.").max(200),
   description: z.string().trim().max(1000).optional(),
@@ -41,17 +44,18 @@ const createAgentSchema = z.object({
   llmConfig: z.record(z.string(), z.json()),
 })
 
+type CreateAgentInput = {
+  name: string
+  config: Record<string, unknown>
+  channel: AgentChannel
+  llmConfig: Record<string, unknown>
+}
 
 // ===============================================================
 // ========================= AGENT ===============================
 // ===============================================================
 
-export async function createAgent(input: {
-  name: string
-  config: Record<string, unknown>
-  channel: "voice" | "chat"
-  llmConfig: Record<string, unknown>
-}) {
+export async function createAgent(input: CreateAgentInput) {
   const workspaceId = await getCurrentWorkspaceId()
   const parsed = createAgentSchema.parse(input)
   const agent = await prisma.agent.create({
@@ -67,6 +71,37 @@ export async function createAgent(input: {
 
   revalidatePath("/dashboard/agents")
   return agent
+}
+
+export async function createConversationalFlowAgent(input: CreateAgentInput) {
+  const workspaceId = await getCurrentWorkspaceId()
+  const parsed = createAgentSchema.parse(input)
+
+  const agent = await prisma.agent.create({
+    data: {
+      workspaceId,
+      name: parsed.name,
+      channel: parsed.channel,
+      config: parsed.config as Prisma.InputJsonObject,
+      llmConfig: parsed.llmConfig as Prisma.InputJsonObject,
+      conversationalFlow: {
+        create: {
+          workspaceId,
+          name: `${parsed.name} Flow`,
+          nodes: [],
+        },
+      },
+    },
+    select: {
+      id: true,
+      conversationalFlow: { select: { id: true } },
+    },
+  })
+
+  if (!agent.conversationalFlow) throw new Error("Failed to create conversational flow.")
+
+  revalidatePath("/dashboard/agents")
+  return { agentId: agent.id, conversationalFlowId: agent.conversationalFlow.id }
 }
 
 export async function deleteAgent(agentId: string) {
@@ -164,24 +199,63 @@ export async function publishAgent(
 
   return toAgentSession(result.agent, result.nextDraftVersion)
 }
-
-export async function autoSaveAgentSession(input: AgentSessionAgent) {
+export async function autoSaveAgentSession(input: AgentSessionAgent, conversationalFlowNodes?: Record<string, unknown>) {
   if (!input.id) return
 
   const workspaceId = await getCurrentWorkspaceId()
   const parsed = publishAgentSchema.parse(input)
+
   if (!parsed.id) return
 
-  await prisma.agent.update({
-    where: {
-      id: parsed.id,
-      workspaceId,
-    },
-    data: {
-      name: parsed.name,
-      channel: parsed.channel,
-      config: parsed.config as Prisma.InputJsonObject,
-      llmConfig: parsed.llmConfig as Prisma.InputJsonObject,
-    },
-  })
+  const agentId = parsed.id
+  const agentType = parsed.config.agentType
+
+  // SINGLE PROMPT AGENT
+  if (agentType === "single_prompt") {
+    await prisma.agent.update({
+      where: {
+        id: agentId,
+        workspaceId,
+      },
+      data: {
+        name: parsed.name,
+        channel: parsed.channel,
+        config: parsed.config as Prisma.InputJsonObject,
+        llmConfig: parsed.llmConfig as Prisma.InputJsonObject,
+      },
+    })
+
+    return
+  }
+
+  // CONVERSATIONAL FLOW AGENT
+  if (agentType === "conversational_flow") {
+    const parsedFlowNodes =
+      conversationalFlowNodesSchema.parse(conversationalFlowNodes)
+
+    await prisma.$transaction(async (tx) => {
+      await tx.agent.update({
+        where: {
+          id: agentId,
+          workspaceId,
+        },
+        data: {
+          name: parsed.name,
+          channel: parsed.channel,
+          config: parsed.config as Prisma.InputJsonObject,
+          llmConfig: parsed.llmConfig as Prisma.InputJsonObject,
+        },
+      })
+
+      await tx.conversationalFlow.updateMany({
+        where: {
+          agentId,
+          workspaceId,
+        },
+        data: {
+          nodes: parsedFlowNodes as Prisma.InputJsonObject,
+        },
+      })
+    })
+  }
 }

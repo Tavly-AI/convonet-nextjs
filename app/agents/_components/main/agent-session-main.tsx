@@ -12,7 +12,7 @@ import {
     initializeChatAgentSession,
     writeGeneralPrompt,
 } from "@/app/agents/_lib/session-storage/agent-session"
-import { Card, CardHeader } from "@/components/ui/card"
+import { Card } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { AgentSessionPrimaryTab } from "./agent-session-primary-tab"
 import { AgentSessionTabSecondary } from "./agent-session-secondary-tab"
@@ -22,6 +22,53 @@ import Loading from "@/app/loading"
 import AgentSessionTertiaryTab from "./agent-session-tertiary"
 
 export function AgentSessionMain() {
+
+    const { agentId, isSessionLoading } = useSessionStorageInitAgentSession()
+
+    // make sure the sessionStorage is corretly loaded
+    if (isSessionLoading) return <Loading />
+
+    return (
+        <Tabs
+            defaultValue="create"
+            className="min-h-[calc(100svh-var(--header-height))] flex-1 gap-0 bg-black/10"
+        >
+            <div className="grid shrink-0 grid-cols-[1fr_auto_1fr] items-center border-b bg-background px-2 py-2">
+
+                <AgentSessionName />
+
+                <TabsList>
+                    <TabsTrigger value="create" className="px-4">
+                        Create
+                    </TabsTrigger>
+                    <TabsTrigger value="simulation" className="px-4" disabled>
+                        Simulation
+                    </TabsTrigger>
+                </TabsList>
+
+                <AgentSessionVersion
+                    key={agentId ?? "new-agent"}
+                />
+            </div>
+
+            <TabsContent
+                value="create"
+                className="grid max-h-[100vh] min-h-0 flex-1 gap-2 p-2 xl:grid-cols-[2fr_1fr_1fr]"
+            >
+                <AgentSessionPrimaryTab />
+                <AgentSessionTabSecondary />
+                <AgentSessionTertiaryTab />
+            </TabsContent>
+            <TabsContent value="simulation" className="min-h-0 flex-1 p-2">
+                <Card className="h-full min-h-96" />
+            </TabsContent>
+        </Tabs>
+    )
+}
+
+
+
+export function useSessionStorageInitAgentSession() {
     const searchParams = useSearchParams()
 
     const agentId = searchParams.get("agentId")
@@ -74,44 +121,5 @@ export function AgentSessionMain() {
         }
     }, [agentId])
 
-
-    // make sure the sessionStorage is corretly loaded
-    if (isSessionLoading) return <Loading />
-
-    return (
-        <Tabs
-            defaultValue="create"
-            className="min-h-[calc(100svh-var(--header-height))] flex-1 gap-0 bg-black/10"
-        >
-            <div className="grid shrink-0 grid-cols-[1fr_auto_1fr] items-center border-b bg-background px-2 py-2">
-
-                <AgentSessionName />
-
-                <TabsList>
-                    <TabsTrigger value="create" className="px-4">
-                        Create
-                    </TabsTrigger>
-                    <TabsTrigger value="simulation" className="px-4" disabled>
-                        Simulation
-                    </TabsTrigger>
-                </TabsList>
-
-                <AgentSessionVersion
-                    key={agentId ?? "new-agent"}
-                />
-            </div>
-
-            <TabsContent
-                value="create"
-                className="grid max-h-[100vh] min-h-0 flex-1 gap-2 p-2 xl:grid-cols-[2fr_1fr_1fr]"
-            >
-                <AgentSessionPrimaryTab />
-                <AgentSessionTabSecondary />
-                <AgentSessionTertiaryTab />
-            </TabsContent>
-            <TabsContent value="simulation" className="min-h-0 flex-1 p-2">
-                <Card className="h-full min-h-96" />
-            </TabsContent>
-        </Tabs>
-    )
+    return { agentId, channel, template, agentType, isSessionLoading }
 }

@@ -21,7 +21,7 @@ import { cn } from "@/lib/utils"
 import { TEMPLATE_TABS, TEMPLATES_LIST } from "../_data/templates-list"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
-import { createAgent as createAgentAction, } from "@/app/agents/actions"
+import { createAgent as createAgentAction, createConversationalFlowAgent } from "@/app/agents/actions"
 import { AGENT_CHANNELS, type AgentChannel } from "@/lib/constants"
 
 export type CreateAgentOptions = {
@@ -48,11 +48,18 @@ export function CreateAgentModal({ open, onOpenChange }: CreateAgentModalProps) 
 
   async function createAgent() {
     try {
-      const agent = await createAgentAction({ name: "Untitled Agent", channel: AGENT_CHANNELS.VOICE, config: {}, llmConfig: {} })
+      if (agentType === "conversational_flow") {
+        const flow = await createConversationalFlowAgent({ name: "Untitled Agent", channel: AGENT_CHANNELS.VOICE, config: {}, llmConfig: {}, })
+        const params = new URLSearchParams({ ...flow, channel: AGENT_CHANNELS.VOICE, agentType, })
+        router.push(`/agents-conversational-flow?${params.toString()}`)
+        return
+      }
 
-      const params = new URLSearchParams({ agentId: agent.id, channel: AGENT_CHANNELS.VOICE, agentType, template: selectedTemplate, })
-
-      router.push(`/agents?${params.toString()}`)
+      if (agentType === "single_prompt") {
+        const agent = await createAgentAction({ name: "Untitled Agent", channel: AGENT_CHANNELS.VOICE, config: {}, llmConfig: {} })
+        const params = new URLSearchParams({ agentId: agent.id, channel: AGENT_CHANNELS.VOICE, agentType, template: selectedTemplate, })
+        router.push(`/agents?${params.toString()}`)
+      }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to create agent.")
     }
@@ -101,10 +108,8 @@ export function CreateAgentModal({ open, onOpenChange }: CreateAgentModalProps) 
               <button
                 type="button"
                 onClick={() => setAgentType("conversational_flow")}
-                disabled
                 className={cn(
                   "rounded-lg border bg-background p-4 text-left transition-colors hover:bg-muted/40",
-                  "disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-background",
                   agentType === "conversational_flow" && "border-ring"
                 )}
               >
@@ -123,7 +128,7 @@ export function CreateAgentModal({ open, onOpenChange }: CreateAgentModalProps) 
             </div>
           </section>
 
-          <section className="space-y-4">
+          {agentType === "single_prompt" && <section className="space-y-4">
             <h2 className="text-sm font-medium text-muted-foreground">
               Templates
             </h2>
@@ -205,7 +210,7 @@ export function CreateAgentModal({ open, onOpenChange }: CreateAgentModalProps) 
                 </button>
               ))}
             </div>
-          </section>
+          </section>}
         </div>
 
         <DialogFooter className="shrink-0 border-t px-6 py-4">

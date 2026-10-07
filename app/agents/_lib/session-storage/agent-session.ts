@@ -5,6 +5,7 @@ import type { GeneralTool } from "@/app/agents/_lib/functions/general-tools"
 import type { McpConfig } from "@/app/agents/_lib/mcp/mcp"
 import { getAgentTemplates } from "../../_data/templates-data-list"
 import type { LlmModel } from "../../_components/main/agent-session-model"
+import { conversational_flow_session_storage } from "@/app/agents-conversational-flow/_lib/flow-sessionStorage"
 
 const SESSION_KEY = "agent-session"
 
@@ -389,7 +390,7 @@ export type AgentSessionBaseSettings =
     Partial<BeginMessageSettings>
 
 export type AgentSessionConfig = AgentSessionBaseSettings & {
-    agentType: string
+    agentType: "single_prompt" | "conversational_flow"
     voiceId: string | null
     language: AgentLanguage
     generalTools: GeneralTool[]
@@ -1041,11 +1042,20 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function scheduleAgentSessionAutoSave(agent: AgentSessionAgent) {
     if (!agent.id) return
 
+    const agentType = agent.config.agentType
+
     window.setTimeout(() => {
-        void autoSaveAgentSession(agent).catch(console.error)
+        if (agentType === "conversational_flow") {
+            const flowNodes = conversational_flow_session_storage.getAll()
+            void autoSaveAgentSession(agent, flowNodes).catch(console.error)
+            return
+        }
+
+        if (agentType === "single_prompt") {
+            void autoSaveAgentSession(agent).catch(console.error)
+        }
     }, 1000)
 }
-
 
 // =================================================================
 // ========================== VOICE TTS ============================

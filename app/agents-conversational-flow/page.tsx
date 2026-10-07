@@ -17,6 +17,7 @@ import { EndFlowNode } from "./_components/node-cf-components/EndFlowNode"
 import { useEffect } from "react"
 import type { CF } from "./_types/global-cf-types"
 import { conversational_flow_session_storage } from "./_lib/flow-sessionStorage"
+import { FlowTertiaryPanel } from "./_components/panels/flow-tertiary-panel"
 
 
 type FlowNode = CF["Node"]
@@ -123,6 +124,7 @@ function FlowCanvas() {
         <div className="size-full">
             <FlowLeftSidePanel />
             <FlowRightSidePanel />
+            {/* <FlowTertiaryPanel /> */}
             <ReactFlow
                 nodes={nodes}
                 edges={edges}

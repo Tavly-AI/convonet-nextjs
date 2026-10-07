@@ -17,7 +17,7 @@ import { AgentSessionStartSpeaker } from "./agent-session-start-speaker"
 import { TimezoneSelect } from "./agent-session-timezone"
 
 
-export function AgentSessionPrimaryTab({ isConversationalFlow }: { isConversationalFlow: boolean }) {
+export function AgentSessionPrimaryTab({ isConversationalFlow }: { isConversationalFlow?: boolean }) {
 
   const [voiceOpen, setVoiceOpen] = React.useState(false)
 

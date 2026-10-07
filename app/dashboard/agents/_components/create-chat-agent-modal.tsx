@@ -5,8 +5,7 @@ import { useRouter } from "next/navigation"
 import { BracesIcon, WorkflowIcon } from "lucide-react"
 import { toast } from "sonner"
 
-import { createAgent as createAgentAction } from "@/app/agents/actions"
-import { Button } from "@/components/ui/button"
+import { createAgent as createAgentAction, createConversationalFlowAgent } from "@/app/agents/actions"
 import {
     Dialog,
     DialogContent,
@@ -30,11 +29,18 @@ export function CreateChatAgentModal({ open, onOpenChange }: CreateChatAgentModa
 
     async function createAgent() {
         try {
-            const agent = await createAgentAction({ name: "Untitled Agent", channel: AGENT_CHANNELS.CHAT, config: {}, llmConfig: {} })
+            if (agentType === "conversational_flow") {
+                const flow = await createConversationalFlowAgent({ name: "Untitled Agent", channel: AGENT_CHANNELS.CHAT, config: {}, llmConfig: {}, })
+                const params = new URLSearchParams({ ...flow, channel: AGENT_CHANNELS.CHAT, agentType, })
+                router.push(`/agents-conversational-flow?${params.toString()}`)
+                return
+            }
 
-            const params = new URLSearchParams({ agentId: agent.id, channel: AGENT_CHANNELS.CHAT, agentType })
-
-            router.push(`/agents?${params.toString()}`)
+            if (agentType === "single_prompt") {
+                const agent = await createAgentAction({ name: "Untitled Agent", channel: AGENT_CHANNELS.CHAT, config: {}, llmConfig: {} })
+                const params = new URLSearchParams({ agentId: agent.id, channel: AGENT_CHANNELS.CHAT, agentType })
+                router.push(`/agents?${params.toString()}`)
+            }
         } catch (error) {
             toast.error(error instanceof Error ? error.message : "Failed to create agent.")
         }
@@ -84,10 +90,8 @@ export function CreateChatAgentModal({ open, onOpenChange }: CreateChatAgentModa
                             <button
                                 type="button"
                                 onClick={() => setAgentType("conversational_flow")}
-                                disabled
                                 className={cn(
                                     "rounded-lg border bg-background p-4 text-left transition-colors hover:bg-muted/40",
-                                    "disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-background",
                                     agentType === "conversational_flow" && "border-ring"
                                 )}
                             >

@@ -1,18 +1,12 @@
 import type { CF } from "../_types/global-cf-types"
 
-const KEY = "flow-node-data", EVENT = `${KEY}:change`
+export const CONVERSTAIONAL_FLOW_SESSION_STORAGE_KEY = "flow-node-data"
+const EVENT = `${CONVERSTAIONAL_FLOW_SESSION_STORAGE_KEY}:change`
+const KEY = CONVERSTAIONAL_FLOW_SESSION_STORAGE_KEY
+
 type Store = Record<string, CF["Node"]["data"]>
 
-const EMPTY_CONVERSATIONAL_FLOW = {
-    begin: {
-        id: "begin",
-        type: "begin",
-        name: "Begin",
-        skippable: false,
-        display_position: { x: 0, y: 0 },
-        edge: { id: "begin-edge", transition_condition: { type: "prompt", prompt: "Start" } },
-    },
-} satisfies Store
+const EMPTY_CONVERSATIONAL_FLOW: Store = {}
 
 const read = (): Store => {
     try { return JSON.parse(sessionStorage.getItem(KEY) || JSON.stringify(EMPTY_CONVERSATIONAL_FLOW)) }
@@ -29,6 +23,8 @@ export const conversational_flow_session_storage = {
         const node = read()[id]
         return node?.type === type ? node as CF["Data"][T] : undefined
     },
+
+    getAll() { return read() },
 
     set(data: CF["Node"]["data"]) { write({ ...read(), [data.id]: data }) },
 

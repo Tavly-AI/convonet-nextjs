@@ -24,22 +24,7 @@ export function createAgentDefinition(agentConfig: RuntimeAgentConfig) {
       Always respond in ${languages.gpt}.
     `,
 
-    tools: [
-      endCallTool,
-      createAwarenessTools(agentConfig),
-      createCheckAvailabilityTool(agentConfig),
-      createBookAppointmentTool(agentConfig),
-      ...createCodeExecutionTools(agentConfig),
-      ...createCustomFunctionTools(agentConfig),
-      ...(() => {
-        const tool = createCallTransferTool(agentConfig, createAgentDefinition);
-        return tool ? [tool] : [];
-      })(),
-      ...(() => {
-        const tool = createPressDigitTool(agentConfig);
-        return tool ? [tool] : [];
-      })(),
-    ],
+    tools: createAllAgentToolsAvailable(agentConfig),
   });
 }
 
@@ -59,4 +44,20 @@ export function getPostCallCollectionInstructions(fields: RuntimeAgentConfig["co
     Collect these details naturally during the conversation. Do not mention extraction or ask again for information the caller already provided. Ask for required details before ending the call; capture optional details when relevant. Never invent a value.
     ${fieldsToCollect.map((field) => `- ${field.name}${field.required ? " (required)" : ""}: ${field.description}`).join("\n")}
   `;
+}
+
+export function createAllAgentToolsAvailable(agentConfig: RuntimeAgentConfig) {
+  const callTransfer = createCallTransferTool(agentConfig, createAgentDefinition)
+  const pressDigit = createPressDigitTool(agentConfig)
+
+  return [
+    endCallTool,
+    createAwarenessTools(agentConfig),
+    createCheckAvailabilityTool(agentConfig),
+    createBookAppointmentTool(agentConfig),
+    ...createCodeExecutionTools(agentConfig),
+    ...createCustomFunctionTools(agentConfig),
+    ...(callTransfer ? [callTransfer] : []),
+    ...(pressDigit ? [pressDigit] : []),
+  ]
 }

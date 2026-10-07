@@ -3,7 +3,9 @@ import { audioEnhancement } from '@livekit/plugins-ai-coustics';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'node:url';
 import { createAgentDefinition } from './agent.ts';
+import { createInitialFlowAgent } from './conversational-flow/conversational-flow-runtime.ts';
 import { getAgentConfig, getAgentIdFromJob, type RuntimeAgentConfig } from './ingestion/get-agent-config.ts';
+import { getConversationalFlowConfig } from './ingestion/get-conversational-flow-config.ts';
 import { createVoiceStack, type VoiceStack } from './ingestion/configure-voice-stack.ts';
 import { registerSessionDataHooks } from './data-hooks/main.ts';
 import { registerS3DualChannelRecording } from './egress/upload-s3-egress.ts';
@@ -17,7 +19,7 @@ export default defineAgent({
     const agentConfig = await getAgentConfig(agentId);
 
     const { llm, stt, tts } = await createVoiceStack(agentId, agentConfig);
-    const agent = createAgentDefinition(agentConfig);
+    const agent = await createRuntimeAgent(agentId, agentConfig)
 
     const session = createSession({ llm, stt, tts, channel: agentConfig.channel, });
     await session.start({ agent, room: ctx.room, ...getSessionStartOptions(agentConfig.channel) });
@@ -42,6 +44,15 @@ cli.runApp(
 
 
 // MISC STATIC CODE
+
+async function createRuntimeAgent(agentId: string, config: RuntimeAgentConfig,) {
+  if (config.config.agentType === "conversational_flow") {
+    const flow = await getConversationalFlowConfig(agentId)
+    return createInitialFlowAgent(flow, config)
+  }
+
+  return createAgentDefinition(config)
+}
 
 function createSession({ llm, stt, tts, channel }: VoiceStack & { channel: RuntimeAgentConfig["channel"] }) {
   const isChat = channel === 'chat';
