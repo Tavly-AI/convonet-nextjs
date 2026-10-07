@@ -98,6 +98,18 @@ export type TransferCallTool = {
   ignore_e164_validation?: boolean
 } & ExecutionMessageFields
 
+export type AgentSwapTool = {
+  type: "agent_swap"
+  name: string
+  description: string
+  agent_id: string
+  post_call_analysis_setting: "both_agents" | "only_destination_agent"
+  webhook_setting?: "both_agents" | "only_destination_agent" | "only_source_agent"
+  keep_current_voice?: boolean
+  keep_current_language?: boolean
+  use_swap_agent_max_duration?: boolean
+} & ExecutionMessageFields
+
 export type FunctionParameterType =
   | "string"
   | "number"
@@ -237,6 +249,7 @@ export type CancelTransferTool = {
 export type GeneralTool =
   | EndCallTool
   | TransferCallTool
+  | AgentSwapTool
   | CustomFunctionTool
   | CodeTool
   | ExtractDynamicVariableTool

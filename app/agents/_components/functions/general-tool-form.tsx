@@ -18,6 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { KeyValueEditor } from "@/app/agents/_components/shared/key-value-editor"
 import type {
+  AgentSwapTool,
   BookAppointmentCalTool,
   BridgeTransferTool,
   CancelTransferTool,
@@ -70,6 +71,9 @@ export function GeneralToolForm({
       {value.type === "transfer_call" && (
         <TransferCallForm value={value} onChange={onChange} />
       )}
+      {value.type === "agent_swap" && (
+        <AgentSwapForm value={value} onChange={onChange} />
+      )}
       {(value.type === "check_availability_cal" || value.type === "book_appointment_cal") && (
         <CalComToolForm value={value} onChange={onChange} />
       )}
@@ -92,6 +96,88 @@ export function GeneralToolForm({
         <SendSMSForm value={value} onChange={onChange} />
       )}
     </div>
+  )
+}
+
+function AgentSwapForm({
+  value,
+  onChange,
+}: {
+  value: AgentSwapTool
+  onChange: (value: AgentSwapTool) => void
+}) {
+  return (
+    <>
+      <Section title="Destination agent">
+        <div>
+          <Field label="Agent ID">
+            <Input
+              value={value.agent_id}
+              onChange={(event) => onChange({ ...value, agent_id: event.target.value })}
+              placeholder="agent_..."
+            />
+          </Field>
+        </div>
+      </Section>
+
+      <Section title="Agent swap behavior">
+        <div className="space-y-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Post-call analysis">
+              <Select
+                value={value.post_call_analysis_setting}
+                onValueChange={(post_call_analysis_setting) =>
+                  onChange({ ...value, post_call_analysis_setting: post_call_analysis_setting as AgentSwapTool["post_call_analysis_setting"] })
+                }
+              >
+                <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="only_destination_agent">Destination agent only</SelectItem>
+                  <SelectItem value="both_agents">Both agents</SelectItem>
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field label="Webhook ownership">
+              <Select
+                value={value.webhook_setting ?? "only_source_agent"}
+                onValueChange={(webhook_setting) =>
+                  onChange({ ...value, webhook_setting: webhook_setting as NonNullable<AgentSwapTool["webhook_setting"]> })
+                }
+              >
+                <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="only_source_agent">Source agent only</SelectItem>
+                  <SelectItem value="only_destination_agent">Destination agent only</SelectItem>
+                  <SelectItem value="both_agents">Both agents</SelectItem>
+                </SelectContent>
+              </Select>
+            </Field>
+          </div>
+          <CheckRow
+            label="Keep current voice"
+            description="Keep the current voice and ambient audio after the swap."
+            checked={value.keep_current_voice ?? false}
+            onCheckedChange={(keep_current_voice) => onChange({ ...value, keep_current_voice })}
+          />
+          <CheckRow
+            label="Keep current language"
+            description="Keep the current language after the swap."
+            checked={value.keep_current_language ?? false}
+            onCheckedChange={(keep_current_language) => onChange({ ...value, keep_current_language })}
+          />
+          <CheckRow
+            label="Use destination max duration"
+            description="Restart the duration timer using the destination agent's maximum duration."
+            checked={value.use_swap_agent_max_duration ?? false}
+            onCheckedChange={(use_swap_agent_max_duration) => onChange({ ...value, use_swap_agent_max_duration })}
+          />
+        </div>
+      </Section>
+
+      <Section title="Conversation behavior">
+        <ExecutionMessageForm value={value} onChange={onChange} />
+      </Section>
+    </>
   )
 }
 

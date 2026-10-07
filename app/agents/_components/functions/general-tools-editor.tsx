@@ -13,6 +13,7 @@ import {
   MessageSquareTextIcon,
   MoreHorizontalIcon,
   PhoneOffIcon,
+  Repeat2Icon,
   Trash2Icon,
 } from "lucide-react"
 
@@ -28,6 +29,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import type {
+  AgentSwapTool,
   BookAppointmentCalTool,
   CheckAvailabilityCalTool,
   CodeTool,
@@ -62,6 +64,13 @@ const TOOL_OPTIONS = [
     label: "Call Transfer",
     description: "Route the caller to a person or external number.",
     icon: ArrowRightLeftIcon,
+    channels: ["voice"],
+  },
+  {
+    type: "agent_swap" as const,
+    label: "Agent Transfer",
+    description: "Switch the conversation to another AI agent.",
+    icon: Repeat2Icon,
     channels: ["voice"],
   },
   {
@@ -115,7 +124,7 @@ const TOOL_OPTIONS = [
   },
 ]
 
-type AvailableToolType = (typeof TOOL_OPTIONS)[number]["type"]
+export type AvailableToolType = (typeof TOOL_OPTIONS)[number]["type"]
 
 export function GeneralToolsEditor() {
   const isChatAgent = isChatAgentSession(useSearchParams())
@@ -134,7 +143,7 @@ export function GeneralToolsEditor() {
   function openNew(type: AvailableToolType) {
     setEditingIndex(null)
     setError("")
-    setDraft(createTool(type))
+    setDraft(createFunctionTool(type))
   }
 
   function selectTool(type: string) {
@@ -167,6 +176,15 @@ export function GeneralToolsEditor() {
     updateTools(nextTools)
     setDraft(null)
   }
+
+  // note: used in 
+  // app/agents/_lib/session-storage/agent-session.ts
+  // onDrop()
+  React.useEffect(() => {
+    const update = () => setTools(getGeneralTools())
+    window.addEventListener("general-tools:change", update)
+    return () => window.removeEventListener("general-tools:change", update)
+  }, [])
 
   return (
     <div className="space-y-3 border-t px-1 py-4">
@@ -297,7 +315,7 @@ export function GeneralToolsEditor() {
   )
 }
 
-function createTool(type: AvailableToolType): GeneralTool {
+export function createFunctionTool(type: AvailableToolType): GeneralTool {
   if (type === "end_call") {
     return {
       type,
@@ -331,6 +349,23 @@ function createTool(type: AvailableToolType): GeneralTool {
       execution_message_type: "prompt",
       execution_message_description: "",
     } satisfies TransferCallTool
+  }
+
+  if (type === "agent_swap") {
+    return {
+      type,
+      name: "transfer_to_agent",
+      description: "Switch the conversation to a specialist agent when appropriate.",
+      agent_id: "",
+      post_call_analysis_setting: "only_destination_agent",
+      webhook_setting: "only_source_agent",
+      keep_current_voice: false,
+      keep_current_language: false,
+      use_swap_agent_max_duration: false,
+      speak_during_execution: false,
+      execution_message_type: "prompt",
+      execution_message_description: "",
+    } satisfies AgentSwapTool
   }
 
   if (type === "check_availability_cal") {
@@ -483,6 +518,9 @@ function validateTool(tool: GeneralTool, tools: GeneralTool[], editingIndex: num
       return "Hold music asset ID is required when custom hold music is selected."
     }
   }
+  if (tool.type === "agent_swap" && !tool.agent_id.trim()) {
+    return "Destination agent ID is required."
+  }
   if (tool.type === "custom" && !tool.url.trim()) return "API endpoint is required."
   if (tool.type === "custom" && tool.timeout_ms !== undefined && (tool.timeout_ms < 1000 || tool.timeout_ms > 600000)) {
     return "Custom function timeout must be between 1000 and 600000 ms."
@@ -533,7 +571,8 @@ function validateTool(tool: GeneralTool, tools: GeneralTool[], editingIndex: num
 function normalizeTool(tool: GeneralTool): GeneralTool {
   if (
     tool.type === "end_call" ||
-    tool.type === "transfer_call"
+    tool.type === "transfer_call" ||
+    tool.type === "agent_swap"
   ) {
     const normalizedExecutionTool = {
       ...tool,
@@ -542,6 +581,7 @@ function normalizeTool(tool: GeneralTool): GeneralTool {
       execution_message_description: tool.execution_message_description ?? "",
     }
 
+    if (normalizedExecutionTool.type === "agent_swap") return normalizeAgentSwapTool(normalizedExecutionTool)
     if (normalizedExecutionTool.type !== "transfer_call") return normalizedExecutionTool
 
     return normalizeTransferCallTool(normalizedExecutionTool)
@@ -565,6 +605,20 @@ function normalizeTool(tool: GeneralTool): GeneralTool {
   if (tool.type !== "custom") return tool
 
   return normalizeCustomTool(tool)
+}
+
+function normalizeAgentSwapTool(tool: AgentSwapTool): AgentSwapTool {
+  return {
+    ...tool,
+    name: tool.name.trim(),
+    description: tool.description.trim(),
+    agent_id: tool.agent_id.trim(),
+    post_call_analysis_setting: tool.post_call_analysis_setting ?? "only_destination_agent",
+    webhook_setting: tool.webhook_setting ?? "only_source_agent",
+    keep_current_voice: tool.keep_current_voice ?? false,
+    keep_current_language: tool.keep_current_language ?? false,
+    use_swap_agent_max_duration: tool.use_swap_agent_max_duration ?? false,
+  }
 }
 
 function normalizeSendSMSTool(tool: SendSMSTool): SendSMSTool {
@@ -709,9 +763,26 @@ function coerceToolForEdit(tool: GeneralTool): GeneralTool {
   }
   if (tool.type === "send_sms") return coerceSendSMSTool(tool)
   if (tool.type === "custom") return coerceCustomTool(tool)
+  if (tool.type === "agent_swap") return coerceAgentSwapTool(tool)
   if (tool.type !== "transfer_call") return tool
 
   return coerceTransferCallTool(tool)
+}
+
+function coerceAgentSwapTool(tool: AgentSwapTool): AgentSwapTool {
+  return {
+    ...tool,
+    description: tool.description ?? "",
+    agent_id: tool.agent_id ?? "",
+    post_call_analysis_setting: tool.post_call_analysis_setting ?? "only_destination_agent",
+    webhook_setting: tool.webhook_setting ?? "only_source_agent",
+    keep_current_voice: tool.keep_current_voice ?? false,
+    keep_current_language: tool.keep_current_language ?? false,
+    use_swap_agent_max_duration: tool.use_swap_agent_max_duration ?? false,
+    speak_during_execution: tool.speak_during_execution ?? false,
+    execution_message_type: tool.execution_message_type ?? "prompt",
+    execution_message_description: tool.execution_message_description ?? "",
+  }
 }
 
 function coerceSendSMSTool(tool: SendSMSTool): SendSMSTool {

@@ -1,4 +1,5 @@
 import { Agent, dedent } from '@livekit/agents';
+import { createAgentSwapTools } from './agent-config/general-tools/agent-swap.ts';
 import { createBookAppointmentTool } from './agent-config/general-tools/book-appointment.ts';
 import { createCallTransferTool } from './agent-config/general-tools/call-transfer.ts';
 import { createCheckAvailabilityTool } from './agent-config/general-tools/check-availability.ts';
@@ -49,6 +50,7 @@ export function getPostCallCollectionInstructions(fields: RuntimeAgentConfig["co
 export function createAllAgentToolsAvailable(agentConfig: RuntimeAgentConfig) {
   const callTransfer = createCallTransferTool(agentConfig, createAgentDefinition)
   const pressDigit = createPressDigitTool(agentConfig)
+  const agentSwaps = createAgentSwapTools(agentConfig, createAgentDefinition)
 
   return [
     endCallTool,
@@ -57,6 +59,7 @@ export function createAllAgentToolsAvailable(agentConfig: RuntimeAgentConfig) {
     createBookAppointmentTool(agentConfig),
     ...createCodeExecutionTools(agentConfig),
     ...createCustomFunctionTools(agentConfig),
+    ...agentSwaps,
     ...(callTransfer ? [callTransfer] : []),
     ...(pressDigit ? [pressDigit] : []),
   ]

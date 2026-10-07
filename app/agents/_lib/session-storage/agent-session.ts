@@ -743,6 +743,9 @@ export function writeGeneralTools(tools: GeneralTool[]) {
         },
     })
 
+    // used in app/agents/_components/functions/general-tools-editor.tsx
+    window.dispatchEvent(new Event("general-tools:change"))
+
     return tools
 }
 

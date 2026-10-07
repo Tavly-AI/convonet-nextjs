@@ -17,6 +17,8 @@ import { EndFlowNode } from "./_components/node-cf-components/EndFlowNode"
 import { useEffect } from "react"
 import type { CF } from "./_types/global-cf-types"
 import { conversational_flow_session_storage } from "./_lib/flow-sessionStorage"
+import { createFunctionTool, type AvailableToolType } from "../agents/_components/functions/general-tools-editor"
+import { getGeneralTools, writeGeneralTools } from "../agents/_lib/session-storage/agent-session"
 import { FlowTertiaryPanel } from "./_components/panels/flow-tertiary-panel"
 
 
@@ -92,6 +94,7 @@ function FlowCanvas() {
 
         conversational_flow_session_storage.set(data)
 
+
         setNodes(nodes => [...nodes, { id: data.id, type, position, data } as CF["Node"],])
     }
 
@@ -124,7 +127,7 @@ function FlowCanvas() {
         <div className="size-full">
             <FlowLeftSidePanel />
             <FlowRightSidePanel />
-            {/* <FlowTertiaryPanel /> */}
+            <FlowTertiaryPanel />
             <ReactFlow
                 nodes={nodes}
                 edges={edges}
@@ -155,4 +158,22 @@ export default function ConversationalFlowPage() {
             </section>
         </main>
     )
+}
+
+function updateAgentSessionStorageOnDropCanvas(type: CF["Type"]) {
+    const toolMap: Partial<Record<CF["Type"], AvailableToolType>> = {
+        transfer_call: "transfer_call",
+        press_digit: "press_digit",
+        sms: "send_sms",
+        code: "code",
+        end: "end_call",
+    }
+
+    const toolType = toolMap[type]
+    if (!toolType) return
+
+    writeGeneralTools([
+        ...getGeneralTools(),
+        createFunctionTool(toolType),
+    ])
 }
