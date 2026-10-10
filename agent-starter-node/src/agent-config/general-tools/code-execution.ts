@@ -23,7 +23,7 @@ function getCodeTools(agentConfig: RuntimeAgentConfig): CodeTool[] {
 export async function runConfiguredCode(code: string, timeoutMs: number | undefined, abortSignal: AbortSignal,): Promise<unknown> {
     const timeout = getTimeoutMs(timeoutMs);
     const result = runInNewContext(`(async () => {\n${code}\n})()`, Object.create(null), { timeout, });
-    return await awaitResult(result, timeout, abortSignal);
+    return normalizeCodeResult(await awaitResult(result, timeout, abortSignal));
 }
 
 export function createCodeExecutionTools(agentConfig: RuntimeAgentConfig) {
@@ -85,4 +85,38 @@ async function awaitResult(result: unknown, timeoutMs: number, abortSignal: Abor
         abortSignal.addEventListener('abort', onAbort, { once: true });
         Promise.resolve(result).then((value) => finish(resolve, value), (error: unknown) => finish(reject, error),);
     });
+}
+
+
+/**
+ * Values created by node:vm belong to a separate JavaScript realm. LiveKit
+ * validates object results with `instanceof Object`, so returning a sandbox
+ * object directly makes an otherwise valid result appear invalid. Rebuild the
+ * supported JSON-like values in this realm before giving them to LiveKit.
+ */
+function normalizeCodeResult(value: unknown, seen = new WeakSet<object>()): unknown {
+    if (value === null || value === undefined) return value;
+
+    if (typeof value === 'string' || typeof value === 'boolean') return value;
+    if (typeof value === 'number') {
+        if (Number.isFinite(value)) return value;
+        throw new TypeError('Code tool results cannot contain non-finite numbers.');
+    }
+
+    if (typeof value !== 'object') {
+        throw new TypeError(`Code tool results must be JSON-like values; received ${typeof value}.`);
+    }
+
+    if (seen.has(value)) throw new TypeError('Code tool results cannot contain circular references.');
+    seen.add(value);
+
+    if (Array.isArray(value)) return value.map((item) => normalizeCodeResult(item, seen));
+
+    if (Object.prototype.toString.call(value) !== '[object Object]') {
+        throw new TypeError('Code tool results may only contain plain objects and arrays.');
+    }
+
+    const result: Record<string, unknown> = {};
+    for (const [key, item] of Object.entries(value)) result[key] = normalizeCodeResult(item, seen);
+    return result;
 }

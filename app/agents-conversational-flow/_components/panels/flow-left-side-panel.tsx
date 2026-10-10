@@ -56,18 +56,18 @@ const nodeItems = [
         icon: GitBranch,
         iconClass: "bg-blue-500/15 text-blue-400",
     },
-    {
-        type: "agent_swap",
-        label: "Agent Transfer",
-        icon: Network,
-        iconClass: "bg-orange-500/15 text-orange-400",
-    },
-    {
-        type: "sms",
-        label: "In-Call SMS",
-        icon: MessageSquare,
-        iconClass: "bg-yellow-500/15 text-yellow-400",
-    },
+    // {
+    //     type: "agent_swap",
+    //     label: "Agent Transfer",
+    //     icon: Network,
+    //     iconClass: "bg-orange-500/15 text-orange-400",
+    // },
+    // {
+    //     type: "sms",
+    //     label: "In-Call SMS",
+    //     icon: MessageSquare,
+    //     iconClass: "bg-yellow-500/15 text-yellow-400",
+    // },
     // {
     //     type: "extract-variable",
     //     label: "Extract Variable",

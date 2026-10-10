@@ -37,4 +37,10 @@ export const conversational_flow_session_storage = {
         window.addEventListener(EVENT, fn)
         return () => window.removeEventListener(EVENT, fn)
     },
+
+    remove(id: string) {
+        const store = read()
+        delete store[id]
+        write(store)
+    },
 }

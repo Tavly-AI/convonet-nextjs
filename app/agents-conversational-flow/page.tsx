@@ -14,7 +14,7 @@ import { AgentTransferFlowNode } from "./_components/node-cf-components/AgentTra
 import { SmsFlowNode } from "./_components/node-cf-components/SmsFlowNode"
 import { CodeFlowNode } from "./_components/node-cf-components/CodeFlowNode"
 import { EndFlowNode } from "./_components/node-cf-components/EndFlowNode"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import type { CF } from "./_types/global-cf-types"
 import { conversational_flow_session_storage } from "./_lib/flow-sessionStorage"
 import { createFunctionTool, type AvailableToolType } from "../agents/_components/functions/general-tools-editor"
@@ -74,13 +74,22 @@ function setDestination(
 
 function FlowCanvas() {
     const [nodes, setNodes, onNodesChange] = useNodesState<FlowNode>(initialNodes)
+    const [edges, setEdges] = useState<Edge[]>([])
     const { screenToFlowPosition } = useReactFlow()
 
-    const edges: Edge[] = nodes.flatMap(node =>
-        getEdges(node.data)
-            .filter((edge) => edge.destination_node_id)
-            .map(edge => ({ id: edge.id, source: node.id, sourceHandle: edge.id, target: edge.destination_node_id!, type: "smoothstep" }))
-    )
+    // get nodes from sesessionStorage onLoad
+    useEffect(() => {
+        const storedNodes = Object.values(conversational_flow_session_storage.getAll()).map(data => ({ id: data.id, type: data.type, position: data.display_position, data, }) as FlowNode)
+        setNodes(storedNodes)
+    }, [setNodes])
+
+    // update edges
+    useEffect(() => {
+        const timeout = setTimeout(() => {
+            setEdges(nodes.flatMap(node => getEdges(node.data).filter(edge => edge.destination_node_id).map(edge => ({ id: edge.id, source: node.id, sourceHandle: edge.id, target: edge.destination_node_id!, type: "smoothstep", }))))
+        }, 1500)
+        return () => clearTimeout(timeout)
+    }, [nodes])
 
 
     function onDrop(e: React.DragEvent) {
@@ -94,6 +103,7 @@ function FlowCanvas() {
 
         conversational_flow_session_storage.set(data)
 
+        updateAgentSessionStorageOnDropCanvas(type)
 
         setNodes(nodes => [...nodes, { id: data.id, type, position, data } as CF["Node"],])
     }
@@ -111,17 +121,16 @@ function FlowCanvas() {
         setNodes(current => current.map(node => node.id === source ? updatedNode : node))
     }
 
-    useEffect(() => {
-        const flowNodes = nodes.map(node => ({
-            ...node.data,
-            display_position: node.position,
-        }))
-
-        console.log(
-            "nodes:",
-            JSON.stringify(flowNodes, null, 2)
-        )
-    }, [nodes])
+    // useEffect(() => {
+    //     const flowNodes = nodes.map(node => ({
+    //         ...node.data,
+    //         display_position: node.position,
+    //     }))
+    //     console.log(
+    //         "nodes:",
+    //         JSON.stringify(flowNodes, null, 2)
+    //     )
+    // }, [nodes])
 
     return (
         <div className="size-full">
@@ -134,6 +143,7 @@ function FlowCanvas() {
                 nodeTypes={nodeTypes}
                 onNodesChange={onNodesChange}
                 onConnect={onConnect}
+                onNodesDelete={(nodes) => { nodes.forEach(node => updateAgentSessionStorageOnDeleteCanvas(node.type, node.id)) }}
                 onDrop={onDrop}
                 onDragOver={(e) => {
                     e.preventDefault()
@@ -176,4 +186,23 @@ function updateAgentSessionStorageOnDropCanvas(type: CF["Type"]) {
         ...getGeneralTools(),
         createFunctionTool(toolType),
     ])
+}
+
+function updateAgentSessionStorageOnDeleteCanvas(type: CF["Type"], id: string) {
+    const toolMap: Partial<Record<CF["Type"], AvailableToolType>> = {
+        transfer_call: "transfer_call",
+        press_digit: "press_digit",
+        sms: "send_sms",
+        code: "code",
+        end: "end_call",
+    }
+
+    const toolType = toolMap[type]
+    if (!toolType) return
+
+    writeGeneralTools(
+        getGeneralTools().filter(tool => tool.type !== toolType)
+    )
+
+    conversational_flow_session_storage.remove(id)
 }
