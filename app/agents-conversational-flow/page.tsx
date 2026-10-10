@@ -20,11 +20,12 @@ import { conversational_flow_session_storage } from "./_lib/flow-sessionStorage"
 import { createFunctionTool, type AvailableToolType } from "../agents/_components/functions/general-tools-editor"
 import { getGeneralTools, writeGeneralTools } from "../agents/_lib/session-storage/agent-session"
 import { FlowTertiaryPanel } from "./_components/panels/flow-tertiary-panel"
+import { SubflowStartNode } from "./_components/node-cf-components/SubflowStartNode"
+import { SubflowEndNode } from "./_components/node-cf-components/SubflowEndNode"
+import { flowHelperGetFlowNodesFromSessionStorage, flowHelperSaveFlowNode, flowHelperUpdateFlowNode } from "./_lib/flow-subflow-helper-functions"
 
 
 type FlowNode = CF["Node"]
-
-const initialNodes: FlowNode[] = []
 
 const nodeTypes = {
     begin: FlowBeginNodeType,
@@ -37,6 +38,8 @@ const nodeTypes = {
     sms: SmsFlowNode,
     code: CodeFlowNode,
     end: EndFlowNode,
+    subflow_start: SubflowStartNode,
+    subflow_end: SubflowEndNode,
 }
 
 function getEdges(data: CF["Node"]["data"]): CF["Edge"][] {
@@ -73,14 +76,15 @@ function setDestination(
 }
 
 function FlowCanvas() {
-    const [nodes, setNodes, onNodesChange] = useNodesState<FlowNode>(initialNodes)
+
+    const [nodes, setNodes, onNodesChange] = useNodesState<FlowNode>([])
     const [edges, setEdges] = useState<Edge[]>([])
     const { screenToFlowPosition } = useReactFlow()
 
     // get nodes from sesessionStorage onLoad
+
     useEffect(() => {
-        const storedNodes = Object.values(conversational_flow_session_storage.getAll()).map(data => ({ id: data.id, type: data.type, position: data.display_position, data, }) as FlowNode)
-        setNodes(storedNodes)
+        setNodes(flowHelperGetFlowNodesFromSessionStorage())
     }, [setNodes])
 
     // update edges
@@ -101,9 +105,7 @@ function FlowCanvas() {
         const position = screenToFlowPosition({ x: e.clientX, y: e.clientY })
         const data = createCFNode(type, position)
 
-        conversational_flow_session_storage.set(data)
-
-        updateAgentSessionStorageOnDropCanvas(type)
+        flowHelperSaveFlowNode(data)
 
         setNodes(nodes => [...nodes, { id: data.id, type, position, data } as CF["Node"],])
     }
@@ -117,19 +119,15 @@ function FlowCanvas() {
 
         const data = conversational_flow_session_storage.get(sourceNode.type, sourceNode.id) ?? sourceNode.data
         const updatedNode = setDestination({ ...sourceNode, data } as CF["Node"], sourceHandle, target)
-        conversational_flow_session_storage.set(updatedNode.data)
+
+        flowHelperUpdateFlowNode(updatedNode.data)
+
         setNodes(current => current.map(node => node.id === source ? updatedNode : node))
     }
 
     // useEffect(() => {
-    //     const flowNodes = nodes.map(node => ({
-    //         ...node.data,
-    //         display_position: node.position,
-    //     }))
-    //     console.log(
-    //         "nodes:",
-    //         JSON.stringify(flowNodes, null, 2)
-    //     )
+    //     const flowNodes = nodes.map(node => ({ ...node.data, display_position: node.position, }))
+    //     console.log("nodes:", JSON.stringify(flowNodes, null, 2))
     // }, [nodes])
 
     return (

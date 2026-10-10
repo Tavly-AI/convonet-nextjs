@@ -171,6 +171,28 @@ const nodeFactories: NodeFactoryMap = {
         instruction: { type: "prompt", text: "Politely end the call" },
         display_position: position,
     }),
+    subflow_start: (id, position) => ({
+        id,
+        type: "subflow_start",
+        name: "Start",
+        skippable: false,
+        edge: {
+            id: crypto.randomUUID(),
+            transition_condition: {
+                type: "prompt",
+                prompt: "Start",
+            },
+        },
+        display_position: position,
+    }),
+
+    subflow_end: (id, position) => ({
+        id,
+        type: "subflow_end",
+        name: "End",
+        skippable: false,
+        display_position: position,
+    }),
 }
 
 export function createCFNode(type: CF["Type"], position: XYPosition): CF["Node"]["data"] {

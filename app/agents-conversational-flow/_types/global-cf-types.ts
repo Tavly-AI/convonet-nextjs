@@ -111,6 +111,12 @@ type Data = {
     end: Base<"end"> & {
         instruction: Instruction
     }
+
+    subflow_start: Base<"subflow_start"> & {
+        edge: Edge
+    }
+
+    subflow_end: Base<"subflow_end"> & {}
 }
 
 export type CF = {
@@ -122,4 +128,35 @@ export type CF = {
     Node: CF["Nodes"][keyof CF["Nodes"]]
     Edge: Edge
     Instruction: Instruction
+}
+
+export type CFSubflowComponent = {
+    conversation_flow_component_id?: string
+    name: string
+    nodes: Data[keyof Data][]
+    start_node_id?: string
+
+    flex_mode?: boolean | null
+    tools?: Record<string, unknown>[] | null
+    mcps?: {
+        name: string
+        url: string
+        headers?: Record<string, string>
+        query_params?: Record<string, string>
+        timeout_ms?: number
+    }[] | null
+
+    begin_tag_display_position?: XYPosition | null
+
+    notes?: {
+        id: string
+        content: string
+        display_position: XYPosition
+        size: {
+            width: number
+            height: number
+        }
+    }[] | null
+
+    user_modified_timestamp?: number
 }
