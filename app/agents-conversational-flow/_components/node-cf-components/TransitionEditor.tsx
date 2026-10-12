@@ -11,13 +11,14 @@ type TransitionNode = (
     | CF["Data"]["press_digit"]
     | CF["Data"]["branch"]
     | CF["Data"]["code"]
+    | CF["Data"]["subflow"]
 ) & {
     edges?: CF["Edge"][]
     else_edge?: CF["Edge"]
     always_edge?: CF["Edge"]
 }
 type EquationCondition = Extract<TransitionCondition, { type: "equation" }>
-type Color = "pink" | "green" | "cyan" | "blue" | "zinc"
+type Color = "pink" | "green" | "cyan" | "blue" | "zinc" | "violet"
 type TransitionType = "prompt" | "equation" | "else" | "always"
 
 const comparisonOperators: EquationOperator[] = ["==", "!=", ">", ">=", "<", "<="]
@@ -50,6 +51,7 @@ export function TransitionEditor<T extends TransitionNode>({
         cyan: "text-cyan-400",
         blue: "text-blue-400",
         zinc: "text-zinc-400",
+        violet: "text-violet-400",
     }[color]
 
     const updateEdges = (update: (edges: CF["Edge"][]) => CF["Edge"][]) =>

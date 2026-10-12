@@ -117,6 +117,11 @@ type Data = {
     }
 
     subflow_end: Base<"subflow_end"> & {}
+
+    subflow: Base<"subflow"> & {
+        conversation_flow_component_id: string
+        edges?: Edge[]
+    }
 }
 
 export type CF = {

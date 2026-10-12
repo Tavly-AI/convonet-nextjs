@@ -91,8 +91,12 @@ function defineTransitionInstructions(node: HandoffFlowNode, getNode: (id: strin
 
 function defineConnectedChainedTools(node: HandoffFlowNode, getNode: (id: string) => FlowNode,) {
     const tools = new Map<string, string>()
+    const queue: FlowNode[] = []
+    const visited = new Set<string>()
 
     function follow(node: FlowNode) {
+        if (visited.has(node.id)) return
+        visited.add(node.id)
         if (node.type === "conversation" || node.type === "subagent") return
 
         if ("edges" in node) {
@@ -103,7 +107,7 @@ function defineConnectedChainedTools(node: HandoffFlowNode, getNode: (id: string
                     const condition = edge.transition_condition.type === "prompt" ? edge.transition_condition.prompt : "when the transition condition is satisfied"
 
                     tools.set(condition, destination.type)
-                    follow(getNode(edge.destination_node_id))
+                    queue.push(destination)
                 }
             })
         }
@@ -112,15 +116,17 @@ function defineConnectedChainedTools(node: HandoffFlowNode, getNode: (id: string
 
             const destination = getNode(node.else_edge.destination_node_id)
             tools.set("else", destination.type)
-            follow(getNode(node.else_edge.destination_node_id))
+            queue.push(destination)
         }
     }
 
     node.edges?.forEach(edge => {
         if (edge.destination_node_id) {
-            follow(getNode(edge.destination_node_id))
+            queue.push(getNode(edge.destination_node_id))
         }
     })
+
+    while (queue.length) follow(queue.shift()!)
 
     return [...tools].map(([condition, tool]) => `- ${condition} → use the ${tool} tool.`).join("\n")
 }

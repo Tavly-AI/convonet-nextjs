@@ -12,6 +12,7 @@ const palette = {
     green: { border: "border-green-600/70", selected: "border-green-400 ring-2 ring-green-500/30", handle: "!bg-green-500", text: "text-green-400" },
     zinc: { border: "border-zinc-600", selected: "border-zinc-300 ring-2 ring-zinc-400/30", handle: "!bg-zinc-400", text: "text-zinc-400" },
     teal: { border: "border-teal-500/70", selected: "border-teal-400 ring-2 ring-teal-500/30", handle: "!bg-teal-500", text: "text-teal-400" },
+    violet: { border: "border-violet-500/70", selected: "border-violet-400 ring-2 ring-violet-500/30", handle: "!bg-violet-500", text: "text-violet-400" },
 }
 
 export function FlowNodeCard({ children, selected, color, className = "" }: { children: ReactNode; selected: boolean; color: keyof typeof palette; className?: string }) {

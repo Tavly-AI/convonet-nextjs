@@ -216,6 +216,16 @@ function DisplaySubflows() {
         onSubflowClick(id)
     }
 
+    function onDragStart(
+        event: React.DragEvent<HTMLButtonElement>,
+        subflowId: string
+    ) {
+        event.dataTransfer.setData("application/reactflow", "subflow")
+        event.dataTransfer.setData("application/subflow-id", subflowId)
+        event.dataTransfer.effectAllowed = "move"
+    }
+
+
     return (
         <div className="space-y-5">
             {/* Search */}
@@ -275,7 +285,8 @@ function DisplaySubflows() {
                         <button
                             key={subflow.conversation_flow_component_id}
                             type="button"
-                            onClick={() => onSubflowClick(subflow.conversation_flow_component_id!)}
+                            draggable
+                            onDragStart={(event) => onDragStart(event, subflow.conversation_flow_component_id!)}
                             className="group flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-left transition-colors hover:bg-muted"
                         >
                             <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-emerald-50 text-emerald-500">
@@ -287,7 +298,7 @@ function DisplaySubflows() {
                             </span>
 
                             <div className="flex items-center opacity-0 transition-opacity group-hover:opacity-100">
-                                <Pencil className="size-4 text-muted-foreground" />
+                                <Pencil className="size-4 text-muted-foreground" onClick={() => onSubflowClick(subflow.conversation_flow_component_id!)} />
                                 <MoreHorizontal className="ml-2 size-4 text-muted-foreground" />
                             </div>
                         </button>

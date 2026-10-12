@@ -22,7 +22,9 @@ import { getGeneralTools, writeGeneralTools } from "../agents/_lib/session-stora
 import { FlowTertiaryPanel } from "./_components/panels/flow-tertiary-panel"
 import { SubflowStartNode } from "./_components/node-cf-components/SubflowStartNode"
 import { SubflowEndNode } from "./_components/node-cf-components/SubflowEndNode"
+import { SubFlowCustomNode } from "./_components/node-cf-components/SubFlowCustomNode"
 import { flowHelperGetFlowNodesFromSessionStorage, flowHelperSaveFlowNode, flowHelperUpdateFlowNode } from "./_lib/flow-subflow-helper-functions"
+import { subflow_session_storage } from "./_lib/flow-subflow-sessonStorage"
 
 
 type FlowNode = CF["Node"]
@@ -40,6 +42,7 @@ const nodeTypes = {
     end: EndFlowNode,
     subflow_start: SubflowStartNode,
     subflow_end: SubflowEndNode,
+    subflow: SubFlowCustomNode,
 }
 
 function getEdges(data: CF["Node"]["data"]): CF["Edge"][] {
@@ -91,7 +94,7 @@ function FlowCanvas() {
     useEffect(() => {
         const timeout = setTimeout(() => {
             setEdges(nodes.flatMap(node => getEdges(node.data).filter(edge => edge.destination_node_id).map(edge => ({ id: edge.id, source: node.id, sourceHandle: edge.id, target: edge.destination_node_id!, type: "smoothstep", }))))
-        }, 1500)
+        }, 150)
         return () => clearTimeout(timeout)
     }, [nodes])
 
@@ -99,15 +102,18 @@ function FlowCanvas() {
     function onDrop(e: React.DragEvent) {
         e.preventDefault()
 
-        const type = e.dataTransfer.getData("application/reactflow") as CF["Type"]
-        if (!type) return
+        const nodeType = e.dataTransfer.getData("application/reactflow") as CF["Type"]
+        if (!nodeType) return
+
+        const referencedSubflowId = nodeType === "subflow" ? e.dataTransfer.getData("application/subflow-id") : undefined
 
         const position = screenToFlowPosition({ x: e.clientX, y: e.clientY })
-        const data = createCFNode(type, position)
 
-        flowHelperSaveFlowNode(data)
+        const nodeData = createCFNode(nodeType, position, referencedSubflowId)
 
-        setNodes(nodes => [...nodes, { id: data.id, type, position, data } as CF["Node"],])
+        flowHelperSaveFlowNode(nodeData)
+
+        setNodes(nodes => [...nodes, { id: nodeData.id, type: nodeData.type, position, data: nodeData } as CF["Node"],])
     }
 
 
@@ -125,10 +131,11 @@ function FlowCanvas() {
         setNodes(current => current.map(node => node.id === source ? updatedNode : node))
     }
 
-    // useEffect(() => {
-    //     const flowNodes = nodes.map(node => ({ ...node.data, display_position: node.position, }))
-    //     console.log("nodes:", JSON.stringify(flowNodes, null, 2))
-    // }, [nodes])
+    useEffect(() => {
+        console.log("Main Flow Nodes:", conversational_flow_session_storage.getAll())
+        console.log("Subflow Components:", subflow_session_storage.getAll())
+        console.log("Current Canvas Nodes:", nodes)
+    }, [nodes])
 
     return (
         <div className="size-full">

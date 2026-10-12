@@ -1,7 +1,8 @@
 import type { XYPosition } from "@xyflow/react"
 import type { CF } from "../_types/global-cf-types"
+import { subflow_session_storage } from "./flow-subflow-sessonStorage"
 
-type NodeFactoryMap = Record<CF["Type"], (id: string, position: XYPosition) => CF["Node"]["data"]>
+type NodeFactoryMap = Record<CF["Type"], (id: string, position: XYPosition, subflowId?: string) => CF["Node"]["data"]>
 
 const nodeFactories: NodeFactoryMap = {
     begin: (id, position) => ({
@@ -193,8 +194,35 @@ const nodeFactories: NodeFactoryMap = {
         skippable: false,
         display_position: position,
     }),
+
+    subflow: (id, position, subflowId) => {
+
+        if (!subflowId) throw new Error("Subflow ID is required")
+        const subflow = subflow_session_storage.get(subflowId)
+        if (!subflow) throw new Error(`Subflow ${subflowId} not found`)
+
+        return {
+            id,
+            type: "subflow",
+            name: subflow.name,
+            skippable: false,
+            conversation_flow_component_id: subflowId,
+            edges: [{
+                id: crypto.randomUUID(),
+                transition_condition: {
+                    type: "prompt",
+                    prompt: "Continue",
+                },
+            }],
+            display_position: position,
+        }
+    },
 }
 
-export function createCFNode(type: CF["Type"], position: XYPosition): CF["Node"]["data"] {
-    return nodeFactories[type](crypto.randomUUID(), position)
+
+export function createCFNode(nodeType: CF["Type"], position: XYPosition, referencedSubflowId?: string): CF["Node"]["data"] {
+
+    if (nodeType === "subflow" && !referencedSubflowId) { throw new Error("Referenced subflow ID is required") }
+
+    return nodeFactories[nodeType](crypto.randomUUID(), position, referencedSubflowId)
 }
