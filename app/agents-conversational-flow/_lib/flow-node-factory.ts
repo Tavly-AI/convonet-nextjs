@@ -5,6 +5,15 @@ import { subflow_session_storage } from "./flow-subflow-sessonStorage"
 type NodeFactoryMap = Record<CF["Type"], (id: string, position: XYPosition, subflowId?: string) => CF["Node"]["data"]>
 
 const nodeFactories: NodeFactoryMap = {
+    note: (id, position) => ({
+        id,
+        type: "note",
+        name: "Note",
+        skippable: false,
+        instruction: { type: "prompt", text: "" },
+        display_position: position,
+    }),
+
     begin: (id, position) => ({
         id,
         type: "begin",

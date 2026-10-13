@@ -17,6 +17,7 @@ import { SmsFlowNode } from "./_components/node-cf-components/SmsFlowNode"
 import { CustomFunctionFlowNode } from "./_components/node-cf-components/CustomFunctionFlowNode"
 import { CodeFlowNode } from "./_components/node-cf-components/CodeFlowNode"
 import { EndFlowNode } from "./_components/node-cf-components/EndFlowNode"
+import { NoteFlowNode } from "./_components/node-cf-components/NoteFlowNode"
 import { Suspense, useEffect, useState } from "react"
 import type { CF } from "./_types/global-cf-types"
 import { conversational_flow_session_storage } from "./_lib/flow-sessionStorage"
@@ -34,6 +35,7 @@ import { FlowTopNavbarPanel } from "./_components/panels/flow-top-navbar-panel"
 type FlowNode = CF["Node"]
 
 const nodeTypes = {
+    note: NoteFlowNode,
     begin: FlowBeginNodeType,
     conversation: FlowConversationNodeType,
     subagent: FlowSubAgentsNodeType,

@@ -26,7 +26,7 @@ function createInlineSubflow(subflowNode: CF["Data"]["subflow"], subflowById: Ma
     if (!component) throw new Error(`Subflow ${subflowNode.conversation_flow_component_id} referenced by ${subflowNode.id} does not exist.`)
     if (component.nodes.some(node => node.type === "subflow")) { throw new Error(`Nested subflows are not supported: ${component.name}.`) }
 
-    const startNode = component.start_node_id ? component.nodes.find(node => node.id === component.start_node_id) : component.nodes.find(node => node.type === "subflow_start")
+    const startNode = component.nodes.find(node => node.type === "subflow_start")
     if (!startNode || startNode.type !== "subflow_start" || !startNode.edge.destination_node_id) { throw new Error(`Subflow ${component.name} must have a Start node connected to another node.`) }
 
     const endNodeIds = new Set(component.nodes.filter(node => node.type === "subflow_end").map(node => node.id))

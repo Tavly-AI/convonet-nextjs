@@ -16,7 +16,8 @@ import {
     Search,
     Smartphone,
     Workflow,
-    // StickyNote,
+    StickyNote,
+    type LucideIcon,
     // Variable,
 } from "lucide-react"
 import { useEffect, useState } from "react"
@@ -29,7 +30,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { useRouter, useSearchParams } from "next/navigation"
-import type { CFSubflowComponent } from "../../_types/global-cf-types"
+import type { CF, CFSubflowComponent } from "../../_types/global-cf-types"
 import { subflow_session_storage } from "../../_lib/flow-subflow-sessonStorage"
 import { createCFNode } from "../../_lib/flow-node-factory"
 
@@ -112,13 +113,13 @@ const nodeItems = [
     //     icon: Network,
     //     iconClass: "bg-indigo-500/15 text-indigo-400",
     // },
-    // {
-    //     type: "note",
-    //     label: "Note",
-    //     icon: StickyNote,
-    //     iconClass: "bg-yellow-500/15 text-yellow-400",
-    // },
-]
+    {
+        type: "note",
+        label: "Note",
+        icon: StickyNote,
+        iconClass: "bg-yellow-500/15 text-yellow-400",
+    },
+] satisfies Array<{ type: CF["Type"]; label: string; icon: LucideIcon; iconClass: string }>
 
 export function FlowLeftSidePanel() {
     return (
@@ -152,7 +153,7 @@ export function FlowLeftSidePanel() {
 function DisplayNodes() {
     function onDragStart(
         event: React.DragEvent<HTMLButtonElement>,
-        nodeType: string
+        nodeType: CF["Type"]
     ) {
         event.dataTransfer.setData("application/reactflow", nodeType)
         event.dataTransfer.effectAllowed = "move"

@@ -35,6 +35,10 @@ type Base<T extends string> = {
 }
 
 type Data = {
+    note: Base<"note"> & {
+        instruction: Extract<Instruction, { type: "prompt" }>
+    }
+
     begin: Base<"begin"> & {
         edge: Edge
     }
@@ -144,31 +148,8 @@ export type CFSubflowComponent = {
     conversation_flow_component_id?: string
     name: string
     nodes: Data[keyof Data][]
-    start_node_id?: string
 
     flex_mode?: boolean | null
-    tools?: Record<string, unknown>[] | null
-    mcps?: {
-        name: string
-        url: string
-        headers?: Record<string, string>
-        query_params?: Record<string, string>
-        timeout_ms?: number
-    }[] | null
-
-    begin_tag_display_position?: XYPosition | null
-
-    notes?: {
-        id: string
-        content: string
-        display_position: XYPosition
-        size: {
-            width: number
-            height: number
-        }
-    }[] | null
-
-    user_modified_timestamp?: number
 }
 
 export type MainflowSubflowConfig = {
