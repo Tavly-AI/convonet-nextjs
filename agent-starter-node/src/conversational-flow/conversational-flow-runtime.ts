@@ -24,8 +24,9 @@ export function createInitialFlowAgent(nodes: FlowNode[], agentConfig: RuntimeAg
             instructions: `
                 ${agentConfig.llmConfig.generalPrompt.trim() || "You are a helpful voice assistant."}\n\n
                 ${node.instruction.text.trim() || "Continue helping the caller."}\n\n
-                FLOW TRANSITIONS: ${defineTransitionInstructions(node, getNode)}
-                AVAILABLE CONNECTED TOOLS: ${defineConnectedChainedTools(node, getNode)}
+                FLOW TRANSITIONS: ${defineConnectedToolInstructions(node, getNode)}
+                AVAILABLE CONNECTED TOOLS: ${defineChainedToolInstructions(node, getNode)}
+                LOGIC SPLITS: ${defineLogicSplitInstructions(node, getNode)}
                 IMPORTANT: After every user response, check the transition conditions. If a condition is satisfied, you MUST immediately call its transition tool instead of responding to the user.
             `,
 
@@ -75,12 +76,12 @@ function defineFlowForHandOffTools(node: HandoffFlowNode, getNode: (id: string) 
 
 
 
-function defineTransitionInstructions(node: HandoffFlowNode, getNode: (id: string) => FlowNode,) {
+function defineConnectedToolInstructions(node: HandoffFlowNode, getNode: (id: string) => FlowNode,) {
     return (node.edges ?? []).map(edge => {
         if (!edge.destination_node_id) return null
 
         const destination = getNode(edge.destination_node_id)
-        if (destination.type === "conversation" || destination.type === "subagent") { return null }
+        if (destination.type === "conversation" || destination.type === "subagent" || destination.type === "branch") { return null }
 
         const condition = edge.transition_condition.type === "prompt" ? edge.transition_condition.prompt : "when the transition condition is satisfied"
         return `- ${condition} → use the ${destination.type} tool.`
@@ -89,7 +90,7 @@ function defineTransitionInstructions(node: HandoffFlowNode, getNode: (id: strin
 }
 
 
-function defineConnectedChainedTools(node: HandoffFlowNode, getNode: (id: string) => FlowNode,) {
+function defineChainedToolInstructions(node: HandoffFlowNode, getNode: (id: string) => FlowNode,) {
     const tools = new Map<string, string>()
     const queue: FlowNode[] = []
     const visited = new Set<string>()
@@ -97,7 +98,7 @@ function defineConnectedChainedTools(node: HandoffFlowNode, getNode: (id: string
     function follow(node: FlowNode) {
         if (visited.has(node.id)) return
         visited.add(node.id)
-        if (node.type === "conversation" || node.type === "subagent") return
+        if (node.type === "conversation" || node.type === "subagent" || node.type === "branch") return
 
         if ("edges" in node) {
             node.edges?.forEach(edge => {
@@ -129,4 +130,36 @@ function defineConnectedChainedTools(node: HandoffFlowNode, getNode: (id: string
     while (queue.length) follow(queue.shift()!)
 
     return [...tools].map(([condition, tool]) => `- ${condition} → use the ${tool} tool.`).join("\n")
+}
+
+
+function defineLogicSplitInstructions(node: HandoffFlowNode, getNode: (id: string) => FlowNode) {
+    const edges = (node.edges ?? []).flatMap(edge => {
+        if (!edge.destination_node_id) return []
+
+        const destination = getNode(edge.destination_node_id)
+        if (destination.type !== "branch") return []
+
+        const conditions = destination.edges.map(branchEdge => {
+            if (branchEdge.transition_condition.type !== "prompt") {
+                throw new Error(`Logic Split ${destination.id} requires prompt conditions.`)
+            }
+            return branchEdge.transition_condition.prompt
+        })
+        const incoming = edge.transition_condition.type === "prompt" ? edge.transition_condition.prompt : "when the transition condition is satisfied"
+
+        return [...destination.edges, ...(destination.else_edge ? [destination.else_edge] : [])].map((branchEdge, index) => ({
+            ...branchEdge,
+            transition_condition: {
+                type: "prompt" as const,
+                prompt: `(${incoming}) AND ${index < conditions.length ? `(${conditions[index]}) AND ` : ""}none of these earlier conditions match: ${JSON.stringify(conditions.slice(0, index))}`,
+            },
+        }))
+    })
+
+    return edges.filter(edge => edge.destination_node_id).map(edge => {
+        const destination = getNode(edge.destination_node_id!)
+        if (destination.type === "conversation" || destination.type === "subagent" || destination.type === "branch") return null
+        return `- ${edge.transition_condition.prompt} → use the ${destination.type} tool.`
+    }).filter(Boolean).join("\n")
 }
