@@ -12,7 +12,7 @@ export default function AgentSessionTertiaryTab() {
 
     return (
         <>
-            <Card className="max-h-[91vh] min-h-0 overflow-y-auto gap-0 py-0">
+            <Card className="h-full min-h-0 overflow-y-auto gap-0 py-0">
                 <Tabs defaultValue="audio" className="h-full gap-0">
                     <CardHeader className="border-b py-3">
                         <TabsList>

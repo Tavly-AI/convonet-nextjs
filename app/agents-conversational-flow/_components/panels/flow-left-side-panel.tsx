@@ -122,7 +122,7 @@ const nodeItems = [
 
 export function FlowLeftSidePanel() {
     return (
-        <aside className="absolute left-4 top-4 z-10 w-60 overflow-hidden rounded-xl border bg-card shadow-lg">
+        <aside className="absolute left-4 top-20 z-10 w-60 overflow-hidden rounded-xl border bg-card/50 shadow-lg">
             <Tabs defaultValue="nodes" className="w-full">
                 <div className="border-b p-2">
                     <TabsList className="grid h-9 w-full grid-cols-2">
