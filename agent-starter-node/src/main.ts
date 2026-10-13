@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import { fileURLToPath } from 'node:url';
 import { createAgentDefinition } from './agent.ts';
 import { createInitialFlowAgent } from './conversational-flow/conversational-flow-runtime.ts';
+import { compileFlowSubflows } from './conversational-flow/helper-functions.ts';
 import { getAgentConfig, getAgentIdFromJob, type RuntimeAgentConfig } from './ingestion/get-agent-config.ts';
 import { getConversationalFlowConfig } from './ingestion/get-conversational-flow-config.ts';
 import { createVoiceStack, type VoiceStack } from './ingestion/configure-voice-stack.ts';
@@ -47,8 +48,9 @@ cli.runApp(
 
 async function createRuntimeAgent(agentId: string, config: RuntimeAgentConfig,) {
   if (config.config.agentType === "conversational_flow") {
-    const flow = await getConversationalFlowConfig(agentId)
-    return createInitialFlowAgent(flow, config)
+    const flowSubflowConfig = await getConversationalFlowConfig(agentId)
+    const flatGraph = compileFlowSubflows(flowSubflowConfig)
+    return createInitialFlowAgent(flatGraph, config)
   }
 
   return createAgentDefinition(config)

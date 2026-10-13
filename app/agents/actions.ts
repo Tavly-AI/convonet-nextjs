@@ -13,6 +13,7 @@ import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
 import type { AgentChannel } from "@/lib/constants"
+import type { MainflowSubflowConfig } from "@/app/agents-conversational-flow/_types/global-cf-types"
 
 export type { AgentSessionResult } from "@/app/agents/_lib/helper-actions"
 
@@ -30,7 +31,10 @@ const publishAgentSchema = z.object({
   llmConfig: z.record(z.string(), z.json()),
 })
 
-const conversationalFlowNodesSchema = z.record(z.string(), z.json())
+const conversationalFlowConfigSchema = z.object({
+  mainFlowConfig: z.record(z.string(), z.json()),
+  subflowConfig: z.record(z.string(), z.json()),
+})
 
 const publishAgentVersionSchema = z.object({
   title: z.string().trim().min(1, "Version title is required.").max(200),
@@ -89,6 +93,7 @@ export async function createConversationalFlowAgent(input: CreateAgentInput) {
           workspaceId,
           name: `${parsed.name} Flow`,
           nodes: [],
+          components: {},
         },
       },
     },
@@ -199,7 +204,7 @@ export async function publishAgent(
 
   return toAgentSession(result.agent, result.nextDraftVersion)
 }
-export async function autoSaveAgentSession(input: AgentSessionAgent, conversationalFlowNodes?: Record<string, unknown>) {
+export async function autoSaveAgentSession(input: AgentSessionAgent, conversationalFlowConfig?: MainflowSubflowConfig) {
   if (!input.id) return
 
   const workspaceId = await getCurrentWorkspaceId()
@@ -230,8 +235,7 @@ export async function autoSaveAgentSession(input: AgentSessionAgent, conversatio
 
   // CONVERSATIONAL FLOW AGENT
   if (agentType === "conversational_flow") {
-    const parsedFlowNodes =
-      conversationalFlowNodesSchema.parse(conversationalFlowNodes)
+    const parsedFlowConfig = conversationalFlowConfigSchema.parse(conversationalFlowConfig)
 
     await prisma.$transaction(async (tx) => {
       await tx.agent.update({
@@ -253,7 +257,8 @@ export async function autoSaveAgentSession(input: AgentSessionAgent, conversatio
           workspaceId,
         },
         data: {
-          nodes: parsedFlowNodes as Prisma.InputJsonObject,
+          nodes: parsedFlowConfig.mainFlowConfig as Prisma.InputJsonObject,
+          components: parsedFlowConfig.subflowConfig as Prisma.InputJsonObject,
         },
       })
     })

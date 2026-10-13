@@ -6,6 +6,8 @@ import type { McpConfig } from "@/app/agents/_lib/mcp/mcp"
 import { getAgentTemplates } from "../../_data/templates-data-list"
 import type { LlmModel } from "../../_components/main/agent-session-model"
 import { conversational_flow_session_storage } from "@/app/agents-conversational-flow/_lib/flow-sessionStorage"
+import { subflow_session_storage } from "@/app/agents-conversational-flow/_lib/flow-subflow-sessonStorage"
+import type { MainflowSubflowConfig } from "@/app/agents-conversational-flow/_types/global-cf-types"
 
 const SESSION_KEY = "agent-session"
 
@@ -1049,8 +1051,11 @@ function scheduleAgentSessionAutoSave(agent: AgentSessionAgent) {
 
     window.setTimeout(() => {
         if (agentType === "conversational_flow") {
-            const flowNodes = conversational_flow_session_storage.getAll()
-            void autoSaveAgentSession(agent, flowNodes).catch(console.error)
+            const flowConfig: MainflowSubflowConfig = {
+                mainFlowConfig: conversational_flow_session_storage.getAll(),
+                subflowConfig: subflow_session_storage.getAll(),
+            }
+            void autoSaveAgentSession(agent, flowConfig).catch(console.error)
             return
         }
 

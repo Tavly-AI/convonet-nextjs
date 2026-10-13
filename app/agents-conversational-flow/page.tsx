@@ -202,6 +202,8 @@ function updateAgentSessionStorageOnDeleteCanvas(type: CF["Type"], id: string) {
         end: "end_call",
     }
 
+    conversational_flow_session_storage.remove(id)
+
     const toolType = toolMap[type]
     if (!toolType) return
 
@@ -209,5 +211,4 @@ function updateAgentSessionStorageOnDeleteCanvas(type: CF["Type"], id: string) {
         getGeneralTools().filter(tool => tool.type !== toolType)
     )
 
-    conversational_flow_session_storage.remove(id)
 }

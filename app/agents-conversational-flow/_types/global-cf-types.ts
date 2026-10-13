@@ -165,3 +165,8 @@ export type CFSubflowComponent = {
 
     user_modified_timestamp?: number
 }
+
+export type MainflowSubflowConfig = {
+    mainFlowConfig: Record<string, CF["Node"]["data"]>
+    subflowConfig: Record<string, CFSubflowComponent>
+}
