@@ -23,7 +23,7 @@ import { FlowTertiaryPanel } from "./_components/panels/flow-tertiary-panel"
 import { SubflowStartNode } from "./_components/node-cf-components/SubflowStartNode"
 import { SubflowEndNode } from "./_components/node-cf-components/SubflowEndNode"
 import { SubFlowCustomNode } from "./_components/node-cf-components/SubFlowCustomNode"
-import { flowHelperGetFlowNodesFromSessionStorage, flowHelperSaveFlowNode, flowHelperUpdateFlowNode } from "./_lib/flow-subflow-helper-functions"
+import { flowHelperDeleteFlowNode, flowHelperGetFlowNodesFromSessionStorage, flowHelperSaveFlowNode, flowHelperUpdateFlowNode } from "./_lib/flow-subflow-helper-functions"
 import { subflow_session_storage } from "./_lib/flow-subflow-sessonStorage"
 
 
@@ -123,7 +123,7 @@ function FlowCanvas() {
         const sourceNode = nodes.find(node => node.id === source)
         if (!sourceNode) return
 
-        const data = conversational_flow_session_storage.get(sourceNode.type, sourceNode.id) ?? sourceNode.data
+        const data = flowHelperGetFlowNodesFromSessionStorage().find(node => node.id === source)?.data ?? sourceNode.data
         const updatedNode = setDestination({ ...sourceNode, data } as CF["Node"], sourceHandle, target)
 
         flowHelperUpdateFlowNode(updatedNode.data)
@@ -202,7 +202,7 @@ function updateAgentSessionStorageOnDeleteCanvas(type: CF["Type"], id: string) {
         end: "end_call",
     }
 
-    conversational_flow_session_storage.remove(id)
+    flowHelperDeleteFlowNode(id)
 
     const toolType = toolMap[type]
     if (!toolType) return

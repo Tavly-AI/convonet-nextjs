@@ -56,3 +56,16 @@ export function flowHelperUpdateFlowNode(data: CF["Node"]["data"]) {
     // Update node in main flow
     conversational_flow_session_storage.set(data)
 }
+
+export function flowHelperDeleteFlowNode(id: string) {
+    const subflowId = getSubflowId()
+
+    // Delete node in subflow
+    if (subflowId) {
+        subflow_session_storage.removeNode(subflowId, id)
+        return
+    }
+
+    // Delete node in main flow
+    conversational_flow_session_storage.remove(id)
+}

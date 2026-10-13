@@ -1,20 +1,13 @@
-import { useEffect, useState } from "react"
 import type { NodeProps } from "@xyflow/react"
 import { Hash } from "lucide-react"
 
 import type { CF } from "../../_types/global-cf-types"
 import { FlowNodeCard, InputHandle, NodeHeader } from "./FlowNodePrimitives"
-import { conversational_flow_session_storage } from "../../_lib/flow-sessionStorage"
 import { TransitionEditor } from "./TransitionEditor"
+import { useActiveFlowNode } from "./use-active-flow-node"
 
 export function PressDigitFlowNode({ id, data, selected }: NodeProps<CF["Nodes"]["press_digit"]>) {
-    const [savedNode, setSavedNode] = useState(() => conversational_flow_session_storage.get("press_digit", id) ?? data)
-    const update = (fn: (node: CF["Data"]["press_digit"]) => CF["Data"]["press_digit"]) => conversational_flow_session_storage.update("press_digit", id, fn)
-
-    useEffect(() => conversational_flow_session_storage.subscribe(() => {
-        const updatedNode = conversational_flow_session_storage.get("press_digit", id)
-        if (updatedNode) setSavedNode(updatedNode)
-    }), [id])
+    const [savedNode, update] = useActiveFlowNode("press_digit", id, data)
 
     return (
         <FlowNodeCard selected={selected} color="cyan" className="bg-[#183038]">

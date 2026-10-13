@@ -1,20 +1,13 @@
-import { useEffect, useState } from "react"
 import type { NodeProps } from "@xyflow/react"
 import { Workflow } from "lucide-react"
 
 import type { CF } from "../../_types/global-cf-types"
-import { conversational_flow_session_storage } from "../../_lib/flow-sessionStorage"
 import { FlowNodeCard, InputHandle, NodeHeader } from "./FlowNodePrimitives"
 import { TransitionEditor } from "./TransitionEditor"
+import { useActiveFlowNode } from "./use-active-flow-node"
 
 export function SubFlowCustomNode({ id, data: node, selected }: NodeProps<CF["Nodes"]["subflow"]>) {
-    const [savedNode, setSavedNode] = useState(() => conversational_flow_session_storage.get("subflow", id) ?? node)
-    const update = (fn: (node: CF["Data"]["subflow"]) => CF["Data"]["subflow"]) => conversational_flow_session_storage.update("subflow", id, fn)
-
-    useEffect(() => conversational_flow_session_storage.subscribe(() => {
-        const updatedNode = conversational_flow_session_storage.get("subflow", id)
-        if (updatedNode) setSavedNode(updatedNode)
-    }), [id])
+    const [savedNode, update] = useActiveFlowNode("subflow", id, node)
 
     return (
         <FlowNodeCard selected={selected} color="violet" className="w-64 bg-[#241a36]">

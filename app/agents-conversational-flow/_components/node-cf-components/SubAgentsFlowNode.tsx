@@ -1,20 +1,13 @@
-import { useEffect, useState } from "react"
 import type { NodeProps } from "@xyflow/react"
 import { Bot, MoreHorizontal, Pencil, Plus } from "lucide-react"
 
 import type { CF } from "../../_types/global-cf-types"
 import { FlowNodeCard, InputHandle, NodeHeader } from "./FlowNodePrimitives"
-import { conversational_flow_session_storage } from "../../_lib/flow-sessionStorage"
 import { TransitionEditor } from "./TransitionEditor"
+import { useActiveFlowNode } from "./use-active-flow-node"
 
 export function FlowSubAgentsNodeType({ id, data, selected }: NodeProps<CF["Nodes"]["subagent"]>) {
-    const [savedNode, setSavedNode] = useState(() => conversational_flow_session_storage.get("subagent", id) ?? data)
-    const update = (fn: (node: CF["Data"]["subagent"]) => CF["Data"]["subagent"]) => conversational_flow_session_storage.update("subagent", id, fn)
-
-    useEffect(() => conversational_flow_session_storage.subscribe(() => {
-        const updatedNode = conversational_flow_session_storage.get("subagent", id)
-        if (updatedNode) setSavedNode(updatedNode)
-    }), [id])
+    const [savedNode, update] = useActiveFlowNode("subagent", id, data)
     return (
         <FlowNodeCard selected={selected} color="green" className="w-[480px] bg-[#172318] transition-colors">
             <InputHandle color="green" top={28} />

@@ -1,19 +1,12 @@
-import { useEffect, useState } from "react"
 import type { NodeProps } from "@xyflow/react"
 import { PhoneOff } from "lucide-react"
 
 import type { CF } from "../../_types/global-cf-types"
 import { FlowNodeCard, InputHandle, NodeHeader } from "./FlowNodePrimitives"
-import { conversational_flow_session_storage } from "../../_lib/flow-sessionStorage"
+import { useActiveFlowNode } from "./use-active-flow-node"
 
 export function EndFlowNode({ id, data, selected }: NodeProps<CF["Nodes"]["end"]>) {
-    const [savedNode, setSavedNode] = useState(() => conversational_flow_session_storage.get("end", id) ?? data)
-    const update = (fn: (node: CF["Data"]["end"]) => CF["Data"]["end"]) => conversational_flow_session_storage.update("end", id, fn)
-
-    useEffect(() => conversational_flow_session_storage.subscribe(() => {
-        const updatedNode = conversational_flow_session_storage.get("end", id)
-        if (updatedNode) setSavedNode(updatedNode)
-    }), [id])
+    const [savedNode, update] = useActiveFlowNode("end", id, data)
 
     return (
         <FlowNodeCard selected={selected} color="teal" className="bg-[#153331]">

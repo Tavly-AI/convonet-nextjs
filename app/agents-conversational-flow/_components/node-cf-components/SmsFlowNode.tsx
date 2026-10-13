@@ -1,19 +1,12 @@
-import { useEffect, useState } from "react"
 import type { NodeProps } from "@xyflow/react"
 import { MessageSquareText } from "lucide-react"
 
 import type { CF } from "../../_types/global-cf-types"
 import { EdgeRow, FlowNodeCard, InputHandle, NodeHeader } from "./FlowNodePrimitives"
-import { conversational_flow_session_storage } from "../../_lib/flow-sessionStorage"
+import { useActiveFlowNode } from "./use-active-flow-node"
 
 export function SmsFlowNode({ id, data, selected }: NodeProps<CF["Nodes"]["sms"]>) {
-    const [savedNode, setSavedNode] = useState(() => conversational_flow_session_storage.get("sms", id) ?? data)
-    const update = (fn: (node: CF["Data"]["sms"]) => CF["Data"]["sms"]) => conversational_flow_session_storage.update("sms", id, fn)
-
-    useEffect(() => conversational_flow_session_storage.subscribe(() => {
-        const updatedNode = conversational_flow_session_storage.get("sms", id)
-        if (updatedNode) setSavedNode(updatedNode)
-    }), [id])
+    const [savedNode, update] = useActiveFlowNode("sms", id, data)
 
     return (
         <FlowNodeCard selected={selected} color="yellow" className="bg-[#332e12]">
