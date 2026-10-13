@@ -2,7 +2,7 @@ import {
     Bot,
     ChevronDown,
     CircleDot,
-    // Braces,
+    Braces,
     Code2,
     Cuboid,
     GitBranch,
@@ -52,12 +52,12 @@ const nodeItems = [
         icon: Bot,
         iconClass: "bg-green-500/15 text-green-400",
     },
-    // {
-    //     type: "function",
-    //     label: "Function",
-    //     icon: Braces,
-    //     iconClass: "bg-purple-500/15 text-purple-400",
-    // },
+    {
+        type: "function",
+        label: "Custom Function",
+        icon: Braces,
+        iconClass: "bg-purple-500/15 text-purple-400",
+    },
     {
         type: "transfer_call",
         label: "Call Transfer",

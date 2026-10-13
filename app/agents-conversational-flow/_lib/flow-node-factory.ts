@@ -145,6 +145,17 @@ const nodeFactories: NodeFactoryMap = {
         },
         display_position: position,
     }),
+    function: (id, position) => ({
+        id,
+        type: "function",
+        name: "Custom Function",
+        skippable: false,
+        edges: [{
+            id: crypto.randomUUID(),
+            transition_condition: { type: "prompt", prompt: "Continue" },
+        }],
+        display_position: position,
+    }),
     code: (id, position) => ({
         id,
         type: "code",

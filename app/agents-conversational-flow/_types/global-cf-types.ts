@@ -99,6 +99,11 @@ type Data = {
         failed_edge: Edge
     }
 
+    function: Base<"function"> & {
+        edges: Edge[]
+        else_edge?: Edge
+    }
+
     code: Base<"code"> & {
         enable_typing_sound: boolean
         code: string

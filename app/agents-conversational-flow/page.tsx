@@ -14,6 +14,7 @@ import { PressDigitFlowNode } from "./_components/node-cf-components/PressDigitF
 import { LogicSplitFlowNode } from "./_components/node-cf-components/LogicSplitFlowNode"
 import { AgentTransferFlowNode } from "./_components/node-cf-components/AgentTransferFlowNode"
 import { SmsFlowNode } from "./_components/node-cf-components/SmsFlowNode"
+import { CustomFunctionFlowNode } from "./_components/node-cf-components/CustomFunctionFlowNode"
 import { CodeFlowNode } from "./_components/node-cf-components/CodeFlowNode"
 import { EndFlowNode } from "./_components/node-cf-components/EndFlowNode"
 import { Suspense, useEffect, useState } from "react"
@@ -42,6 +43,7 @@ const nodeTypes = {
     agent_swap: AgentTransferFlowNode,
     sms: SmsFlowNode,
     code: CodeFlowNode,
+    function: CustomFunctionFlowNode,
     end: EndFlowNode,
     subflow_start: SubflowStartNode,
     subflow_end: SubflowEndNode,
@@ -115,7 +117,11 @@ function FlowCanvas() {
 
         const nodeData = createCFNode(nodeType, position, referencedSubflowId)
 
+        // Save node to session storage
         flowHelperSaveFlowNode(nodeData)
+
+        // Sync corresponding tool with agent session storage
+        updateAgentSessionStorageOnDropCanvas(nodeType)
 
         setNodes(nodes => [...nodes, { id: nodeData.id, type: nodeData.type, position, data: nodeData } as CF["Node"],])
     }
@@ -187,6 +193,7 @@ export default function ConversationalFlowPage() {
 
 function updateAgentSessionStorageOnDropCanvas(type: CF["Type"]) {
     const toolMap: Partial<Record<CF["Type"], AvailableToolType>> = {
+        function: "custom",
         transfer_call: "transfer_call",
         press_digit: "press_digit",
         sms: "send_sms",

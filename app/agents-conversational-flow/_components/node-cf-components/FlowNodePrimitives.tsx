@@ -4,6 +4,7 @@ import type { ReactNode } from "react"
 import type { CF } from "../../_types/global-cf-types"
 
 const palette = {
+    purple: { border: "border-purple-500/70", selected: "border-purple-400 ring-2 ring-purple-500/30", handle: "!bg-purple-500", text: "text-purple-400" },
     cyan: { border: "border-cyan-500/70", selected: "border-cyan-400 ring-2 ring-cyan-500/30", handle: "!bg-cyan-500", text: "text-cyan-400" },
     blue: { border: "border-blue-500/70", selected: "border-blue-400 ring-2 ring-blue-500/30", handle: "!bg-blue-500", text: "text-blue-400" },
     orange: { border: "border-orange-500/70", selected: "border-orange-400 ring-2 ring-orange-500/30", handle: "!bg-orange-500", text: "text-orange-400" },
