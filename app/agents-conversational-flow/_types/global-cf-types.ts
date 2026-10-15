@@ -1,3 +1,4 @@
+import type { GeneralTool, TransferDestination, TransferOption } from "@/app/agents/_lib/functions/general-tools"
 import type { Node, XYPosition } from "@xyflow/react"
 
 type Instruction =
@@ -32,6 +33,9 @@ type Base<T extends string> = {
     name: string
     skippable: boolean
     display_position: XYPosition
+    global_node_setting?: {
+        condition: TransitionCondition
+    }
 }
 
 type Data = {
@@ -49,6 +53,7 @@ type Data = {
         edges?: Edge[]
         else_edge?: Edge
         always_edge?: Edge
+        skip_response_edge?: Edge
     }
 
     subagent: Base<"subagent"> & {
@@ -56,18 +61,15 @@ type Data = {
         edges?: Edge[]
         else_edge?: Edge
         always_edge?: Edge
+        tools?: GeneralTool[]
     }
 
     transfer_call: Base<"transfer_call"> & {
         speak_during_execution: boolean
-        transfer_destination: {
-            type: "predefined"
-            number: string
-        }
-        transfer_option: {
-            type: "cold_transfer"
-            show_transferee_as_caller: boolean
-        }
+
+        // fix node to show more options?
+        transfer_destination: TransferDestination
+        transfer_option: TransferOption
         edge: Edge
         custom_sip_headers: Record<string, string>
         ignore_e164_validation: boolean
@@ -130,6 +132,7 @@ type Data = {
     subflow: Base<"subflow"> & {
         conversation_flow_component_id: string
         edges?: Edge[]
+        else_edge?: Edge
     }
 }
 

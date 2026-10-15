@@ -5,14 +5,21 @@ import {
     DEFAULT_SECURITY_FALLBACK_SETTINGS,
     DEFAULT_WEBHOOK_SETTINGS,
 } from "@/app/agents/_lib/session-storage/agent-session"
+import type { TEMPLATES_LIST } from "@/app/dashboard/agents/_data/templates-list"
 
 type AgentTemplateData = {
-    name: string
+    name: (typeof TEMPLATES_LIST)[number]["name"]
     config: AgentSessionAgent["config"]
     llmConfig: AgentSessionAgent["llmConfig"]
 }
 
-export function getAgentTemplates(): Record<string, AgentTemplateData> {
+type AgentTemplateMap = {
+    [T in (typeof TEMPLATES_LIST)[number]as T["id"]]?: AgentTemplateData & {
+        name: T["name"]
+    }
+}
+
+export function getAgentTemplates() {
     return {
         "medical-receptionist": {
             name: "Medical Receptionist",
@@ -2016,7 +2023,7 @@ NO_RESPONSE_NEEDED
             },
         },
         "payment-collection": {
-            name: "Payment Collection",
+            name: "Payment Collection Agent",
 
             config: {
                 ...DEFAULT_CALL_SETTINGS,
@@ -2951,7 +2958,7 @@ Do not retry the same failed path. Do not guess missing information.`,
             },
         },
         "multilingual-agent": {
-            name: "Multilingual Support Agent",
+            name: "Multilingual Agent",
 
             config: {
                 ...DEFAULT_CALL_SETTINGS,
@@ -4120,7 +4127,7 @@ After collecting the number, provide a natural variation of:
             },
         },
         "lead-reactivation": {
-            name: "Lead Re-engagement",
+            name: "Lead Reactivation Campaign",
 
             config: {
                 ...DEFAULT_CALL_SETTINGS,
@@ -6888,7 +6895,7 @@ If asked whether the call is automated, respond exactly with:
             },
         },
         "pharmacy-refill": {
-            name: "Pharmacy Refill Center",
+            name: "Pharmacy Refill Caller",
 
             config: {
                 ...DEFAULT_CALL_SETTINGS,
@@ -7297,7 +7304,7 @@ If asked whether you are automated, respond exactly with:
             },
         },
         "payment-reminder": {
-            name: "Payment Reminder",
+            name: "Payment Reminder Caller",
 
             config: {
                 ...DEFAULT_CALL_SETTINGS,
@@ -8525,7 +8532,7 @@ If the customer expresses interest in speaking with a specialist or agrees to le
             },
         },
         "faq-voice-agent": {
-            name: "Healthcare FAQ Voice Agent",
+            name: "FAQ Voice Agent",
 
             config: {
                 ...DEFAULT_CALL_SETTINGS,
@@ -8793,7 +8800,7 @@ A: Each account must use its own email address and phone number. If you're arran
             },
         },
         "support-triage": {
-            name: "Windows OS IT Support Triage Bot",
+            name: "Support Triage Bot",
 
             config: {
                 ...DEFAULT_CALL_SETTINGS,
@@ -8995,7 +9002,7 @@ A: Open the **Recycle Bin**, locate the file, right-click it, and select **Resto
             },
         },
         "after-hours-support-guard": {
-            name: "Pre Authorization Support With After Hour Support",
+            name: "After-Hours Support Guard",
 
             config: {
                 ...DEFAULT_CALL_SETTINGS,
@@ -9999,7 +10006,7 @@ Your role is **translation only**.
             },
         },
         "order-status-checker": {
-            name: "Order Status Checker",
+            name: "Order / Status Checker",
 
             config: {
                 ...DEFAULT_CALL_SETTINGS,
@@ -10263,7 +10270,7 @@ If the caller says "Hold on," "One moment," or "Please wait," respond exactly wi
             },
         },
         "ivr-navigation": {
-            name: "IVR Appointment Scheduling Agent (New Patients)",
+            name: "IVR Navigation Bot",
 
             config: {
                 ...DEFAULT_CALL_SETTINGS,
@@ -10619,7 +10626,7 @@ NO_RESPONSE_NEEDED`,
                 }
             },
         }
-    }
+    } satisfies AgentTemplateMap
 }
 
 export type AgentTemplateId = keyof ReturnType<typeof getAgentTemplates>
