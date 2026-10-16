@@ -196,6 +196,8 @@ function DisplaySubflows() {
         const params = new URLSearchParams(searchParams.toString())
         params.set("subflow", id)
         router.push(`?${params.toString()}`)
+
+        window.location.assign(`${window.location.pathname}?${params.toString()}`)
     }
 
     function createSubflow() {
