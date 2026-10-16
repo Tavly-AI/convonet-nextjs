@@ -4,7 +4,8 @@ import { Background, BackgroundVariant, MiniMap, Panel, ReactFlow, ReactFlowProv
 import { Hand, Map as MapIcon, Minus, MousePointer2, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { FlowLeftSidePanel } from "./_components/panels/flow-left-side-panel"
-import { FlowRightSidePanel } from "./_components/panels/flow-right-side-panel"
+import dynamic from "next/dynamic"
+import Loading from "@/app/loading"
 import { FlowConversationNodeType } from "./_components/node-cf-components/ConversationFlowNode"
 import { FlowSubAgentsNodeType } from "./_components/node-cf-components/SubAgentsFlowNode"
 import { createCFNode } from "./_lib/flow-node-factory"
@@ -30,6 +31,8 @@ import { SubFlowCustomNode } from "./_components/node-cf-components/SubFlowCusto
 import { flowHelperDeleteFlowNode, flowHelperGetFlowNodesFromSessionStorage, flowHelperSaveFlowNode, flowHelperUpdateFlowNode } from "./_lib/flow-subflow-helper-functions"
 import { subflow_session_storage } from "./_lib/flow-subflow-sessonStorage"
 import { FlowTopNavbarPanel } from "./_components/panels/flow-top-navbar-panel"
+import { useSessionStorageInitAgentSession } from "../agents/_components/main/agent-session-main"
+import { FlowRightSidePanel } from "./_components/panels/flow-right-side-panel"
 
 
 type FlowNode = CF["Node"]
@@ -87,16 +90,10 @@ function setDestination(
 
 function FlowCanvas() {
 
-    const [nodes, setNodes, onNodesChange] = useNodesState<FlowNode>([])
+    const [nodes, setNodes, onNodesChange] = useNodesState<FlowNode>(flowHelperGetFlowNodesFromSessionStorage())
     const [edges, setEdges] = useState<Edge[]>([])
     const [cusrorInteractionMode, setCursorInteractionMode] = useState<"select" | "pan">("pan")
     const { screenToFlowPosition } = useReactFlow()
-
-    // get nodes from sesessionStorage onLoad
-
-    useEffect(() => {
-        setNodes(flowHelperGetFlowNodesFromSessionStorage())
-    }, [setNodes])
 
     // update edges
     useEffect(() => {
@@ -143,11 +140,11 @@ function FlowCanvas() {
         setNodes(current => current.map(node => node.id === source ? updatedNode : node))
     }
 
-    useEffect(() => {
-        console.log("Main Flow Nodes:", conversational_flow_session_storage.getAll())
-        console.log("Subflow Components:", subflow_session_storage.getAll())
-        console.log("Current Canvas Nodes:", nodes)
-    }, [nodes])
+    // useEffect(() => {
+    //     console.log("Main Flow Nodes:", conversational_flow_session_storage.getAll())
+    //     console.log("Subflow Components:", subflow_session_storage.getAll())
+    //     console.log("Current Canvas Nodes:", nodes)
+    // }, [nodes])
 
     return (
         <div className="size-full">
@@ -182,6 +179,29 @@ function FlowCanvas() {
 }
 
 export default function ConversationalFlowPage() {
+
+    // resolve sessionStorage
+    const { isSessionLoading } = useSessionStorageInitAgentSession()
+    const [mounted, setMounted] = useState(false)
+    useEffect(() => { setMounted(true); }, [])
+
+    // so we dont start from fresh template onPage reload
+    useEffect(() => {
+        if (!mounted || isSessionLoading) return
+        removeTemplateFromUrl()
+    }, [mounted, isSessionLoading])
+
+    // so we dont start from fresh template onPage reload
+    function removeTemplateFromUrl() {
+        const params = new URLSearchParams(window.location.search)
+        if (!params.has("template")) return
+
+        params.delete("template")
+        window.history.replaceState(null, "", `${window.location.pathname}?${params.toString()}`)
+    }
+
+    if (!mounted || isSessionLoading) return <div className="absolute inset-0 z-50 bg-background"><Loading /></div>
+
     return (
         <main className="min-h-svh bg-zinc-950">
             <section className="h-screen w-full">

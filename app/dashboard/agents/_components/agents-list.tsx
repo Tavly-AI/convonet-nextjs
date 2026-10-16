@@ -41,6 +41,7 @@ import type { AgentChannel } from "@/lib/constants"
 
 export type AgentListItem = {
   id: string
+  conversationalFlowId: string | null
   name: string
   type: string
   channel: AgentChannel
@@ -79,6 +80,16 @@ export function AgentsList({ agents }: { agents: AgentListItem[] }) {
         setDeletingAgentId(null)
       }
     })
+  }
+
+  function resolveRedirectUrl(agent: any) {
+    const params = new URLSearchParams({
+      agentId: agent.id,
+      channel: agent.channel,
+      ...(agent.type === "conversational_flow" && { agentType: agent.type, showFlowRightSidePanel: "true", ...(agent.conversationalFlowId && { conversationalFlowId: agent.conversationalFlowId }) }),
+    })
+
+    return `/${agent.type === "conversational_flow" ? "agents-conversational-flow" : "agents"}?${params}`
   }
 
   return (
@@ -125,9 +136,7 @@ export function AgentsList({ agents }: { agents: AgentListItem[] }) {
             {visibleAgents.map((agent) => (
               <TableRow
                 key={agent.id}
-                onClick={() =>
-                  router.push(`/agents?agentId=${encodeURIComponent(agent.id)}&channel=${agent.channel}`)
-                }
+                onClick={() => router.push(resolveRedirectUrl(agent))}
               >
                 <TableCell className="h-14 pl-4 font-medium">
                   <div className="flex max-w-64 items-center gap-3">

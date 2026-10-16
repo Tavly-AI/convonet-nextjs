@@ -23,6 +23,7 @@ import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { createAgent as createAgentAction, createConversationalFlowAgent } from "@/app/agents/actions"
 import { AGENT_CHANNELS, type AgentChannel } from "@/lib/constants"
+import { getConversationalFlowTemplates } from "@/app/agents/_data/templates-conversational-flow"
 
 export type CreateAgentOptions = {
   channel: AgentChannel
@@ -44,13 +45,13 @@ export function CreateAgentModal({ open, onOpenChange }: CreateAgentModalProps) 
   const [selectedTemplate, setSelectedTemplate] = useState("scratch")
   const [activeTemplateTab, setActiveTemplateTab] = useState<TemplateCategory>("All")
 
-  const visibleTemplates = TEMPLATES_LIST.filter((template) => activeTemplateTab === "All" || template.category === activeTemplateTab)
+  const visibleTemplates = getVisibleTemplates(agentType).filter((template) => activeTemplateTab === "All" || template.category === activeTemplateTab)
 
   async function createAgent() {
     try {
       if (agentType === "conversational_flow") {
         const flow = await createConversationalFlowAgent({ name: "Untitled Agent", channel: AGENT_CHANNELS.VOICE, config: {}, llmConfig: {}, })
-        const params = new URLSearchParams({ ...flow, channel: AGENT_CHANNELS.VOICE, agentType, })
+        const params = new URLSearchParams({ agentId: flow.agentId, conversationalFlowId: flow.conversationalFlowId, channel: AGENT_CHANNELS.VOICE, agentType, template: selectedTemplate })
         router.push(`/agents-conversational-flow?${params.toString()}`)
         return
       }
@@ -128,7 +129,7 @@ export function CreateAgentModal({ open, onOpenChange }: CreateAgentModalProps) 
             </div>
           </section>
 
-          {agentType === "single_prompt" && <section className="space-y-4">
+          <section className="space-y-4">
             <h2 className="text-sm font-medium text-muted-foreground">
               Templates
             </h2>
@@ -162,7 +163,6 @@ export function CreateAgentModal({ open, onOpenChange }: CreateAgentModalProps) 
                   onClick={() => setSelectedTemplate(template.id)}
                   className={cn(
                     "min-h-36 rounded-lg border bg-background p-4 text-left transition-colors hover:bg-muted/40",
-                    template.muted && "border-dashed",
                     selectedTemplate === template.id && "border-ring"
                   )}
                 >
@@ -177,14 +177,13 @@ export function CreateAgentModal({ open, onOpenChange }: CreateAgentModalProps) 
                               index === 0
                                 ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300"
                                 : "bg-violet-100 text-violet-700 dark:bg-violet-500/15 dark:text-violet-300",
-                              template.id === "prompt" &&
                               "bg-indigo-500/15 text-indigo-400",
                               template.id === "scratch" &&
                               "bg-muted text-muted-foreground",
-                              template.id === "outreach" &&
+                              template.id === "outreach-dialer" &&
                               index === 1 &&
                               "bg-orange-100 text-orange-700 dark:bg-orange-500/15 dark:text-orange-300",
-                              template.id === "outreach" &&
+                              template.id === "outreach-dialer" &&
                               index === 2 &&
                               "bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300"
                             )}
@@ -193,11 +192,6 @@ export function CreateAgentModal({ open, onOpenChange }: CreateAgentModalProps) 
                           </span>
                         ))}
                       </div>
-                      {template.badge && (
-                        <span className="rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
-                          {template.badge}
-                        </span>
-                      )}
                     </div>
 
                     <div className="mt-auto space-y-1.5">
@@ -210,7 +204,7 @@ export function CreateAgentModal({ open, onOpenChange }: CreateAgentModalProps) 
                 </button>
               ))}
             </div>
-          </section>}
+          </section>
         </div>
 
         <DialogFooter className="shrink-0 border-t px-6 py-4">
@@ -220,6 +214,11 @@ export function CreateAgentModal({ open, onOpenChange }: CreateAgentModalProps) 
     </Dialog >
   )
 }
+
+// ======================================================================
+// ======================== CREATE AGENT BUTTON =========================
+// ======================================================================
+
 
 type CreateAgentButtonProps = {
   onCreate: () => Promise<void>
@@ -250,4 +249,28 @@ export function CreateAgentButton({ onCreate }: CreateAgentButtonProps) {
       {isCreating ? "Creating..." : "Create agent"}
     </Button>
   )
+}
+
+
+// ======================================================================
+// ======================== RESOLVE TEMPALTES ===========================
+// ======================================================================
+
+function getVisibleTemplates(agentType: string) {
+
+  if (agentType !== "conversational_flow") { return TEMPLATES_LIST }
+
+  const flowTemplates = getConversationalFlowTemplates()
+  const flowTemplateIds = new Set<string>(Object.keys(flowTemplates))
+
+  return TEMPLATES_LIST.filter((template) => {
+
+    // scratch
+    const isBuildFromScratch = template.id === "scratch"
+
+    // template
+    const hasFlowTemplate = flowTemplateIds.has(template.id)
+
+    return isBuildFromScratch || hasFlowTemplate
+  })
 }

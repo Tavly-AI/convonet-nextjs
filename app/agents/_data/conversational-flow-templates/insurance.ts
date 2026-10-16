@@ -615,12 +615,65 @@ Provide a natural variation of:
                     },
                     edge: {
                         id: "ivr-subflow-start-edge",
-                        destination_node_id: "ivr-press-digit-node",
+                        destination_node_id: "ivr-nav-listen",
                         transition_condition: {
                             type: "prompt",
                             prompt: "Start",
                         },
                     },
+                },
+
+                {
+                    id: "ivr-nav-listen",
+                    type: "conversation",
+                    name: "IVR Navigation",
+                    skippable: false,
+                    start_speaker: "user",
+                    display_position: { x: 0, y: 400 },
+                    instruction: {
+                        type: "prompt",
+                        text: `The call has just connected. The IVR will speak first — do not say anything until spoken to.
+
+Navigate toward Eligibility and Benefits, then Provider Services, then Authorizations / Prior Auth. Select Claims only if none of those are available. If asked member or provider, select provider.
+
+Avoid member services, billing or payments, medical records, pharmacy, clinical departments, and new enrollment.
+
+If the IVR is DTMF-driven (says "press X for..."), transition to press the appropriate digit.
+If the IVR is speech-driven or says "say or press", speak the response clearly and concisely (e.g., "eligibility and benefits" or "provider services").
+If no option clearly matches, select the most general option.
+
+If placed on hold or told to wait, respond exactly with: NO_RESPONSE_NEEDED
+
+Continue navigating until an automated eligibility response begins or a live representative answers.
+
+<*Wait for customer response*>`,
+                    },
+                    edges: [
+                        {
+                            id: "edge-nav-to-press",
+                            destination_node_id: "ivr-press-digit-node",
+                            transition_condition: {
+                                type: "prompt",
+                                prompt: "IVR presents a DTMF-only menu requiring a digit press",
+                            },
+                        },
+                        {
+                            id: "edge-nav-to-human",
+                            destination_node_id: "ivr-provider-auth",
+                            transition_condition: {
+                                type: "prompt",
+                                prompt: "A live representative answers and is ready to assist, or an automated eligibility response begins",
+                            },
+                        },
+                        {
+                            id: "edge-nav-to-failure",
+                            destination_node_id: "ivr-exit-failure",
+                            transition_condition: {
+                                type: "prompt",
+                                prompt: "The IVR explicitly states the wrong company, plays an after-hours or office-closed message, or reaches a voicemail greeting",
+                            },
+                        },
+                    ],
                 },
 
                 {

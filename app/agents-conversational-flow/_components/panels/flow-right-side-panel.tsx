@@ -14,9 +14,6 @@ const tabs = ["Global settings", "Node settings"] as const
 export function FlowRightSidePanel() {
     const [activeTab, setActiveTab] = useState<(typeof tabs)[number]>("Global settings")
 
-    const { isSessionLoading } = useSessionStorageInitAgentSession()
-    if (isSessionLoading) return <Loading />
-
     const searchParams = useSearchParams()
     const isOpen = searchParams.get("showFlowRightSidePanel") === "true"
 

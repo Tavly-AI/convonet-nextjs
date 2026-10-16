@@ -121,6 +121,23 @@ export async function deleteAgent(agentId: string) {
   revalidatePath("/dashboard/agents")
 }
 
+export async function loadConversationalFlow(agentId: string): Promise<MainflowSubflowConfig> {
+  const workspaceId = await getCurrentWorkspaceId()
+  const id = z.string().trim().min(1).parse(agentId)
+
+  const flow = await prisma.conversationalFlow.findFirst({
+    where: { agentId: id, workspaceId },
+    select: { nodes: true, components: true },
+  })
+
+  if (!flow) throw new Error("Conversational flow not found.")
+
+  return {
+    mainFlowConfig: (Array.isArray(flow.nodes) ? {} : flow.nodes) as MainflowSubflowConfig["mainFlowConfig"],
+    subflowConfig: flow.components as MainflowSubflowConfig["subflowConfig"],
+  }
+}
+
 export async function loadAgentSession(agentId: string): Promise<AgentSessionResult> {
   const workspaceId = await getCurrentWorkspaceId()
   const id = z.string().trim().min(1).parse(agentId)

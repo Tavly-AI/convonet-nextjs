@@ -4,13 +4,14 @@ import { useEffect, useTransition } from "react"
 import { useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 
-import { loadAgentSession } from "@/app/agents/actions"
+import { loadAgentSession, loadConversationalFlow } from "@/app/agents/actions"
 import {
     getGeneralPrompt,
     initializeAgentFromTemplate,
     initializeAgentSession,
     initializeChatAgentSession,
     writeGeneralPrompt,
+    type AgentSessionConfig,
 } from "@/app/agents/_lib/session-storage/agent-session"
 import { Card } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -20,6 +21,7 @@ import { AgentSessionVersion } from "./agent-session-version"
 import { AgentSessionName } from "./agent-session-name"
 import Loading from "@/app/loading"
 import AgentSessionTertiaryTab from "./agent-session-tertiary"
+import { initializeConversationalFlowAgentFromTemplate, initializeConversaionalAgentScratchFlow } from "@/app/agents-conversational-flow/_lib/flow-sessionStorage"
 
 export function AgentSessionMain() {
 
@@ -74,7 +76,7 @@ export function useSessionStorageInitAgentSession() {
     const agentId = searchParams.get("agentId")
     const channel = searchParams.get("channel")
     const template = searchParams.get("template")
-    const agentType = searchParams.get("agentType")
+    const agentType = searchParams.get("agentType") as AgentSessionConfig["agentType"]
 
     const [isSessionLoading, startSessionLoad] = useTransition()
 
@@ -121,5 +123,35 @@ export function useSessionStorageInitAgentSession() {
         }
     }, [agentId])
 
+
+    useEffect(() => {
+        if (agentType !== "conversational_flow") return
+
+        let cancelled = false
+
+        startSessionLoad(async () => {
+            try {
+                if (cancelled) return
+
+                // Create conversational flow from template.
+                if (template && template !== "scratch") {
+                    await initializeConversationalFlowAgentFromTemplate(template)
+                    return
+                }
+
+                const conversationalFlowDBDetails = agentId ? await loadConversationalFlow(agentId) : undefined
+
+                // Create conversational flow from scratch.
+                initializeConversaionalAgentScratchFlow(conversationalFlowDBDetails)
+            } catch (error) {
+                if (cancelled) return
+                toast.error(error instanceof Error ? error.message : "Failed to initialize conversational flow.")
+            }
+        })
+
+        return () => {
+            cancelled = true
+        }
+    }, [agentId])
     return { agentId, channel, template, agentType, isSessionLoading }
 }

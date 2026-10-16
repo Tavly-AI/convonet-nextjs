@@ -31,9 +31,7 @@ type AgentTemplate = {
     name: string
     description: string
     category: Exclude<TemplateCategory, "All"> | "Starter"
-    icons: LucideIcon[]
-    badge?: string
-    muted?: boolean
+    icons: readonly LucideIcon[]
 }
 
 export const TEMPLATE_TABS = [
@@ -52,23 +50,13 @@ export const TEMPLATE_TABS = [
 type TemplateCategory = (typeof TEMPLATE_TABS)[number]
 
 
-export const TEMPLATES_LIST: AgentTemplate[] = [
+export const TEMPLATES_LIST = [
     {
         id: "scratch",
         name: "Build from scratch",
         description: "Start with a blank agent",
         category: "Starter",
         icons: [PlusIcon],
-        muted: true,
-    },
-    {
-        id: "prompt",
-        name: "Generate from prompt",
-        description: "Describe it, AI builds your agent",
-        category: "Starter",
-        icons: [SparklesIcon],
-        badge: "Suggested",
-        muted: true,
     },
     {
         id: "insurance",
@@ -289,4 +277,4 @@ export const TEMPLATES_LIST: AgentTemplate[] = [
         category: "Appointment Booking",
         icons: [CalendarCheckIcon, PhoneCallIcon],
     },
-]
+] as const satisfies readonly AgentTemplate[]

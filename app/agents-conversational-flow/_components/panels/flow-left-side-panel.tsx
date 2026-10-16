@@ -239,30 +239,6 @@ function DisplaySubflows() {
                 />
             </div>
 
-            {/* Library Subflows */}
-            <section>
-                <div className="mb-2 flex items-center justify-between px-1">
-                    <div className="flex items-center gap-1.5 text-xs font-medium uppercase text-muted-foreground">
-                        <ChevronDown className="size-3.5" />
-                        <span>Library Subflows</span>
-                    </div>
-
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="size-7"
-                    >
-                        <Plus className="size-4" />
-                    </Button>
-                </div>
-
-                <div className="flex h-24 items-center justify-center rounded-lg bg-muted/40 px-4 text-center text-sm text-muted-foreground">
-                    No library subflows
-                    <br />
-                    available
-                </div>
-            </section>
-
             {/* Agent Subflows */}
             <section>
                 <div className="mb-2 flex items-center justify-between px-1">

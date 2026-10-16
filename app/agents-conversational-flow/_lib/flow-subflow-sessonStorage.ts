@@ -47,4 +47,9 @@ export const subflow_session_storage = {
         window.addEventListener(EVENT, fn)
         return () => window.removeEventListener(EVENT, fn)
     },
+
+    // used onPageLoad
+    setAll(store: Store) {
+        write(store)
+    },
 }
