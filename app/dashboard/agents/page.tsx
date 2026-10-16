@@ -22,6 +22,7 @@ export default async function Page() {
     ? await prisma.agent.findMany({
       where: { workspaceId: user.workspaceId },
       orderBy: { updatedAt: "desc" },
+      include: { conversationalFlow: { select: { id: true } } },
     })
     : []
 
@@ -60,6 +61,7 @@ export default async function Page() {
 
     return {
       id: agent.id,
+      conversationalFlowId: agent.conversationalFlow?.id ?? null,
       name: agent.name,
       type: String(config.agentType),
       channel: agent.channel as AgentChannel,
