@@ -118,7 +118,7 @@ function ChangeMainFlowToSubflow() {
         if (id === "main") params.delete("subflow")
         else params.set("subflow", id)
 
-        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+        window.location.assign(`${pathname}?${params.toString()}`)
     }
 
     return (

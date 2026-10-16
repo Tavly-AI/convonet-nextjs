@@ -56,7 +56,7 @@ export const TemplateReminderNoShowReducer = {
                 execution_message_description: "Let me check what we have open.",
                 response_variables: {
                     available_slots: "data.slots",
-                } as CustomFunctionTool["response_variables"],
+                } satisfies NonNullable<CustomFunctionTool["response_variables"]>,
                 parameters: {
                     type: "object",
                     properties: {
@@ -82,7 +82,7 @@ export const TemplateReminderNoShowReducer = {
                     confirmation_number: "data.confirmation_id",
                     booked_date: "data.date",
                     booked_time: "data.time",
-                } as CustomFunctionTool["response_variables"],
+                } satisfies NonNullable<CustomFunctionTool["response_variables"]>,
                 parameters: {
                     type: "object",
                     properties: {
@@ -108,7 +108,7 @@ export const TemplateReminderNoShowReducer = {
                 execution_message_description: "Let me cancel that for you.",
                 response_variables: {
                     cancellation_status: "data.status"
-                } as CustomFunctionTool["response_variables"],
+                } satisfies NonNullable<CustomFunctionTool["response_variables"]>,
                 parameters: {
                     type: "object",
                     properties: {
@@ -145,7 +145,7 @@ export const TemplateReminderNoShowReducer = {
                     required: ["patient_name", "appointment_date", "appointment_time"],
                 },
             },
-        ] satisfies GeneralTool[],
+        ] as GeneralTool[],
     },
     llmConfig: {
         ...template.llmConfig,

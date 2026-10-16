@@ -7,12 +7,72 @@ import { fileURLToPath } from "url";
 // src/agent.ts
 import { Agent, dedent } from "@livekit/agents";
 
+// src/agent-config/general-tools/agent-swap.ts
+import { handoff, tool } from "@livekit/agents";
+
+// src/ingestion/get-agent-config.ts
+function getAgentIdFromJob(ctx) {
+  if (!ctx.job.metadata) {
+    throw new Error("Job metadata is missing");
+  }
+  const metadata = JSON.parse(ctx.job.metadata);
+  if (!metadata.agentId) {
+    throw new Error("agentId is missing from job metadata");
+  }
+  return metadata.agentId;
+}
+async function getAgentConfig(agentId) {
+  const baseUrl = process.env.NEXTJS_APP_URL ?? "http://localhost:3000";
+  const response = await fetch(`${baseUrl}/api/agent/list-config?agentId=${encodeURIComponent(agentId)}`);
+  if (!response.ok) {
+    const body = await response.text();
+    throw new Error(`Failed to fetch agent config (${response.status}): ${body}`);
+  }
+  const agent = await response.json();
+  return agent;
+}
+
+// src/agent-config/general-tools/agent-swap.ts
+function getAgentSwapTools(agentConfig) {
+  const names = /* @__PURE__ */ new Set();
+  return agentConfig.config.generalTools.flatMap((configuredTool) => {
+    if (configuredTool.type !== "agent_swap") return [];
+    const name = configuredTool.name.trim();
+    const agentId = configuredTool.agent_id.trim();
+    if (!name || !agentId || names.has(name)) return [];
+    names.add(name);
+    return [{ ...configuredTool, name, agent_id: agentId }];
+  });
+}
+function createAgentSwapTools(agentConfig, createTargetAgent) {
+  return getAgentSwapTools(agentConfig).map(
+    (config) => tool({
+      name: config.name,
+      description: config.description.trim() || "Switch the conversation to the configured agent.",
+      execute: async (_, { ctx }) => {
+        if (config.speak_during_execution && config.execution_message_description?.trim()) {
+          const message = config.execution_message_description.trim();
+          const speech = config.execution_message_type === "static_text" ? ctx.session.say(message, { allowInterruptions: false }) : ctx.session.generateReply({ instructions: message, allowInterruptions: false });
+          await speech.waitForPlayout();
+        }
+        try {
+          const targetConfig = await getAgentConfig(config.agent_id);
+          return handoff({ agent: createTargetAgent(targetConfig), returns: "The conversation has been switched to the specialist agent." });
+        } catch (error) {
+          console.error(`Agent swap to "${config.agent_id}" failed.`, error);
+          return "The destination agent is unavailable. Continue helping the caller.";
+        }
+      }
+    })
+  );
+}
+
 // src/agent-config/general-tools/book-appointment.ts
-import { tool as tool2 } from "@livekit/agents";
+import { tool as tool3 } from "@livekit/agents";
 import { z as z2 } from "zod";
 
 // src/agent-config/general-tools/check-availability.ts
-import { tool } from "@livekit/agents";
+import { tool as tool2 } from "@livekit/agents";
 import { z } from "zod";
 var CAL_API_VERSION = "2024-09-04";
 var CAL_SLOTS_URL = "https://api.cal.com/v2/slots";
@@ -37,7 +97,7 @@ function extractSlotStarts(data) {
   );
 }
 function createCheckAvailabilityTool(agentConfig) {
-  return tool({
+  return tool2({
     name: "check_availability",
     description: "Check Cal.com for bookable appointment times on a specific calendar date. Use this before offering or booking an appointment.",
     parameters: z.object({
@@ -88,7 +148,7 @@ function isEmail(value) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 }
 function createBookAppointmentTool(agentConfig) {
-  return tool2({
+  return tool3({
     name: "book_appointment",
     description: "Create a Cal.com appointment. Use only after the caller explicitly confirms the selected available time, their name, and their email address.",
     parameters: z2.object({
@@ -145,33 +205,9 @@ function createBookAppointmentTool(agentConfig) {
 }
 
 // src/agent-config/general-tools/call-transfer.ts
-import { getJobContext, handoff, tool as tool3, workflows } from "@livekit/agents";
+import { getJobContext, handoff as handoff2, tool as tool4, workflows } from "@livekit/agents";
 import { ParticipantKind } from "@livekit/rtc-node";
 import { LiveKitAPI } from "livekit-server-sdk";
-
-// src/ingestion/get-agent-config.ts
-function getAgentIdFromJob(ctx) {
-  if (!ctx.job.metadata) {
-    throw new Error("Job metadata is missing");
-  }
-  const metadata = JSON.parse(ctx.job.metadata);
-  if (!metadata.agentId) {
-    throw new Error("agentId is missing from job metadata");
-  }
-  return metadata.agentId;
-}
-async function getAgentConfig(agentId) {
-  const baseUrl = process.env.NEXTJS_APP_URL ?? "http://localhost:3000";
-  const response = await fetch(`${baseUrl}/api/agent/list-config?agentId=${encodeURIComponent(agentId)}`);
-  if (!response.ok) {
-    const body = await response.text();
-    throw new Error(`Failed to fetch agent config (${response.status}): ${body}`);
-  }
-  const agent = await response.json();
-  return agent;
-}
-
-// src/agent-config/general-tools/call-transfer.ts
 var E164_PHONE_NUMBER = /^\+[1-9]\d{7,14}$/;
 function getTransferConfig(agentConfig) {
   const transferTool = agentConfig.config.generalTools.find(
@@ -182,7 +218,7 @@ function getTransferConfig(agentConfig) {
 function createCallTransferTool(agentConfig, createTargetAgent) {
   const config = getTransferConfig(agentConfig);
   if (!config) return null;
-  return tool3({
+  return tool4({
     name: config.name.trim() || "transfer_call",
     description: config.description.trim() || "Transfer the caller to the configured human agent.",
     execute: async (_, { ctx }) => {
@@ -205,7 +241,7 @@ function createCallTransferTool(agentConfig, createTargetAgent) {
         }
         try {
           const targetConfig = await getAgentConfig(agentId);
-          return handoff({ agent: createTargetAgent(targetConfig), returns: "The conversation has been transferred to the specialist agent." });
+          return handoff2({ agent: createTargetAgent(targetConfig), returns: "The conversation has been transferred to the specialist agent." });
         } catch (error) {
           console.error("Agentic call transfer failed.", error);
           return "The specialist agent is unavailable. Continue helping the caller and offer an alternative.";
@@ -313,7 +349,7 @@ function getTransferDtmf(config) {
 }
 
 // src/agent-config/general-tools/code-execution.ts
-import { tool as tool4 } from "@livekit/agents";
+import { tool as tool5 } from "@livekit/agents";
 import { runInNewContext } from "vm";
 function getCodeTools(agentConfig) {
   const seenNames = /* @__PURE__ */ new Set();
@@ -330,11 +366,11 @@ async function runConfiguredCode(code, timeoutMs2, abortSignal) {
   const result = runInNewContext(`(async () => {
 ${code}
 })()`, /* @__PURE__ */ Object.create(null), { timeout });
-  return await awaitResult(result, timeout, abortSignal);
+  return normalizeCodeResult(await awaitResult(result, timeout, abortSignal));
 }
 function createCodeExecutionTools(agentConfig) {
   return getCodeTools(agentConfig).map(
-    (config) => tool4({
+    (config) => tool5({
       name: config.name,
       description: config.description.trim(),
       execute: async (_, { abortSignal }) => {
@@ -375,9 +411,29 @@ async function awaitResult(result, timeoutMs2, abortSignal) {
     Promise.resolve(result).then((value) => finish(resolve, value), (error) => finish(reject, error));
   });
 }
+function normalizeCodeResult(value, seen = /* @__PURE__ */ new WeakSet()) {
+  if (value === null || value === void 0) return value;
+  if (typeof value === "string" || typeof value === "boolean") return value;
+  if (typeof value === "number") {
+    if (Number.isFinite(value)) return value;
+    throw new TypeError("Code tool results cannot contain non-finite numbers.");
+  }
+  if (typeof value !== "object") {
+    throw new TypeError(`Code tool results must be JSON-like values; received ${typeof value}.`);
+  }
+  if (seen.has(value)) throw new TypeError("Code tool results cannot contain circular references.");
+  seen.add(value);
+  if (Array.isArray(value)) return value.map((item) => normalizeCodeResult(item, seen));
+  if (Object.prototype.toString.call(value) !== "[object Object]") {
+    throw new TypeError("Code tool results may only contain plain objects and arrays.");
+  }
+  const result = {};
+  for (const [key, item] of Object.entries(value)) result[key] = normalizeCodeResult(item, seen);
+  return result;
+}
 
 // src/agent-config/general-tools/custom-tool.ts
-import { tool as tool5 } from "@livekit/agents";
+import { tool as tool6 } from "@livekit/agents";
 function configuredCustomTools(agentConfig) {
   const names = /* @__PURE__ */ new Set();
   return agentConfig.config.generalTools.flatMap((configuredTool) => {
@@ -406,7 +462,7 @@ function createCustomFunctionTools(agentConfig) {
       }
     };
     const common = { name: config.name, description: config.description.trim(), execute };
-    return config.parameters ? tool5({ ...common, parameters: config.parameters }) : tool5(common);
+    return config.parameters ? tool6({ ...common, parameters: config.parameters }) : tool6(common);
   });
 }
 function requestUrl(config) {
@@ -481,6 +537,41 @@ async function executeRequest(config, args, abortSignal) {
   throw lastError;
 }
 
+// src/agent-config/general-tools/current-time.ts
+import { tool as tool7 } from "@livekit/agents";
+import { z as z3 } from "zod";
+function createAwarenessTools(agentConfig) {
+  const tzString = agentConfig.llmConfig?.timezone?.trim() || agentConfig.config.timezone?.trim() || "UTC";
+  return tool7({
+    name: "get_current_datetime",
+    description: "Check the current date and local time. Call this whenever the user asks for the time, date, or day of the week.",
+    parameters: z3.object({}),
+    execute: async () => {
+      try {
+        const now = /* @__PURE__ */ new Date();
+        const formatter = new Intl.DateTimeFormat("en-US", {
+          timeZone: tzString,
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true
+        });
+        const parts = formatter.formatToParts(now);
+        const map = Object.fromEntries(parts.map((p) => [p.type, p.value]));
+        const resultMsg = `${map.weekday}, ${map.month} ${map.day}, ${map.year} at ${map.hour}:${map.minute} ${map.dayPeriod?.toUpperCase() ?? ""}`.trim();
+        console.log(`[AwarenessTool:get_current_datetime] Timezone: ${tzString} -> ${resultMsg}`);
+        return resultMsg;
+      } catch (error) {
+        console.error(`AwarenessTool failed for ${tzString}:`, error);
+        return "I'm sorry, I'm having trouble accessing the clock right now. Please try again in a moment.";
+      }
+    }
+  });
+}
+
 // src/agent-config/general-tools/end-call.ts
 import { beta } from "@livekit/agents";
 var endCallTool = beta.createEndCallTool({
@@ -490,8 +581,8 @@ var endCallTool = beta.createEndCallTool({
 });
 
 // src/agent-config/general-tools/press-digit.ts
-import { getJobContext as getJobContext2, tool as tool6 } from "@livekit/agents";
-import { z as z3 } from "zod";
+import { getJobContext as getJobContext2, tool as tool8 } from "@livekit/agents";
+import { z as z4 } from "zod";
 var DTMF_CODES = {
   "0": 0,
   "1": 1,
@@ -506,7 +597,7 @@ var DTMF_CODES = {
   "*": 10,
   "#": 11
 };
-var digitSchema = z3.enum(["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "*", "#"]);
+var digitSchema = z4.enum(["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "*", "#"]);
 function getPressDigitConfig(agentConfig) {
   const pressDigitTool = agentConfig.config.generalTools.find((configuredTool) => configuredTool.type === "press_digit");
   return pressDigitTool ?? null;
@@ -514,10 +605,10 @@ function getPressDigitConfig(agentConfig) {
 function createPressDigitTool(agentConfig) {
   const config = getPressDigitConfig(agentConfig);
   if (!config) return null;
-  return tool6({
+  return tool8({
     name: config.name.trim(),
     description: config.description.trim(),
-    parameters: z3.object({
+    parameters: z4.object({
       digit: digitSchema.describe("The single DTMF digit to send to the active phone menu.")
     }),
     execute: async ({ digit }, { ctx, abortSignal }) => {
@@ -10280,7 +10371,7 @@ var VOICES_UPDATED = [
 ];
 
 // src/ingestion/configure-voice-stack.ts
-function createVoiceStack(agentConfig) {
+async function createVoiceStack(agentId, agentConfig) {
   const model = agentConfig.llmConfig.model.trim() || "gpt-4.1";
   let llm;
   if (model.startsWith("gpt-")) {
@@ -10298,18 +10389,18 @@ function createVoiceStack(agentConfig) {
     language: languages.deepgram
   });
   const voiceId = agentConfig.config.voiceId?.trim() || "db6b0ed5-d5d3-463d-ae85-518a07d3c2b4";
-  const voice3 = VOICES_UPDATED.find((voice4) => voice4.voice_id === voiceId);
+  let voice3 = VOICES_UPDATED.find((voice4) => voice4.voice_id === voiceId);
   if (!voice3) {
-    throw new Error(`Voice not found: ${voiceId}`);
+    voice3 = await solveCustomVoice(agentId, voiceId);
   }
   let tts;
-  if (voice3.provider === "cartesia") {
+  if (voice3?.provider === "cartesia") {
     tts = new cartesia.TTS({
       model: formatModelId(voice3.model),
       voice: voice3.voice_id,
       language: languages.cartesia
     });
-  } else if (voice3.provider === "elevenlabs") {
+  } else if (voice3?.provider === "elevenlabs") {
     tts = new elevenlabs.TTS({
       modelID: voice3.model,
       voiceId: voice3.voice_id,
@@ -10324,9 +10415,6 @@ function createVoiceStack(agentConfig) {
     });
   }
   return { llm, stt, tts };
-}
-function formatModelId(model) {
-  return model.trim().replace(/\s+/g, "-");
 }
 function getProviderLanguages(language) {
   const DEFAULT_AGENT_LANGUAGE = "en-US";
@@ -10343,67 +10431,297 @@ function getProviderLanguages(language) {
     sarvam: locale
   };
 }
+async function solveCustomVoice(agentId, voiceId) {
+  const baseUrl = process.env.NEXTJS_APP_URL ?? "http://localhost:3000";
+  const params = new URLSearchParams({ agentId, voiceId });
+  const customVoice = await fetch(`${baseUrl}/api/agent/get-custom-voice-config?${params}`).then(async (response) => response.ok ? await response.json() : null).catch(() => null);
+  if (!customVoice?.provider) return void 0;
+  const modelByProvider = {
+    cartesia: "sonic 3.5",
+    elevenlabs: "eleven_flash_v2_5"
+  };
+  return {
+    provider: customVoice.provider,
+    voice_id: voiceId,
+    model: modelByProvider[customVoice.provider]
+  };
+}
+function formatModelId(model) {
+  return model.trim().replace(/\s+/g, "-");
+}
 
 // src/agent.ts
-function createAgent(agentConfig) {
+function createAgentDefinition(agentConfig) {
   const languages = getProviderLanguages(agentConfig.config.language);
+  const timezone = agentConfig.config.timezone?.trim() || "UTC";
   return Agent.create({
     instructions: dedent` 
       ${agentConfig.llmConfig.generalPrompt.trim() || DEFAULT_GENERAL_PROMPT}
+
+      ## Timezone & Date Guidelines
+      You operate in the ${timezone} timezone. Whenever the caller asks about the current time, today's date, or day of the week, call the \`get_current_datetime\` tool to provide an accurate answer.
+      ${getPostCallCollectionInstructions(agentConfig.config.post_call_analysis_data)}
       Always respond in ${languages.gpt}.
     `,
-    tools: [
-      endCallTool,
-      createCheckAvailabilityTool(agentConfig),
-      createBookAppointmentTool(agentConfig),
-      ...createCodeExecutionTools(agentConfig),
-      ...createCustomFunctionTools(agentConfig),
-      ...(() => {
-        const tool7 = createCallTransferTool(agentConfig, createAgent);
-        return tool7 ? [tool7] : [];
-      })(),
-      ...(() => {
-        const tool7 = createPressDigitTool(agentConfig);
-        return tool7 ? [tool7] : [];
-      })()
-    ]
-    // To use a realtime model instead of a voice pipeline, replace the LLM
-    // with a RealtimeModel and remove the STT/TTS from the AgentSession
-    // (Note: This is for the OpenAI Realtime API. For other providers, see https://docs.livekit.io/agents/models/realtime/)
-    // 1. Install '@livekit/agents-plugin-openai'
-    // 2. Set OPENAI_API_KEY in .env.local
-    // 3. Add `import * as openai from '@livekit/agents-plugin-openai'` to the top of this file
-    // 4. Replace the llm option with:
-    //    llm: new openai.realtime.RealtimeModel({ voice: 'marin' }),
-    // To add tools, specify `tools` in the constructor.
-    // Here's an example that adds a simple weather tool.
-    // You also have to add `import { tool } from '@livekit/agents'` and `import { z } from 'zod'` to the top of this file
-    // tools: [
-    //   tool({
-    //     name: 'getWeather',
-    //     description: dedent`
-    //       Use this tool to look up current weather information in the given location.
-    //
-    //       If the location is not supported by the weather service, the tool will indicate this.
-    //       You must tell the user the location's weather is unavailable.
-    //     `,
-    //     parameters: z.object({
-    //       location: z
-    //         .string()
-    //         .describe('The location to look up weather information for (e.g. city name)'),
-    //     }),
-    //     execute: async ({ location }) => {
-    //       console.log(`Looking up weather for ${location}`);
-    //
-    //       return 'sunny with a temperature of 70 degrees.';
-    //     },
-    //   }),
-    // ],
+    tools: createAllAgentToolsAvailable(agentConfig)
   });
 }
 var DEFAULT_GENERAL_PROMPT = dedent`
   You are a friendly, reliable voice assistant that answers questions, explains topics, and completes tasks with available tools.
 `;
+function getPostCallCollectionInstructions(fields = []) {
+  const fieldsToCollect = fields.filter((field) => field.type !== "system-presets" && field.name && field.description);
+  if (!fieldsToCollect.length) return "";
+  return `
+    ## Information to collect
+    Collect these details naturally during the conversation. Do not mention extraction or ask again for information the caller already provided. Ask for required details before ending the call; capture optional details when relevant. Never invent a value.
+    ${fieldsToCollect.map((field) => `- ${field.name}${field.required ? " (required)" : ""}: ${field.description}`).join("\n")}
+  `;
+}
+function createAllAgentToolsAvailable(agentConfig) {
+  const callTransfer = createCallTransferTool(agentConfig, createAgentDefinition);
+  const pressDigit = createPressDigitTool(agentConfig);
+  const agentSwaps = createAgentSwapTools(agentConfig, createAgentDefinition);
+  return [
+    endCallTool,
+    createAwarenessTools(agentConfig),
+    createCheckAvailabilityTool(agentConfig),
+    createBookAppointmentTool(agentConfig),
+    ...createCodeExecutionTools(agentConfig),
+    ...createCustomFunctionTools(agentConfig),
+    ...agentSwaps,
+    ...callTransfer ? [callTransfer] : [],
+    ...pressDigit ? [pressDigit] : []
+  ];
+}
+
+// src/conversational-flow/conversational-flow-runtime.ts
+import { Agent as Agent2, handoff as handoff3, tool as tool9 } from "@livekit/agents";
+function createInitialFlowAgent(nodes, agentConfig) {
+  const globalNodes = resolveGlobalNodes(nodes);
+  const getNode = (id) => {
+    const node = new Map(nodes.map((node2) => [node2.id, node2])).get(id);
+    if (!node) throw new Error(`Flow node ${id} does not exist.`);
+    return node;
+  };
+  const createNodeAgent = (id) => {
+    const node = getNode(id);
+    if (node.type !== "conversation" && node.type !== "subagent") {
+      throw new Error(`Flow node ${id} has unsupported type: ${node.type}`);
+    }
+    return Agent2.create({
+      instructions: `
+                ${agentConfig.llmConfig.generalPrompt.trim() || "You are a helpful voice assistant."}
+
+
+                ${node.instruction.text.trim() || "Continue helping the caller."}
+
+
+                FLOW TRANSITIONS: ${defineConnectedToolInstructions(node, getNode)}
+                AVAILABLE CONNECTED TOOLS: ${defineChainedToolInstructions(node, getNode)}
+                LOGIC SPLITS: ${defineLogicSplitInstructions(node, getNode)}
+                IMPORTANT: After every user response, first check the global_transition tools against the latest user message. If a global condition matches, immediately call that tool before any regular transition or response. Do not trigger a global transition solely from an older message that has already been handled. Otherwise, check the regular transition conditions. If a condition is satisfied, you MUST immediately call its transition tool instead of responding to the user.
+            `,
+      onEnter(ctx) {
+        ctx.session.generateReply({ instructions: node.instruction.text });
+      },
+      tools: [
+        ...defineFlowForNonHandOffTools(agentConfig),
+        ...globalNodes.filter((globalNode) => globalNode.id !== node.id).map((globalNode) => tool9({
+          name: globalNode.toolName,
+          description: globalNode.prompt,
+          execute: async () => handoff3({ agent: createNodeAgent(globalNode.id) })
+        })),
+        ...defineFlowForHandOffTools(node, getNode, createNodeAgent)
+      ]
+    });
+  };
+  const begin = nodes.find((node) => node.type === "begin");
+  if (!begin?.edge.destination_node_id) throw new Error("The Begin node must connect to an executable node.");
+  return createNodeAgent(begin.edge.destination_node_id);
+}
+function defineFlowForNonHandOffTools(agentConfig) {
+  return createAllAgentToolsAvailable(agentConfig);
+}
+function defineFlowForHandOffTools(node, getNode, createNodeAgent) {
+  return (node.edges ?? []).flatMap((edge) => {
+    const destination = edge.destination_node_id;
+    if (!destination) return [];
+    const destinationNode = getNode(destination);
+    if (destinationNode.type !== "conversation" && destinationNode.type !== "subagent") {
+      return [];
+    }
+    return [
+      tool9({
+        name: `transition_${edge.id.replaceAll("-", "_")}`,
+        description: edge.transition_condition.type === "prompt" ? edge.transition_condition.prompt : "Transition when the configured condition is satisfied.",
+        execute: async () => handoff3({ agent: createNodeAgent(destination) })
+      })
+    ];
+  });
+}
+function defineConnectedToolInstructions(node, getNode) {
+  return (node.edges ?? []).map((edge) => {
+    if (!edge.destination_node_id) return null;
+    const destination = getNode(edge.destination_node_id);
+    if (destination.type === "conversation" || destination.type === "subagent" || destination.type === "branch") {
+      return null;
+    }
+    const condition = edge.transition_condition.type === "prompt" ? edge.transition_condition.prompt : "when the transition condition is satisfied";
+    return `- ${condition} \u2192 use the ${destination.type} tool.`;
+  }).filter(Boolean).join("\n");
+}
+function defineChainedToolInstructions(node, getNode) {
+  const tools = /* @__PURE__ */ new Map();
+  const queue = [];
+  const visited = /* @__PURE__ */ new Set();
+  function follow(node2) {
+    if (visited.has(node2.id)) return;
+    visited.add(node2.id);
+    if (node2.type === "conversation" || node2.type === "subagent" || node2.type === "branch") return;
+    if ("edges" in node2) {
+      node2.edges?.forEach((edge) => {
+        if (edge.destination_node_id) {
+          const destination = getNode(edge.destination_node_id);
+          const condition = edge.transition_condition.type === "prompt" ? edge.transition_condition.prompt : "when the transition condition is satisfied";
+          tools.set(condition, destination.type);
+          queue.push(destination);
+        }
+      });
+    }
+    if ("else_edge" in node2 && node2.else_edge?.destination_node_id) {
+      const destination = getNode(node2.else_edge.destination_node_id);
+      tools.set("else", destination.type);
+      queue.push(destination);
+    }
+  }
+  node.edges?.forEach((edge) => {
+    if (edge.destination_node_id) {
+      queue.push(getNode(edge.destination_node_id));
+    }
+  });
+  while (queue.length) follow(queue.shift());
+  return [...tools].map(([condition, tool10]) => `- ${condition} \u2192 use the ${tool10} tool.`).join("\n");
+}
+function defineLogicSplitInstructions(node, getNode) {
+  const edges = (node.edges ?? []).flatMap((edge) => {
+    if (!edge.destination_node_id) return [];
+    const destination = getNode(edge.destination_node_id);
+    if (destination.type !== "branch") return [];
+    const conditions = destination.edges.map((branchEdge) => {
+      if (branchEdge.transition_condition.type !== "prompt") {
+        throw new Error(`Logic Split ${destination.id} requires prompt conditions.`);
+      }
+      return branchEdge.transition_condition.prompt;
+    });
+    const incoming = edge.transition_condition.type === "prompt" ? edge.transition_condition.prompt : "when the transition condition is satisfied";
+    return [...destination.edges, ...destination.else_edge ? [destination.else_edge] : []].map((branchEdge, index) => ({
+      ...branchEdge,
+      transition_condition: {
+        type: "prompt",
+        prompt: `(${incoming}) AND ${index < conditions.length ? `(${conditions[index]}) AND ` : ""}none of these earlier conditions match: ${JSON.stringify(conditions.slice(0, index))}`
+      }
+    }));
+  });
+  return edges.filter((edge) => edge.destination_node_id).map((edge) => {
+    const destination = getNode(edge.destination_node_id);
+    if (destination.type === "conversation" || destination.type === "subagent" || destination.type === "branch") return null;
+    return `- ${edge.transition_condition.prompt} \u2192 use the ${destination.type} tool.`;
+  }).filter(Boolean).join("\n");
+}
+function resolveGlobalNodes(nodes) {
+  return nodes.flatMap((node, index) => {
+    if (!node.global_node_setting) return [];
+    if (node.type !== "conversation" && node.type !== "subagent") {
+      throw new Error(`Global node ${node.id} has unsupported type: ${node.type}`);
+    }
+    const condition = node.global_node_setting.condition;
+    if (condition.type !== "prompt" || !condition.prompt.trim()) {
+      throw new Error(`Global node ${node.id} requires a non-empty prompt condition.`);
+    }
+    return [{ id: node.id, toolName: `global_transition_${index}`, prompt: condition.prompt }];
+  });
+}
+
+// src/conversational-flow/helper-functions.ts
+function compileFlowSubflows({ mainFlowConfig, subflowConfig }) {
+  const nodes = Object.values(mainFlowConfig);
+  const subflowById = new Map(Object.values(subflowConfig).map((subflow) => [subflow.conversation_flow_component_id, subflow]));
+  const subflowNodes = nodes.filter((node) => node.type === "subflow");
+  const inlinedSubflows = new Map(subflowNodes.map((node) => [node.id, createInlineSubflow(node, subflowById)]));
+  const resolveMainDestination = (destinationNodeId) => inlinedSubflows.get(destinationNodeId)?.entryNodeId ?? destinationNodeId;
+  const compiledMainNodes = nodes.filter((node) => node.type !== "subflow").map((node) => withResolvedDestinations(node, resolveMainDestination));
+  return [
+    ...compiledMainNodes,
+    ...[...inlinedSubflows.values()].flatMap((subflow) => [
+      ...subflow.nodes,
+      withResolvedDestinations(subflow.returnNode, resolveMainDestination)
+    ])
+  ];
+}
+function createInlineSubflow(subflowNode, subflowById) {
+  const component = subflowById.get(subflowNode.conversation_flow_component_id);
+  if (!component) throw new Error(`Subflow ${subflowNode.conversation_flow_component_id} referenced by ${subflowNode.id} does not exist.`);
+  if (component.nodes.some((node) => node.type === "subflow")) {
+    throw new Error(`Nested subflows are not supported: ${component.name}.`);
+  }
+  const startNode = component.nodes.find((node) => node.type === "subflow_start");
+  if (!startNode || startNode.type !== "subflow_start" || !startNode.edge.destination_node_id) {
+    throw new Error(`Subflow ${component.name} must have a Start node connected to another node.`);
+  }
+  const endNodeIds = new Set(component.nodes.filter((node) => node.type === "subflow_end").map((node) => node.id));
+  if (!endNodeIds.size) throw new Error(`Subflow ${component.name} must contain an End node.`);
+  const nodeIdByOriginalId = new Map(component.nodes.filter((node) => node.type !== "subflow_start" && node.type !== "subflow_end").map((node) => [node.id, `${subflowNode.id}:${node.id}`]));
+  const returnNodeId = `${subflowNode.id}:return`;
+  const resolveSubflowDestination = (destinationNodeId) => {
+    if (endNodeIds.has(destinationNodeId)) return returnNodeId;
+    const destination = nodeIdByOriginalId.get(destinationNodeId);
+    if (!destination) throw new Error(`Subflow ${component.name} contains an edge to unknown node ${destinationNodeId}.`);
+    return destination;
+  };
+  const entryNodeId = resolveSubflowDestination(startNode.edge.destination_node_id);
+  const nodes = component.nodes.filter((node) => node.type !== "subflow_start" && node.type !== "subflow_end").map((node) => ({ ...withResolvedDestinations(node, resolveSubflowDestination), id: nodeIdByOriginalId.get(node.id) }));
+  return {
+    entryNodeId,
+    nodes,
+    returnNode: {
+      id: returnNodeId,
+      type: "conversation",
+      name: `${subflowNode.name} complete`,
+      skippable: false,
+      display_position: subflowNode.display_position,
+      start_speaker: "agent",
+      instruction: {
+        type: "static_text",
+        text: "The subflow has completed. Continue with the caller using the available transitions."
+      },
+      edges: subflowNode.edges ?? []
+    }
+  };
+}
+function withResolvedDestinations(node, resolveDestination) {
+  const resolveEdge = (edge) => edge.destination_node_id ? { ...edge, destination_node_id: resolveDestination(edge.destination_node_id) } : edge;
+  return {
+    ...node,
+    ..."edges" in node ? { edges: node.edges?.map(resolveEdge) } : {},
+    ..."edge" in node ? { edge: resolveEdge(node.edge) } : {},
+    ..."else_edge" in node && node.else_edge ? { else_edge: resolveEdge(node.else_edge) } : {},
+    ..."always_edge" in node && node.always_edge ? { always_edge: resolveEdge(node.always_edge) } : {},
+    ..."success_edge" in node ? { success_edge: resolveEdge(node.success_edge) } : {},
+    ..."failed_edge" in node ? { failed_edge: resolveEdge(node.failed_edge) } : {}
+  };
+}
+
+// src/ingestion/get-conversational-flow-config.ts
+async function getConversationalFlowConfig(agentId) {
+  const baseUrl = process.env.NEXTJS_APP_URL ?? "http://localhost:3000";
+  const response = await fetch(`${baseUrl}/api/agent/get-conversational-flow-config?agentId=${encodeURIComponent(agentId)}`);
+  if (!response.ok) {
+    const body = await response.text();
+    throw new Error(`Failed to fetch conversational flow config (${response.status}): ${body}`);
+  }
+  return await response.json();
+}
 
 // src/data-hooks/main.ts
 import { voice } from "@livekit/agents";
@@ -13262,50 +13580,16 @@ var main_default = defineAgent({
   entry: async (ctx) => {
     const agentId = getAgentIdFromJob(ctx);
     const agentConfig = await getAgentConfig(agentId);
-    const { llm, stt, tts } = createVoiceStack(agentConfig);
-    const session = new voice2.AgentSession({
-      llm,
-      stt,
-      tts,
-      turnHandling: {
-        // Turn detection determines when the user is speaking and when the agent should respond.
-        // The LiveKit audio turn detector is a multimodal model that encodes the user's audio
-        // directly to predict end of turn. It's built into the SDK (no extra plugin) and
-        // AgentSession supplies the required VAD automatically.
-        // See more at https://docs.livekit.io/agents/logic/turns/turn-detector/
-        turnDetection: new inference.TurnDetector(),
-        // Adaptive interruptions use the turn detector to tell a real interruption from a
-        // backchannel like "mhm" or "right", so the agent keeps talking through the latter.
-        interruption: { mode: "adaptive" },
-        // Allow the LLM to generate a response while waiting for the end of turn
-        preemptiveGeneration: { enabled: false }
-      },
-      // Expressive mode injects the TTS provider's markup guide into the LLM prompt, so the model
-      // emits inline delivery tags (emotion, pacing, non-verbal sounds) that the TTS renders and
-      // the transcript never shows. Requires a TTS model that supports markup, such as the Fish
-      // Audio model above.
-      expressive: false
-    });
-    const agent = createAgent(agentConfig);
-    await session.start({
-      agent,
-      room: ctx.room,
-      record: { audio: false },
-      inputOptions: {
-        // Delete the room when this session closes so every participant disconnects.
-        deleteRoomOnClose: true,
-        // ai-coustics QUAIL audio enhancement for noise cancellation
-        // Works for both WebRTC and telephony (SIP) participants
-        noiseCancellation: audioEnhancement({ model: "quailVfS" })
-      }
-    });
-    const egressRecording = registerS3DualChannelRecording(ctx);
-    await egressRecording.start();
+    const { llm, stt, tts } = await createVoiceStack(agentId, agentConfig);
+    const agent = await createRuntimeAgent(agentId, agentConfig);
+    const session = createSession({ llm, stt, tts, channel: agentConfig.channel });
+    await session.start({ agent, room: ctx.room, ...getSessionStartOptions(agentConfig.channel) });
+    if (agentConfig.channel === "voice") {
+      const egressRecording = registerS3DualChannelRecording(ctx);
+      await egressRecording.start();
+    }
     await ctx.connect();
     registerSessionDataHooks({ ctx, session, agentId });
-    session.generateReply({
-      instructions: "Greet the user in a helpful and friendly manner."
-    });
   }
 });
 cli.runApp(
@@ -13314,6 +13598,40 @@ cli.runApp(
     agentName: "my-agent-123123"
   })
 );
+async function createRuntimeAgent(agentId, config) {
+  if (config.config.agentType === "conversational_flow") {
+    const flowSubflowConfig = await getConversationalFlowConfig(agentId);
+    const flatGraph = compileFlowSubflows(flowSubflowConfig);
+    return createInitialFlowAgent(flatGraph, config);
+  }
+  return createAgentDefinition(config);
+}
+function createSession({ llm, stt, tts, channel }) {
+  const isChat = channel === "chat";
+  return new voice2.AgentSession({
+    llm,
+    ...isChat ? { vad: null, turnHandling: { turnDetection: null } } : {
+      stt,
+      tts,
+      expressive: false,
+      turnHandling: {
+        turnDetection: new inference.TurnDetector(),
+        interruption: { mode: "adaptive" },
+        preemptiveGeneration: { enabled: false }
+      }
+    }
+  });
+}
+function getSessionStartOptions(channel) {
+  const isChat = channel === "chat";
+  return {
+    record: { audio: false },
+    inputOptions: isChat ? { textEnabled: true, audioEnabled: false, deleteRoomOnClose: true } : { deleteRoomOnClose: true, noiseCancellation: audioEnhancement({ model: "quailVfS" }) },
+    ...isChat && {
+      outputOptions: { transcriptionEnabled: true, audioEnabled: false, syncTranscription: false }
+    }
+  };
+}
 export {
   main_default as default
 };
