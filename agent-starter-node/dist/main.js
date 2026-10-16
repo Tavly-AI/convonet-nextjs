@@ -10523,7 +10523,16 @@ function createInitialFlowAgent(nodes, agentConfig) {
                 IMPORTANT: After every user response, first check the global_transition tools against the latest user message. If a global condition matches, immediately call that tool before any regular transition or response. Do not trigger a global transition solely from an older message that has already been handled. Otherwise, check the regular transition conditions. If a condition is satisfied, you MUST immediately call its transition tool instead of responding to the user.
             `,
       onEnter(ctx) {
-        ctx.session.generateReply({ instructions: node.instruction.text });
+        if ("start_speaker" in node && node.start_speaker === "user") {
+          return;
+        }
+        const text = node.instruction.text.trim();
+        if (!text) return;
+        if (node.instruction.type === "static_text") {
+          ctx.session.say(text);
+        } else {
+          ctx.session.generateReply({ instructions: text });
+        }
       },
       tools: [
         ...defineFlowForNonHandOffTools(agentConfig),

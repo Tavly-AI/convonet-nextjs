@@ -9,7 +9,6 @@ import {
     MessageSquare,
     MoreHorizontal,
     Network,
-    Pencil,
     PhoneForwarded,
     PhoneOff,
     Plus,
@@ -29,7 +28,6 @@ import {
 } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { useRouter, useSearchParams } from "next/navigation"
 import type { CF, CFSubflowComponent } from "../../_types/global-cf-types"
 import { subflow_session_storage } from "../../_lib/flow-subflow-sessonStorage"
 import { createCFNode } from "../../_lib/flow-node-factory"
@@ -185,20 +183,9 @@ function DisplayNodes() {
 function DisplaySubflows() {
     const [subflows, setSubflows] = useState<CFSubflowComponent[]>([])
 
-    const router = useRouter()
-    const searchParams = useSearchParams()
-
     useEffect(() => {
         setSubflows(Object.values(subflow_session_storage.getAll()))
     }, [])
-
-    function onSubflowClick(id: string) {
-        const params = new URLSearchParams(searchParams.toString())
-        params.set("subflow", id)
-        router.push(`?${params.toString()}`)
-
-        window.location.assign(`${window.location.pathname}?${params.toString()}`)
-    }
 
     function createSubflow() {
         const id = crypto.randomUUID()
@@ -216,7 +203,6 @@ function DisplaySubflows() {
 
         setSubflows(Object.values(subflow_session_storage.getAll()))
 
-        onSubflowClick(id)
     }
 
     function onDragStart(
@@ -277,7 +263,6 @@ function DisplaySubflows() {
                             </span>
 
                             <div className="flex items-center opacity-0 transition-opacity group-hover:opacity-100">
-                                <Pencil className="size-4 text-muted-foreground" onClick={() => onSubflowClick(subflow.conversation_flow_component_id!)} />
                                 <MoreHorizontal className="ml-2 size-4 text-muted-foreground" />
                             </div>
                         </button>

@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import {
     ChevronDown,
     Cuboid,
@@ -110,7 +111,13 @@ function ChangeMainFlowToSubflow() {
     const pathname = usePathname()
     const subflowId = searchParams.get("subflow")
 
-    const subflows = Object.values(subflow_session_storage.getAll())
+    const [subflows, setSubflows] = useState(() => Object.values(subflow_session_storage.getAll()))
+
+    // subscribe to changes
+    // used when we create new subflows thoguh left-side-panel
+    useEffect(() => subflow_session_storage.subscribe(() => {
+        setSubflows(Object.values(subflow_session_storage.getAll()))
+    }), [])
 
     function changeFlow(id: string) {
         const params = new URLSearchParams(searchParams.toString())

@@ -1,3 +1,4 @@
+import { getGeneralPrompt, writeGeneralPrompt } from "@/app/agents/_lib/session-storage/agent-session"
 import type { CF, MainflowSubflowConfig } from "../_types/global-cf-types"
 import { subflow_session_storage } from "./flow-subflow-sessonStorage"
 
@@ -15,6 +16,9 @@ const read = (): Store => {
 const write = (store: Store) => {
     sessionStorage.setItem(KEY, JSON.stringify(store))
     window.dispatchEvent(new Event(EVENT))
+
+    // ultimate hack: trigger db save pipeline
+    writeGeneralPrompt(getGeneralPrompt())
 }
 
 export const conversational_flow_session_storage = {
