@@ -18,6 +18,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { AgentSessionName } from "@/app/agents/_components/main/agent-session-name"
+import { AgentSessionVersion } from "@/app/agents/_components/main/agent-session-version"
 import { subflow_session_storage } from "../../_lib/flow-subflow-sessonStorage"
 import { WebsiteCustomDropdown } from "@/components/custom/website-custom-dropdown"
 
@@ -36,9 +37,7 @@ export function FlowTopNavbarPanel() {
 
                 <TestButton />
 
-                {/* <Button type="button" className="h-9 rounded-xl bg-foreground px-4 text-background hover:bg-foreground/90">
-                    Publish
-                </Button> */}
+                <AgentSessionVersion />
             </nav>
         </header>
     )

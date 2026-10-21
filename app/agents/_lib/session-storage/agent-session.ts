@@ -1209,3 +1209,22 @@ export function writeAgentName(name: string) {
 
     return name
 }
+
+// =================================================================
+// =========================== AGENT TYPE ===========================
+// =================================================================
+
+export function writeAgentType(agentType: AgentSessionConfig["agentType"]) {
+    const agent = getAgentSession()
+    if (!agent) throw new Error("Agent session is not initialized.")
+
+    writeAgentSession({
+        ...agent,
+        config: {
+            ...agent.config,
+            agentType,
+        },
+    })
+
+    return agentType
+}
