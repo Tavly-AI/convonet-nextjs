@@ -1,12 +1,12 @@
-import { Agent, handoff, tool } from "@livekit/agents"
+import { Agent, handoff, tool, type voice } from "@livekit/agents"
 
 import type { CF } from "../../../app/agents-conversational-flow/_types/global-cf-types.ts"
 import type { RuntimeAgentConfig } from "../ingestion/get-agent-config.ts"
-import { createAllAgentToolsAvailable } from "../agent.ts"
+import { createAllAgentToolsAvailable } from "../sharable-code/agent-helpers.ts"
 
 type FlowNode = CF["Node"]["data"]
 
-export function createInitialFlowAgent(nodes: FlowNode[], agentConfig: RuntimeAgentConfig): Agent {
+export function createConversationalFlowAgentFromData(nodes: FlowNode[], agentConfig: RuntimeAgentConfig): Agent {
 
     const getNode = (id: string) => {
         const node = new Map(nodes.map(node => [node.id, node])).get(id)
@@ -30,7 +30,7 @@ export function createInitialFlowAgent(nodes: FlowNode[], agentConfig: RuntimeAg
                 IMPORTANT: After every user response, check the transition conditions. If a condition is satisfied, you MUST immediately call its transition tool instead of responding to the user.
             `,
 
-            onEnter(ctx) { ctx.session.generateReply({ instructions: node.instruction.text }) },
+            onEnter(ctx) { resolveFirstNodeBeginMessage(ctx, node, nodes) },
 
             tools: [
                 ...defineFlowForNonHandOffTools(agentConfig),
@@ -162,4 +162,22 @@ function defineLogicSplitInstructions(node: HandoffFlowNode, getNode: (id: strin
         if (destination.type === "conversation" || destination.type === "subagent" || destination.type === "branch") return null
         return `- ${edge.transition_condition.prompt} → use the ${destination.type} tool.`
     }).filter(Boolean).join("\n")
+}
+
+
+function resolveFirstNodeBeginMessage(ctx: voice.AgentContext, node: HandoffFlowNode, nodes: FlowNode[]) {
+
+    const begin = nodes.find(node => node.type === "begin")
+    if (begin?.edge.destination_node_id !== node.id) return
+
+    if ("start_speaker" in node && node.start_speaker === "user") return
+
+    const text = node.instruction.text.trim()
+    if (!text) return
+
+    if (node.instruction.type === "static_text") {
+        ctx.session.say(text)
+    } else {
+        ctx.session.generateReply({ instructions: text })
+    }
 }

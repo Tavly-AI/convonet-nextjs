@@ -2,8 +2,8 @@ import { ServerOptions, cli, defineAgent, inference, voice } from '@livekit/agen
 import { audioEnhancement } from '@livekit/plugins-ai-coustics';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'node:url';
-import { createAgentDefinition } from './agent.ts';
-import { createInitialFlowAgent } from './conversational-flow/conversational-flow-runtime.ts';
+import { createSinglePromptAgentFromData } from './single-prompt/single-prompt-runtime.ts';
+import { createConversationalFlowAgentFromData } from './conversational-flow/conversational-flow-runtime.ts';
 import { compileFlowSubflows } from './conversational-flow/helper-functions.ts';
 import { getAgentConfig, getAgentIdFromJob, type RuntimeAgentConfig } from './ingestion/get-agent-config.ts';
 import { getConversationalFlowConfig } from './ingestion/get-conversational-flow-config.ts';
@@ -46,14 +46,14 @@ cli.runApp(
 
 // MISC STATIC CODE
 
-async function createRuntimeAgent(agentId: string, config: RuntimeAgentConfig,) {
-  if (config.config.agentType === "conversational_flow") {
+async function createRuntimeAgent(agentId: string, agentConfig: RuntimeAgentConfig,) {
+  if (agentConfig.config.agentType === "conversational_flow") {
     const flowSubflowConfig = await getConversationalFlowConfig(agentId)
     const flatGraph = compileFlowSubflows(flowSubflowConfig)
-    return createInitialFlowAgent(flatGraph, config)
+    return createConversationalFlowAgentFromData(flatGraph, agentConfig)
   }
 
-  return createAgentDefinition(config)
+  return createSinglePromptAgentFromData(agentConfig)
 }
 
 function createSession({ llm, stt, tts, channel }: VoiceStack & { channel: RuntimeAgentConfig["channel"] }) {
