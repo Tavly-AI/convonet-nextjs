@@ -54,7 +54,6 @@ You are an AI receptionist for Retell Care, a home-based physical therapy servic
                 x: 558,
                 y: 1086,
             },
-            start_speaker: "agent",
             instruction: {
                 type: "static_text",
                 text: "Hi this is Anna from Retell Care, how can I help with you today?",

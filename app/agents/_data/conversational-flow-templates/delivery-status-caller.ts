@@ -129,7 +129,6 @@ A: We can start a delivery investigation to locate the package or verify deliver
             id: "start-node-delivery-001",
             type: "conversation",
             name: "Greeting",
-            start_speaker: "agent",
             instruction: {
                 type: "static_text",
                 text: "Thank you for calling BrightShip delivery support. This is Jordan. How can I help you today?",

@@ -601,7 +601,6 @@ If the prospect is not a fit or not ready, end the call warmly and leave the doo
                     name: "IVR Navigation",
                     skippable: false,
                     display_position: { x: 200, y: 150 },
-                    start_speaker: "user",
                     instruction: {
                         type: "prompt",
                         text: `The call has just connected — wait to hear who picks up.

@@ -85,7 +85,6 @@ const EMPTY_CONVERSATIONAL_FLOW: Store = {
         name: "Conversation",
         skippable: false,
         display_position: { x: 400, y: 0 },
-        start_speaker: "agent",
         instruction: { type: "prompt", text: "" },
         edges: [{
             id: "conversation-end-edge",

@@ -47,7 +47,6 @@ You are Anna, a Windows OS Support Agent. Your job is to help customers troubles
                 x: 558,
                 y: 1110,
             },
-            start_speaker: "agent",
             instruction: {
                 type: "static_text",
                 text: "Hi this is Anna from Windows support, how can I help you?",

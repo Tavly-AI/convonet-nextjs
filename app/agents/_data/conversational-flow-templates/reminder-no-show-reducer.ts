@@ -196,7 +196,7 @@ You already know the following. Do not ask the patient to repeat it:
                 edge("edge_greeting_someone_else", "node_relay_message", "A family member or caregiver answers and agrees to relay a generic message."),
                 edge("edge_greeting_wrong_person", "node_wrong_person_apology", "Wrong number, or patient unavailable and no message can be taken."),
                 edge("edge_greeting_voicemail", "node_voicemail", "Voicemail or answering machine detected."),
-            ], { start_speaker: "agent" as const }),
+            ]),
         node_deliver_reminder: conversation("node_deliver_reminder", "Deliver Reminder", 1038, -66,
             'Say: "I’m calling to remind you about your {{appointment_type}} appointment with {{doctor_name}} on {{appointment_date}} at {{appointment_time}}. Will you still be able to make it?" Wait for the answer.',
             [

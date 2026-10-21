@@ -59,7 +59,6 @@ You are a language bridge — nothing more.`,
             id: "start-node-translator",
             type: "conversation",
             name: "Live Translation",
-            start_speaker: "user",
             instruction: {
                 type: "prompt",
                 text: `Listen to whoever just spoke.

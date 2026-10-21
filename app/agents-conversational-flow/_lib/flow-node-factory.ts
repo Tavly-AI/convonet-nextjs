@@ -31,7 +31,6 @@ const nodeFactories: NodeFactoryMap = {
         type: "conversation",
         name: "Conversation",
         skippable: false,
-        start_speaker: "agent",
         instruction: {
             type: "prompt",
             text: "",

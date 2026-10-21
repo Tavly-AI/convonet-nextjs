@@ -48,7 +48,6 @@ type Data = {
     }
 
     conversation: Base<"conversation"> & {
-        start_speaker?: "agent" | "user"
         instruction: Instruction
         edges?: Edge[]
         else_edge?: Edge

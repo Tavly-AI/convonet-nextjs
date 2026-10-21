@@ -628,7 +628,6 @@ Provide a natural variation of:
                     type: "conversation",
                     name: "IVR Navigation",
                     skippable: false,
-                    start_speaker: "user",
                     display_position: { x: 0, y: 400 },
                     instruction: {
                         type: "prompt",

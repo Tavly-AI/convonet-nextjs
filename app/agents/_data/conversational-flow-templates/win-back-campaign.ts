@@ -48,7 +48,6 @@ You are Morgan, an Outbound Winback Specialist for Retell. Your main objective i
                 x: 558,
                 y: 534,
             },
-            // start_speaker: "agent",
             instruction: {
                 type: "prompt",
                 text: `Greeting:

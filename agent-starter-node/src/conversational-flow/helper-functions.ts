@@ -57,7 +57,6 @@ function createInlineSubflow(subflowNode: CF["Data"]["subflow"], subflowById: Ma
             name: `${subflowNode.name} complete`,
             skippable: false,
             display_position: subflowNode.display_position,
-            start_speaker: "agent",
             instruction: {
                 type: "static_text",
                 text: "The subflow has completed. Continue with the caller using the available transitions.",
