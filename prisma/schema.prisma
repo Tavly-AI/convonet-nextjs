@@ -32,6 +32,7 @@ model Workspace {
   agentVersions AgentVersion[]
   conversationalFlows ConversationalFlow[]
   callRecords   CallRecord[]
+  batchCalls    BatchCall[]
   knowledgeBases KnowledgeBase[]
   twilioSubaccount TwilioSubaccount?
   telnyxManagedAccount TelnyxManagedAccount?
@@ -114,6 +115,7 @@ model PhoneNumber {
   sipTrunkConnectionId String?
   sipTrunkConnection   SipTrunkConnection? @relation(fields: [sipTrunkConnectionId], references: [id], onDelete: Cascade)
   config           PhoneNumberConfig?
+  batchCalls       BatchCall[]
 
   phoneNumber    String                  @unique
 
@@ -205,6 +207,42 @@ model AgentVersion {
   @@unique([agentId, version])
   @@index([workspaceId])
   @@index([agentId])
+}
+
+model BatchCall {
+  id          String    @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  name        String?
+  
+  fromPhoneNumberId String
+  fromPhoneNumber   PhoneNumber @relation(fields: [fromPhoneNumberId], references: [id], onDelete: Restrict)
+
+  tasks BatchCallTask[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([workspaceId, createdAt])
+  @@index([fromPhoneNumberId])
+}
+
+model BatchCallTask {
+  id          String    @id @default(cuid())
+
+  batchCallId String
+  batchCall   BatchCall @relation(fields: [batchCallId], references: [id], onDelete: Cascade)
+
+  to_number String
+  llm_dynamic_variables Json?
+
+  workerTaskStatus String @default("pending")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([batchCallId, workerTaskStatus])
 }
 
 model CallRecord {

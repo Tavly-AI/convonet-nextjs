@@ -21,6 +21,8 @@ type WebsiteCustomDropdownOption = {
 }
 
 type WebsiteCustomDropdownProps = {
+    id?: string
+    disabled?: boolean
     value: string
     onValueChange: (value: string) => void
     options: WebsiteCustomDropdownOption[]
@@ -30,6 +32,8 @@ type WebsiteCustomDropdownProps = {
 }
 
 export function WebsiteCustomDropdown({
+    id,
+    disabled,
     value,
     onValueChange,
     options,
@@ -41,8 +45,8 @@ export function WebsiteCustomDropdown({
     const SelectedIcon = selectedOption?.icon ?? UserRoundIcon
 
     return (
-        <Select value={value} onValueChange={(nextValue) => onValueChange(nextValue ?? emptyOption?.value ?? "")}>
-            <SelectTrigger className="h-10 w-full">
+        <Select disabled={disabled} value={value} onValueChange={(nextValue) => onValueChange(nextValue ?? emptyOption?.value ?? "")}>
+            <SelectTrigger id={id} className="h-10 w-full">
                 <SelectedIcon className="size-4 shrink-0 text-muted-foreground" />
                 <SelectValue placeholder={placeholder}>{selectedOption?.label ?? placeholder}</SelectValue>
             </SelectTrigger>

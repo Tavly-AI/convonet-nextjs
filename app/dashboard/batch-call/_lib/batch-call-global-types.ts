@@ -1,7 +1,10 @@
+import { z } from "zod"
+
 export type BatchCallGlobalType = {
+    workerTaskStatus: "pending" | "completed"
     request: {
         name?: string
-        from_number: string
+        fromPhoneNumberId: string
         tasks: BatchCallGlobalType["task"][]
         trigger_timestamp?: number // ms | omit for send_now
         reserved_concurrency?: number
@@ -10,22 +13,21 @@ export type BatchCallGlobalType = {
     response: {
         batch_call_id: string
         name: string
-        from_number: string
-        scheduled_timestamp: number
+        fromPhoneNumberId: string
         total_task_count: number
+        scheduled_timestamp?: number
         call_time_window?: BatchCallGlobalType["timeWindow"]
     }
     task: {
         to_number: string
-        retell_llm_dynamic_variables?: Record<string, string>
+        llm_dynamic_variables?: Record<string, string>
         metadata?: unknown
         override_agent_id?: string
         override_agent_version?: string | number
         custom_sip_headers?: Record<string, string>
         ignore_e164_validation?: boolean
     }
-    timeWindow: {
-        /** Minutes since local midnight. Windows cannot cross midnight. */
+    timeWindow?: {
         windows: { start: number; end: number }[]
         timezone?: string
         day?: (
@@ -39,3 +41,35 @@ export type BatchCallGlobalType = {
         )[]
     }
 }
+
+export const batchCallCreateSchema = z.object({
+    name: z.string().trim().max(120).optional(),
+    fromPhoneNumberId: z.string().trim().min(1, "Select an outbound phone number"),
+    tasks: z.array(z.object({
+        to_number: z.string().trim().regex(/^\+[1-9]\d{6,14}$/, "Use international format, e.g. +14155552671"),
+        llm_dynamic_variables: z.record(z.string(), z.string()).optional(),
+        metadata: z.unknown().optional(),
+        override_agent_id: z.string().optional(),
+        override_agent_version: z.union([z.string(), z.number()]).optional(),
+        custom_sip_headers: z.record(z.string(), z.string()).optional(),
+        ignore_e164_validation: z.boolean().optional(),
+    })).min(1, "Add at least one recipient").max(1000, "Upload at most 1,000 recipients"),
+    trigger_timestamp: z.number().optional(),
+    reserved_concurrency: z.number().optional(),
+    call_time_window: z.object({
+        windows: z.array(z.object({
+            start: z.number(),
+            end: z.number(),
+        })),
+        timezone: z.string().optional(),
+        day: z.array(z.enum([
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday",
+            "Saturday",
+            "Sunday",
+        ])).optional(),
+    }).optional(),
+}) satisfies z.ZodType<BatchCallGlobalType["request"]>

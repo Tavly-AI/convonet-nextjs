@@ -13,10 +13,10 @@ const startOutboundTestCallSchema = z.object({
   destinationNumber: z.string().trim().regex(/^\+[1-9]\d{7,14}$/, "Enter a valid E.164 number, for example +14155550123."),
 })
 
-export async function startOutboundTestCall(input: { phoneNumberId: string; destinationNumber: string }) {
+export async function startOutboundTestCall(input: { phoneNumberId: string; destinationNumber: string, workspaceId?: string }) {
 
   const parsed = startOutboundTestCallSchema.parse(input)
-  const workspaceId = await getCurrentWorkspaceId()
+  const workspaceId = input.workspaceId ?? await getCurrentWorkspaceId()
 
   const phoneNumber = await prisma.phoneNumber.findFirst({
     where: {

@@ -1,0 +1,275 @@
+"use client"
+
+import { useRef, useState } from "react"
+import type { PhoneNumberWithConfig } from "@/app/dashboard/phone-numbers/_lib/phone-number-config-actions"
+import { CheckCircle2, ChevronLeft, Download, Phone, UploadCloud, Users } from "lucide-react"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import type { BatchCallGlobalType } from "../_lib/batch-call-global-types"
+
+
+import { Button } from "@/components/ui/button"
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { WebsiteCustomDropdown } from "@/components/custom/website-custom-dropdown"
+import { batchCall_DB_create } from "../_actions/batch-call-db-actions"
+import { batchCallParseFile } from "../_lib/batch-call-parse-files"
+
+export function BatchCallAbsoluteModalClient({ phoneNumbers }: { phoneNumbers: PhoneNumberWithConfig[] }) {
+    const [batchCallTasks, setTasks] = useState<BatchCallGlobalType["task"][]>([])
+
+    return (
+        <Dialog>
+            <DialogTrigger render={<Button />}>
+                Create a batch call
+            </DialogTrigger>
+            <DialogContent className="inset-0 flex h-dvh w-full max-w-none translate-x-0 translate-y-0 flex-col overflow-hidden rounded-none border-0 p-0 data-ending-style:scale-100 data-starting-style:scale-100">
+                <DialogHeader className="shrink-0 flex-row items-center gap-4 border-b bg-card px-6 py-4 pr-14">
+                    <DialogClose render={<Button variant="outline" size="icon" aria-label="Back to batch calls" />}>
+                        <ChevronLeft aria-hidden="true" />
+                    </DialogClose>
+                    <div className="space-y-1">
+                        <DialogTitle>Create a batch call</DialogTitle>
+                        <DialogDescription>Set up your outbound call and add your recipients.</DialogDescription>
+                    </div>
+                </DialogHeader>
+                <div className="grid min-h-0 flex-1 overflow-y-auto lg:grid-cols-[400px_1fr]">
+                    <LeftSideForm phoneNumbers={phoneNumbers} batchCallTasks={batchCallTasks} setTasks={setTasks} />
+                    <RightSideForm batchCallTasks={batchCallTasks} />
+                </div>
+                <DialogFooter className="shrink-0 border-t bg-card px-6 py-4">
+                    <DialogClose render={<Button variant="outline" />}>
+                        Cancel
+                    </DialogClose>
+                    <Button
+                        title="Add recipients before creating a batch call"
+                        type="submit"
+                        form="batch-call-form">
+                        Create a batch call
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    )
+}
+
+function LeftSideForm({ phoneNumbers, batchCallTasks, setTasks }: { phoneNumbers: PhoneNumberWithConfig[], batchCallTasks: BatchCallGlobalType["task"][], setTasks: (batchCallTasks: BatchCallGlobalType["task"][]) => void }) {
+
+    const [uploadError, setUploadError] = useState("")
+    const fileInputRef = useRef<HTMLInputElement>(null)
+    const [fileName, setFileName] = useState("")
+
+    const [name, setName] = useState("")
+    const [fromPhoneNumberId, setFromPhoneNumberId] = useState("")
+
+    async function CreateBatchCallPipeline() {
+        try {
+            if (!fromPhoneNumberId) return
+
+            const batch = await batchCall_DB_create({ name, fromPhoneNumberId, tasks: batchCallTasks })
+
+            const response = await fetch("/api/batch-call/inngest/trigger-function", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ batchCallId: batch.batch_call_id }),
+            })
+
+            if (!response.ok) throw new Error("Failed to trigger batch")
+        } catch (error) {
+            console.error("Failed to create batch:", error)
+        }
+    }
+
+    async function onUpload(file: File) {
+        setUploadError("")
+        try {
+            const batchCallTasks = await batchCallParseFile(file)
+            setTasks(batchCallTasks)
+            setFileName(file.name)
+        } catch (error) {
+            setTasks([])
+            setFileName("")
+            setUploadError(error instanceof Error ? error.message : "Failed to parse CSV")
+        }
+    }
+
+    return (
+        <form
+            id="batch-call-form"
+            onSubmit={(event) => { event.preventDefault(); void CreateBatchCallPipeline() }}
+            className="space-y-6 border-b bg-card p-6 lg:border-r lg:border-b-0">
+            <div className="space-y-1">
+                <h2 className="text-sm font-semibold">Call details</h2>
+                <p className="text-xs text-muted-foreground">Choose a name and an outbound number.</p>
+            </div>
+            <div className="space-y-2">
+                <Label htmlFor="batch-call-name">Batch call name</Label>
+                <Input name="name" value={name} onChange={(event) => setName(event.target.value)} id="batch-call-name" placeholder="e.g. Webinar reminders" className="h-9" />
+            </div>
+
+            <BatchCallFromNumber phoneNumbers={phoneNumbers} value={fromPhoneNumberId} onChange={setFromPhoneNumberId} />
+
+            <section aria-labelledby="upload-recipients-heading" className="space-y-3 border-t pt-6">
+                <div className="flex items-center justify-between gap-2">
+                    <h2 id="upload-recipients-heading" className="text-sm font-semibold">Upload recipients</h2>
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="text-muted-foreground/90"
+                        onClick={() => {
+                            const link = document.createElement("a")
+                            link.href = "/batch-call/batch-call-csv-template.csv"
+                            link.download = "batch-call-csv-template.csv"
+                            link.click()
+                        }}
+                    >
+                        <Download aria-hidden="true" />
+                        Template
+                    </Button>
+                </div>
+                <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".csv,text/csv"
+                    className="hidden"
+                    onChange={(event) => {
+                        const file = event.target.files?.[0]
+                        if (file) void onUpload(file)
+                        event.target.value = ""
+                    }}
+                />
+                <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                    aria-label="Upload recipients CSV"
+                    className="h-40 w-full flex-col gap-3 border-dashed bg-transparent whitespace-normal disabled:opacity-100 dark:bg-transparent"
+                >
+                    <span className="flex size-10 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                        <UploadCloud aria-hidden="true" className="size-5" />
+                    </span>
+                    <span className="space-y-1 text-center">
+                        <span className="block break-all">{fileName || "Choose a CSV file"}</span>
+                        <span className="block text-xs font-normal text-muted-foreground">{fileName ? "Click to choose another file" : "CSV with a to_number column"}</span>
+                    </span>
+                </Button>
+            </section>
+
+            <section aria-labelledby="send-calls-heading" className="space-y-3 border-t pt-6">
+                <h2 id="send-calls-heading" className="text-sm font-semibold">Delivery</h2>
+                <div className="flex items-center justify-between gap-3 rounded-lg border bg-muted/30 px-4 py-3 text-sm">
+                    <div className="space-y-1">
+                        <p className="font-medium">Send now</p>
+                        <p className="text-xs text-muted-foreground">Start calling when you create the batch.</p>
+                    </div>
+                    <CheckCircle2 aria-hidden="true" className="size-4" />
+                </div>
+            </section>
+        </form>
+    )
+}
+
+function RightSideForm({ batchCallTasks }: { batchCallTasks: BatchCallGlobalType["task"][] }) {
+
+    const variableNames = [...new Set(batchCallTasks.flatMap((task) => Object.keys(task.llm_dynamic_variables ?? {})))]
+
+    return (
+        <section aria-labelledby="recipients-heading" className="flex min-h-80 flex-col bg-muted/20 p-6 lg:p-8">
+            <div className="flex min-h-72 flex-1 flex-col overflow-hidden rounded-xl border bg-card">
+                <div className="flex items-center justify-between border-b px-5 py-4">
+                    <div>
+                        <h2 id="recipients-heading" className="text-sm font-semibold">Recipients</h2>
+                        <p className="mt-1 text-xs text-muted-foreground">Example recipients with one column per dynamic variable.</p>
+                    </div>
+                    <span className="text-xs text-muted-foreground">{batchCallTasks.length} recipients</span>
+                </div>
+
+                {!batchCallTasks.length ? (
+                    <div className="flex flex-1 flex-col items-center justify-center gap-3 p-6 text-center">
+                        <span className="flex size-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
+                            <Users aria-hidden="true" className="size-5" />
+                        </span>
+                        <div className="max-w-xs space-y-1.5">
+                            <p className="text-sm font-medium">No recipients yet</p>
+                            <p className="text-sm text-muted-foreground">Upload a CSV file to preview your recipients here.</p>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="min-h-0 flex-1 overflow-auto p-5">
+                        <Table>
+                            <TableHeader>
+                                <TableRow className="hover:bg-transparent">
+                                    <TableHead className="w-12">#</TableHead>
+                                    <TableHead>to_number</TableHead>
+                                    {variableNames.map((name) => (
+                                        <TableHead key={name}>{name}</TableHead>
+                                    ))}
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {batchCallTasks.map((r, i) => (
+                                    <TableRow key={i} className="hover:bg-muted/20">
+                                        <TableCell className="text-muted-foreground">{i + 1}</TableCell>
+                                        <TableCell className="text-muted-foreground">{r.to_number}</TableCell>
+                                        {variableNames.map((name) => (
+                                            <TableCell key={name}>{r.llm_dynamic_variables?.[name] ?? "—"}</TableCell>
+                                        ))}
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                )}
+            </div>
+        </section>
+    )
+}
+
+// MISC
+
+type Props = {
+    phoneNumbers: PhoneNumberWithConfig[]
+    value: string
+    onChange: (value: string) => void
+}
+
+export function BatchCallFromNumber({ phoneNumbers, value, onChange }: Props) {
+
+    const phoneNumberItems = phoneNumbers.map((number) => ({
+        value: number.id,
+        label: number.config?.nickname?.trim() ? `${number.config.nickname.trim()} (${number.phoneNumber})` : number.phoneNumber,
+        icon: Phone,
+    }))
+
+    return (
+        <div className="space-y-2">
+            <Label htmlFor="batch-call-number">From number</Label>
+
+            <WebsiteCustomDropdown
+                id="batch-call-number"
+                value={value}
+                onValueChange={onChange}
+                options={phoneNumberItems}
+                label="Phone numbers"
+                placeholder={phoneNumbers.length ? "Select an outbound number" : "No phone numbers available"}
+                disabled={!phoneNumbers.length}
+            />
+
+            {!phoneNumbers.length && (
+                <p className="text-xs text-muted-foreground">
+                    Add a phone number in Phone Numbers to create a batch call.
+                </p>
+            )}
+        </div>
+    )
+}
