@@ -8,6 +8,7 @@ import { createCustomFunctionTools } from '../agent-config/general-tools/custom-
 import { createAwarenessTools } from '../agent-config/general-tools/current-time.ts';
 import { endCallTool } from '../agent-config/general-tools/end-call.ts';
 import { createPressDigitTool } from '../agent-config/general-tools/press-digit.ts';
+import { createRetrieveKnowledgeBaseFunctionTools } from '../agent-config/general-tools/retrieve-knowledge-base.ts';
 import type { RuntimeAgentConfig } from '../ingestion/get-agent-config.ts';
 import { getProviderLanguages } from '../ingestion/configure-voice-stack.ts';
 
@@ -51,6 +52,7 @@ export function createAllAgentToolsAvailable(agentConfig: RuntimeAgentConfig) {
     createBookAppointmentTool(agentConfig),
     ...createCodeExecutionTools(agentConfig),
     ...createCustomFunctionTools(agentConfig),
+    ...createRetrieveKnowledgeBaseFunctionTools(agentConfig),
     ...agentSwaps,
     ...(callTransfer ? [callTransfer] : []),
     ...(pressDigit ? [pressDigit] : []),
