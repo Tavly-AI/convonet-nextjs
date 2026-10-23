@@ -153,7 +153,7 @@ const data1 = {
     },
     {
       name: "Batch Call",
-      url: "#",
+      url: "/dashboard/batch-call",
       icon: <UsersIcon />,
     },
   ],
