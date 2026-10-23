@@ -1,10 +1,11 @@
 "use client"
 
 import { useRef, useState } from "react"
+import { toast } from "sonner"
 import type { PhoneNumberWithConfig } from "@/app/dashboard/phone-numbers/_lib/phone-number-config-actions"
-import { CheckCircle2, ChevronLeft, Download, Phone, UploadCloud, Users } from "lucide-react"
+import { ChevronLeft, Download, Phone, UploadCloud, Users } from "lucide-react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import type { BatchCallGlobalType } from "../_lib/batch-call-global-types"
+import { BATCH_CALL_TOTAL_CONCURRENCY, type BatchCallGlobalType } from "../_lib/batch-call-global-types"
 
 
 import { Button } from "@/components/ui/button"
@@ -20,15 +21,18 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { WebsiteCustomDropdown } from "@/components/custom/website-custom-dropdown"
 import { batchCall_DB_create } from "../_actions/batch-call-db-actions"
 import { batchCallParseFile } from "../_lib/batch-call-parse-files"
 
-export function BatchCallAbsoluteModalClient({ phoneNumbers }: { phoneNumbers: PhoneNumberWithConfig[] }) {
+export function BatchCallAbsoluteModalClient({ phoneNumbers, availableWorkspaceConcurrency }: { phoneNumbers: PhoneNumberWithConfig[]; availableWorkspaceConcurrency: number }) {
     const [batchCallTasks, setTasks] = useState<BatchCallGlobalType["task"][]>([])
+    const [open, setOpen] = useState(false)
+    const [isSubmitting, setIsSubmitting] = useState(false)
 
     return (
-        <Dialog>
+        <Dialog open={open} onOpenChange={(nextOpen) => { if (nextOpen) setTasks([]); setOpen(nextOpen) }}>
             <DialogTrigger render={<Button />}>
                 Create a batch call
             </DialogTrigger>
@@ -43,7 +47,7 @@ export function BatchCallAbsoluteModalClient({ phoneNumbers }: { phoneNumbers: P
                     </div>
                 </DialogHeader>
                 <div className="grid min-h-0 flex-1 overflow-y-auto lg:grid-cols-[400px_1fr]">
-                    <LeftSideForm phoneNumbers={phoneNumbers} batchCallTasks={batchCallTasks} setTasks={setTasks} />
+                    <LeftSideForm phoneNumbers={phoneNumbers} batchCallTasks={batchCallTasks} setTasks={setTasks} onClose={() => setOpen(false)} isSubmitting={isSubmitting} setIsSubmitting={setIsSubmitting} availableWorkspaceConcurrency={availableWorkspaceConcurrency} />
                     <RightSideForm batchCallTasks={batchCallTasks} />
                 </div>
                 <DialogFooter className="shrink-0 border-t bg-card px-6 py-4">
@@ -51,6 +55,7 @@ export function BatchCallAbsoluteModalClient({ phoneNumbers }: { phoneNumbers: P
                         Cancel
                     </DialogClose>
                     <Button
+                        disabled={isSubmitting || !batchCallTasks.length || !availableWorkspaceConcurrency}
                         title="Add recipients before creating a batch call"
                         type="submit"
                         form="batch-call-form">
@@ -62,30 +67,78 @@ export function BatchCallAbsoluteModalClient({ phoneNumbers }: { phoneNumbers: P
     )
 }
 
-function LeftSideForm({ phoneNumbers, batchCallTasks, setTasks }: { phoneNumbers: PhoneNumberWithConfig[], batchCallTasks: BatchCallGlobalType["task"][], setTasks: (batchCallTasks: BatchCallGlobalType["task"][]) => void }) {
+function LeftSideForm({ phoneNumbers, batchCallTasks, setTasks, onClose, isSubmitting, setIsSubmitting, availableWorkspaceConcurrency }: {
+    phoneNumbers: PhoneNumberWithConfig[]
+    batchCallTasks: BatchCallGlobalType["task"][]
+    setTasks: (tasks: BatchCallGlobalType["task"][]) => void
+    onClose: () => void
+    isSubmitting: boolean
+    setIsSubmitting: (value: boolean) => void
+    availableWorkspaceConcurrency: number
+}) {
 
     const [uploadError, setUploadError] = useState("")
+    const [formError, setFormError] = useState("")
     const fileInputRef = useRef<HTMLInputElement>(null)
     const [fileName, setFileName] = useState("")
 
     const [name, setName] = useState("")
     const [fromPhoneNumberId, setFromPhoneNumberId] = useState("")
 
-    async function CreateBatchCallPipeline() {
+    async function CreateBatchCallPipeline(form: HTMLFormElement) {
+        if (isSubmitting) return
+        setIsSubmitting(true)
+        setFormError("")
+        let batchSaved = false
         try {
-            if (!fromPhoneNumberId) return
+            if (!fromPhoneNumberId) throw new Error("Select an outbound phone number.")
+            if (!batchCallTasks.length) throw new Error("Upload at least one recipient.")
+            const input = form.elements.namedItem("scheduledDateTime") as HTMLInputElement
+            const trigger_timestamp = input.disabled ? Date.now() + 60_000 : new Date(input.value).getTime()
 
-            const batch = await batchCall_DB_create({ name, fromPhoneNumberId, tasks: batchCallTasks })
+            if (!Number.isFinite(trigger_timestamp) || trigger_timestamp <= Date.now()) {
+                input.setCustomValidity("Choose a future date and time")
+                input.reportValidity()
+                return
+            }
+
+            const getFormUserInput = (name: string) => form.elements.namedItem(name) as HTMLInputElement
+            const batchDataSavedInDB = await batchCall_DB_create({
+                name,
+                fromPhoneNumberId,
+                tasks: batchCallTasks,
+                trigger_timestamp,
+                reserved_concurrency: getFormUserInput("reservedConcurrency").valueAsNumber,
+                call_time_window: {
+                    windows: [{
+                        start: getFormUserInput("callWindowStart").valueAsNumber / 60_000,
+                        end: getFormUserInput("callWindowEnd").valueAsNumber / 60_000,
+                    }],
+                    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                    day: JSON.parse(getFormUserInput("callWindowDays").value),
+                },
+            })
+            batchSaved = true
 
             const response = await fetch("/api/batch-call/inngest/trigger-function", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ batchCallId: batch.batch_call_id }),
+                body: JSON.stringify({
+                    batchCallId: batchDataSavedInDB.batch_call_id,
+                    workspaceId: batchDataSavedInDB.workspaceId,
+                }),
             })
-
-            if (!response.ok) throw new Error("Failed to trigger batch")
+            if (!response.ok) throw new Error("Could not schedule the batch call.")
+            toast.success("Batch call created and scheduled successfully.")
+            onClose()
         } catch (error) {
             console.error("Failed to create batch:", error)
+            const message = batchSaved ? "Batch saved, but scheduling could not be confirmed. Check this batch before creating another." : error instanceof Error ? error.message : "Failed to create batch. Please try again."
+            setFormError(message)
+            toast.error(message)
+            if (batchSaved) onClose()
+        } finally {
+            setIsSubmitting(false)
         }
     }
 
@@ -98,15 +151,18 @@ function LeftSideForm({ phoneNumbers, batchCallTasks, setTasks }: { phoneNumbers
         } catch (error) {
             setTasks([])
             setFileName("")
-            setUploadError(error instanceof Error ? error.message : "Failed to parse CSV")
+            const message = error instanceof Error ? error.message : "Failed to parse CSV"
+            setUploadError(message)
+            toast.error(message)
         }
     }
 
     return (
         <form
             id="batch-call-form"
-            onSubmit={(event) => { event.preventDefault(); void CreateBatchCallPipeline() }}
+            onSubmit={(event) => { event.preventDefault(); void CreateBatchCallPipeline(event.currentTarget) }}
             className="space-y-6 border-b bg-card p-6 lg:border-r lg:border-b-0">
+            {formError && <p role="alert" className="text-sm text-destructive">{formError}</p>}
             <div className="space-y-1">
                 <h2 className="text-sm font-semibold">Call details</h2>
                 <p className="text-xs text-muted-foreground">Choose a name and an outbound number.</p>
@@ -163,18 +219,12 @@ function LeftSideForm({ phoneNumbers, batchCallTasks, setTasks }: { phoneNumbers
                         <span className="block text-xs font-normal text-muted-foreground">{fileName ? "Click to choose another file" : "CSV with a to_number column"}</span>
                     </span>
                 </Button>
+                {uploadError && <p role="alert" className="text-sm text-destructive">{uploadError}</p>}
             </section>
 
-            <section aria-labelledby="send-calls-heading" className="space-y-3 border-t pt-6">
-                <h2 id="send-calls-heading" className="text-sm font-semibold">Delivery</h2>
-                <div className="flex items-center justify-between gap-3 rounded-lg border bg-muted/30 px-4 py-3 text-sm">
-                    <div className="space-y-1">
-                        <p className="font-medium">Send now</p>
-                        <p className="text-xs text-muted-foreground">Start calling when you create the batch.</p>
-                    </div>
-                    <CheckCircle2 aria-hidden="true" className="size-4" />
-                </div>
-            </section>
+            <HandleScheduleInput />
+            <CallTimeWindowInput />
+            <ReservedConcurrencyInput availableWorkspaceConcurrency={availableWorkspaceConcurrency} />
         </form>
     )
 }
@@ -271,5 +321,146 @@ export function BatchCallFromNumber({ phoneNumbers, value, onChange }: Props) {
                 </p>
             )}
         </div>
+    )
+}
+
+
+function HandleScheduleInput() {
+    const [deliveryMode, setDeliveryMode] = useState("now")
+
+    return (
+        <section aria-labelledby="send-calls-heading" className="space-y-3 border-t pt-6">
+            <h2 id="send-calls-heading" className="text-sm font-semibold">Delivery</h2>
+            <Tabs value={deliveryMode} onValueChange={(value) => setDeliveryMode(String(value))}>
+                <TabsList className="grid h-8 w-full grid-cols-2" aria-label="Delivery">
+                    <TabsTrigger value="now">Send now</TabsTrigger>
+                    <TabsTrigger value="schedule">Schedule</TabsTrigger>
+                </TabsList>
+                <TabsContent value="now">
+                    <p className="text-xs text-muted-foreground">Set the start time to one minute after submission.</p>
+                </TabsContent>
+                <TabsContent value="schedule" className="space-y-2" keepMounted>
+                    <Label htmlFor="batch-call-scheduled-time">Date and time</Label>
+                    <Input
+                        name="scheduledDateTime"
+                        id="batch-call-scheduled-time"
+                        type="datetime-local"
+                        className="h-9"
+                        disabled={deliveryMode === "now"}
+                        required={deliveryMode === "schedule"}
+                        onChange={(event) => event.target.setCustomValidity("")}
+                        aria-describedby="batch-call-timezone"
+                    />
+                    <p id="batch-call-timezone" className="text-xs text-muted-foreground">Uses your device’s local timezone.</p>
+                </TabsContent>
+            </Tabs>
+        </section>
+    )
+}
+
+
+function ReservedConcurrencyInput({ availableWorkspaceConcurrency }: { availableWorkspaceConcurrency: number }) {
+    const [reservedConcurrency, setReservedConcurrency] = useState(1)
+
+    return (
+        <section className="space-y-3 border-t pt-6">
+            <div className="space-y-1">
+                <Label>Concurrent calls for this batch</Label>
+                <p className="text-xs text-muted-foreground">
+                    Maximum number of calls this batch can make at the same time.
+                </p>
+            </div>
+
+            <div className="flex h-9 items-center rounded-md border">
+                <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    disabled={reservedConcurrency <= 1 || !availableWorkspaceConcurrency}
+                    onClick={() => setReservedConcurrency((prev) => Math.max(1, prev - 1))}
+                >
+                    −
+                </Button>
+
+                <Input
+                    name="reservedConcurrency"
+                    type="number"
+                    required
+                    min={1}
+                    max={availableWorkspaceConcurrency}
+                    disabled={!availableWorkspaceConcurrency}
+                    value={Math.min(reservedConcurrency, availableWorkspaceConcurrency)}
+                    onChange={(e) => setReservedConcurrency(Math.min(availableWorkspaceConcurrency, Math.max(1, Number(e.target.value))))}
+                    className="h-full flex-1 border-0 text-center shadow-none focus-visible:ring-0"
+                />
+
+                <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    disabled={reservedConcurrency >= availableWorkspaceConcurrency}
+                    onClick={() => setReservedConcurrency((prev) => Math.min(availableWorkspaceConcurrency, prev + 1))}
+                >
+                    +
+                </Button>
+            </div>
+
+            <p className="rounded-md bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
+                {availableWorkspaceConcurrency} of {BATCH_CALL_TOTAL_CONCURRENCY} slots available across unfinished batches.
+            </p>
+        </section>
+    )
+}
+
+function CallTimeWindowInput() {
+    const [days, setDays] = useState({ Monday: true, Tuesday: true, Wednesday: true, Thursday: true, Friday: true, Saturday: true, Sunday: true })
+    const [start, setStart] = useState("00:00")
+    const [end, setEnd] = useState("23:59")
+
+    return (
+        <section className="space-y-3 border-t pt-6">
+            <div>
+                <Label>When Calls Can Run</Label>
+                <p className="text-xs text-muted-foreground">
+                    Allowed calling days and hours.
+                </p>
+            </div>
+
+            <input type="hidden" name="callWindowDays" value={JSON.stringify(Object.keys(days).filter(day => days[day as keyof typeof days]))} />
+            <div className="flex gap-1">
+                {(Object.keys(days) as (keyof typeof days)[]).map(day => (
+                    <Button
+                        key={day}
+                        type="button"
+                        size="sm"
+                        variant={days[day] ? "secondary" : "ghost"}
+                        className="h-8 flex-1 px-0 text-xs"
+                        onClick={() => setDays(prev => ({ ...prev, [day]: !prev[day] }))}
+                    >
+                        {day.slice(0, 3)}
+                    </Button>
+                ))}
+            </div>
+
+            <div className="flex items-center gap-2">
+                <Input
+                    name="callWindowStart"
+                    type="time"
+                    required
+                    value={start}
+                    onChange={e => setStart(e.target.value)}
+                    className="h-9"
+                />
+                <span className="text-xs text-muted-foreground">to</span>
+                <Input
+                    name="callWindowEnd"
+                    type="time"
+                    required
+                    value={end}
+                    onChange={e => setEnd(e.target.value)}
+                    className="h-9"
+                />
+            </div>
+        </section>
     )
 }

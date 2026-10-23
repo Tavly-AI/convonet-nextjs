@@ -215,6 +215,10 @@ model BatchCall {
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   name        String?
+  trigger_timestamp BigInt?
+  
+  reserved_concurrency Int @default(5)
+  call_time_window Json?
   
   fromPhoneNumberId String
   fromPhoneNumber   PhoneNumber @relation(fields: [fromPhoneNumberId], references: [id], onDelete: Restrict)
@@ -249,6 +253,8 @@ model CallRecord {
   id          String    @id @default(cuid())
   workspaceId String
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  batchCallId String?
 
   call_type                    String?
   from_number                  String?

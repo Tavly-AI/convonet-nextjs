@@ -5,15 +5,15 @@ import { LiveKitAPI, SipCallError } from "livekit-server-sdk"
 import { z } from "zod"
 
 import { getCurrentWorkspaceId } from "@/app/agents/_lib/helper-actions"
-import { VOICE_RUNTIME_AGENT_NAME } from "@/lib/constants"
+import { INTERNATION_PHONE_NUMBER_SCHEMA, VOICE_RUNTIME_AGENT_NAME } from "@/lib/constants"
 import { prisma } from "@/lib/prisma"
 
 const startOutboundTestCallSchema = z.object({
   phoneNumberId: z.string().trim().min(1),
-  destinationNumber: z.string().trim().regex(/^\+[1-9]\d{7,14}$/, "Enter a valid E.164 number, for example +14155550123."),
+  destinationNumber: INTERNATION_PHONE_NUMBER_SCHEMA,
 })
 
-export async function startOutboundTestCall(input: { phoneNumberId: string; destinationNumber: string, workspaceId?: string }) {
+export async function startOutboundTestCall(input: { phoneNumberId: string; destinationNumber: string, workspaceId?: string, batchCallId?: string }) {
 
   const parsed = startOutboundTestCallSchema.parse(input)
   const workspaceId = input.workspaceId ?? await getCurrentWorkspaceId()
@@ -77,24 +77,11 @@ export async function startOutboundTestCall(input: { phoneNumberId: string; dest
   )
 
   try {
-    const participant = await livekit.sip.createSipParticipant(
-      outboundTrunkId,
-      parsed.destinationNumber,
-      roomName,
-      {
-        fromNumber: phoneNumber.phoneNumber,
-        participantIdentity,
-        participantName: "Test Call Recipient",
-        waitUntilAnswered: true,
-        ringingTimeout: 30,
-        maxCallDuration: 60 * 15,
-      }
-    )
-
     await prisma.callRecord.upsert({
       where: { call_id: roomName },
       create: {
         workspaceId,
+        batchCallId: input.batchCallId ?? null,
         call_id: roomName,
         agent_id: agent.id,
         channel: "voice",
@@ -111,6 +98,20 @@ export async function startOutboundTestCall(input: { phoneNumberId: string; dest
         to_number: parsed.destinationNumber,
       },
     })
+
+    const participant = await livekit.sip.createSipParticipant(
+      outboundTrunkId,
+      parsed.destinationNumber,
+      roomName,
+      {
+        fromNumber: phoneNumber.phoneNumber,
+        participantIdentity,
+        participantName: "Test Call Recipient",
+        waitUntilAnswered: false,
+        ringingTimeout: 30,
+        maxCallDuration: 60 * 15,
+      }
+    )
 
     return { roomName, participantIdentity: participant.participantIdentity, sipCallId: participant.sipCallId, }
   } catch (error) {

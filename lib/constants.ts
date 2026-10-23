@@ -6,3 +6,9 @@ export type AgentChannel = (typeof AGENT_CHANNELS)[keyof typeof AGENT_CHANNELS]
 
 export const VOICE_RUNTIME_AGENT_NAME = "my-agent-123123"
 export const AUTH_TOKEN = "token-convonet"
+
+// Validate international number syntax; destination validity is checked by the provider.
+import { z } from "zod"
+export const INTERNATION_PHONE_NUMBER_SCHEMA = z.string().trim().regex(/^\+[1-9]\d{1,14}$/,
+    "Use + followed by the country code and phone number (up to 15 digits), e.g. +919876543210."
+)
