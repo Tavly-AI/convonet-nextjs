@@ -181,6 +181,7 @@ export function VoiceModalPopup({
             <CustomVoiceModal
               provider={provider}
               onVoiceAdded={(voice) => {
+                setCustomVoices((voices) => [...voices.filter((item) => item.provider !== voice.provider || item.voice_id !== voice.voice_id), voice,])
                 writeVoiceId(voice.voice_id)
                 window.dispatchEvent(new Event("voice-changed"))
               }} />

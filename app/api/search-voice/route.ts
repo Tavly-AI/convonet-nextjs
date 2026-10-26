@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
     // =======================================================
 
     if (provider === "elevenlabs") {
-        const res = await fetch(`https://api.elevenlabs.io/v2/voices?search=${encodeURIComponent(searchQuery)}&page_size=100`, {
+        const res = await fetch(`https://api.elevenlabs.io/v1/shared-voices?search=${encodeURIComponent(searchQuery)}&page_size=100`, {
             headers: { "xi-api-key": process.env.ELEVENLABS_API_KEY! },
         })
 
