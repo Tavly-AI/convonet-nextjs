@@ -282,12 +282,6 @@ export function VoiceModalPopup({
               <span className="text-sm text-muted-foreground">No voice selected</span>
             )}
           </div>
-          <DialogClose render={<Button type="button" variant="outline" size="lg" />}>
-            Cancel
-          </DialogClose>
-          <Button type="button" size="lg" disabled>
-            Save
-          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog >
