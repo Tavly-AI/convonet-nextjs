@@ -19,7 +19,7 @@ import { getAgentSession } from "@/app/agents/_lib/session-storage/agent-session
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
-import type { PER_SESSION_TEST_TYPE } from "../../_lib/helper-actions"
+import { PER_SESSION_TEST_TYPE } from "./agent-session-tertiary-server"
 
 type LiveKitConnection = {
     token: string

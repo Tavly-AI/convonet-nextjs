@@ -7,7 +7,7 @@ import { randomUUID } from "crypto"
 import { VOICE_RUNTIME_AGENT_NAME } from "@/lib/constants"
 import { prisma } from "@/lib/prisma"
 import type { CallRecordDatabaseData } from "../sessionReport/types"
-import { PER_SESSION_TEST_TYPE } from "@/app/agents/_lib/helper-actions"
+import { PER_SESSION_TEST_TYPE } from "@/app/agents/_components/main/agent-session-tertiary-server"
 
 export const runtime = "nodejs"
 

@@ -6,7 +6,7 @@ import AgentSessionTertiaryClient, { AgentSessionLlmClient } from "./agent-sessi
 import { useSearchParams } from "next/navigation";
 import { isChatAgentSession } from "./agent-session-start-speaker";
 import { useState } from "react";
-import { PER_SESSION_TEST_TYPE } from "../../_lib/helper-actions";
+import { PER_SESSION_TEST_TYPE } from "./agent-session-tertiary-server";
 
 export default function AgentSessionTertiaryTab() {
 
