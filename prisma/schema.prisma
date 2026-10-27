@@ -38,9 +38,42 @@ model Workspace {
   telnyxManagedAccount TelnyxManagedAccount?
   sipTrunkConnections SipTrunkConnection[]
   phoneNumbers      PhoneNumber[]
+  billing           Billing?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Billing {
+  id          String    @id @default(cuid())
+  workspaceId String    @unique
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+
+  balance          Decimal @default(0) @db.Decimal(18, 6)
+  stripeCustomerId String? @unique
+
+  autoRechargeEnabled Boolean  @default(false)
+  rechargeThreshold   Decimal? @db.Decimal(18, 2)
+  rechargeTarget      Decimal? @db.Decimal(18, 2)
+
+  transactions BillingTransaction[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model BillingTransaction {
+  id        String  @id @default(cuid())
+  stripeCheckoutSessionId String? @unique
+  billingId String
+  billing   Billing @relation(fields: [billingId], references: [id])
+
+  amount      Decimal @db.Decimal(18, 6)
+  description String?
+
+  createdAt DateTime @default(now())
+
+  @@index([billingId, createdAt])
 }
 
 model TwilioSubaccount {

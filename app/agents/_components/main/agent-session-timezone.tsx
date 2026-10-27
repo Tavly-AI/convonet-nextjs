@@ -14,7 +14,7 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover"
 
-const TIMEZONES = [
+export const TIMEZONES_GLOBAL_CONFIG = [
     "America/New_York",
     "America/Chicago",
     "America/Denver",
@@ -52,7 +52,7 @@ export function TimezoneSelect() {
                     <PopoverDescription>Use this timezone for your agent.</PopoverDescription>
                 </PopoverHeader>
                 <div className="max-h-72 overflow-y-auto p-1.5">
-                    {TIMEZONES.map(zone => (
+                    {TIMEZONES_GLOBAL_CONFIG.map(zone => (
                         <Button
                             key={zone}
                             type="button"

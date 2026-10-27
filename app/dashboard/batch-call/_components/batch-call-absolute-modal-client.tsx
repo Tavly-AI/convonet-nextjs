@@ -3,7 +3,8 @@
 import { useRef, useState } from "react"
 import { toast } from "sonner"
 import type { PhoneNumberWithConfig } from "@/app/dashboard/phone-numbers/_lib/phone-number-config-actions"
-import { ChevronLeft, Download, Phone, UploadCloud, Users } from "lucide-react"
+import { ChevronLeft, Clock3Icon, Download, Phone, UploadCloud, Users } from "lucide-react"
+import { TIMEZONES_GLOBAL_CONFIG } from "@/app/agents/_components/main/agent-session-timezone"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { BATCH_CALL_TOTAL_CONCURRENCY, type BatchCallGlobalType } from "../_lib/batch-call-global-types"
 
@@ -114,7 +115,7 @@ function LeftSideForm({ phoneNumbers, batchCallTasks, setTasks, onClose, isSubmi
                         start: getFormUserInput("callWindowStart").valueAsNumber / 60_000,
                         end: getFormUserInput("callWindowEnd").valueAsNumber / 60_000,
                     }],
-                    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                    timezone: getFormUserInput("callWindowTimezone").value,
                     day: JSON.parse(getFormUserInput("callWindowDays").value),
                 },
             })
@@ -413,6 +414,10 @@ function ReservedConcurrencyInput({ availableWorkspaceConcurrency }: { available
 }
 
 function CallTimeWindowInput() {
+    const [timezone, setTimezone] = useState(() => {
+        const localTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone
+        return TIMEZONES_GLOBAL_CONFIG.includes(localTimezone) ? localTimezone : "UTC"
+    })
     const [days, setDays] = useState({ Monday: true, Tuesday: true, Wednesday: true, Thursday: true, Friday: true, Saturday: true, Sunday: true })
     const [start, setStart] = useState("00:00")
     const [end, setEnd] = useState("23:59")
@@ -427,6 +432,18 @@ function CallTimeWindowInput() {
             </div>
 
             <input type="hidden" name="callWindowDays" value={JSON.stringify(Object.keys(days).filter(day => days[day as keyof typeof days]))} />
+            <input type="hidden" name="callWindowTimezone" value={timezone} />
+            <div className="space-y-2">
+                <Label htmlFor="batch-call-window-timezone">Timezone</Label>
+                <WebsiteCustomDropdown
+                    id="batch-call-window-timezone"
+                    value={timezone}
+                    onValueChange={setTimezone}
+                    options={TIMEZONES_GLOBAL_CONFIG.map(zone => ({ value: zone, label: zone, icon: Clock3Icon }))}
+                    label="Timezones"
+                    placeholder="Select a timezone"
+                />
+            </div>
             <div className="flex gap-1">
                 {(Object.keys(days) as (keyof typeof days)[]).map(day => (
                     <Button

@@ -53,8 +53,3 @@ function toAgentChannel(channel: string): AgentSessionAgent["channel"] {
 function toJsonRecord(value: Prisma.JsonValue): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value) ? value : {}
 }
-
-export const PER_SESSION_TEST_TYPE = {
-  AUDIO: "test-audio",
-  LLM: "test-llm",
-} as const
