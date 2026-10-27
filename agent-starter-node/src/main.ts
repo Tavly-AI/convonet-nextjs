@@ -10,7 +10,7 @@ import { getConversationalFlowConfig } from './ingestion/get-conversational-flow
 import { createVoiceStack, type VoiceStack } from './ingestion/configure-voice-stack.ts';
 import { registerSessionDataHooks } from './data-hooks/main.ts';
 import { registerS3DualChannelRecording } from './egress/upload-s3-egress.ts';
-import { PER_SESSION_TEST_TYPE } from '../../app/agents/_components/main/agent-session-tertiary-server.tsx'
+import { PER_SESSION_TEST_TYPE } from '../../app/agents/_components/main/agent-session-tertiary-server.ts'
 
 dotenv.config({ path: '.env.local' });
 

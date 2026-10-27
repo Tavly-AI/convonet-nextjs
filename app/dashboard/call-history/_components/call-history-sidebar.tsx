@@ -1,7 +1,7 @@
 "use client"
 
 import type { CallRecordDatabaseData } from "@/app/api/livekit/sessionReport/types"
-import { HeadphonesIcon, PhoneIcon } from "lucide-react"
+import { BookOpenIcon, HeadphonesIcon, PhoneIcon, WrenchIcon } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet"
@@ -54,7 +54,7 @@ export function CallHistorySidebar({ record, onOpenChange }: { record: CallRecor
                 <Tabs defaultValue="transcript" className="gap-0">
                     <TabsList variant="line" className="h-14 w-full justify-start gap-5 border-b px-6"><TabsTrigger value="transcript">Transcription</TabsTrigger><TabsTrigger value="data">Data</TabsTrigger></TabsList>
                     <TabsContent value="transcript" className="space-y-4 p-6">
-                        <TranscriptView transcriptObject={record.transcript_object} url={record.recording_multi_channel_url} />
+                        <TranscriptView timeline={record.transcript_with_tool_calls} url={record.recording_multi_channel_url} />
                     </TabsContent>
                     <TabsContent value="data" className="space-y-4 p-6"><div className="grid gap-4 sm:grid-cols-2"><div><p className="mb-1 text-muted-foreground">Dynamic variables</p><pre className="overflow-x-auto rounded-lg bg-muted p-3 text-xs">{JSON.stringify(record.retell_llm_dynamic_variables, null, 2)}</pre></div><div><p className="mb-1 text-muted-foreground">Collected variables</p><pre className="overflow-x-auto rounded-lg bg-muted p-3 text-xs">{JSON.stringify(record.collected_dynamic_variables, null, 2)}</pre></div></div></TabsContent>
                 </Tabs>
@@ -86,28 +86,22 @@ export function PlayAudio({ url }: { url?: string | null }) {
     )
 }
 
-function TranscriptView({ transcriptObject, url }: { transcriptObject?: CallRecordDatabaseData["transcript_object"], url?: string | null }) {
-
-    const messages = transcriptObject ?? []
+function TranscriptView({ timeline, url }: { timeline: CallRecordDatabaseData["transcript_with_tool_calls"], url?: string | null }) {
+    if (!timeline?.length) return <p className="text-sm text-muted-foreground">No transcript available.</p>
 
     return (
         <div className="space-y-4">
-            {messages.map((message, index) => (
-                <div
-                    key={index}
-                    onClick={() => playThatAudio(url, message.start_timestamp)}
-                    className="cursor-pointer rounded-lg bg-muted p-4 leading-6"
-                >
-                    <div className="mb-1 text-xs font-medium text-muted-foreground">
-                        {message.role}
-                    </div>
-
-                    <div>{message.content}</div>
-                </div>
+            {timeline.map((message, index) => message.type !== "message" ? (
+                <TranscriptMessageButTool key={`${message.type}-${message.call_id}-${index}`} event={message} />
+            ) : (
+                <TranscriptMessageOnlySimple key={index} message={message} url={url} />
             ))}
         </div>
     )
 }
+
+// MISC CODE
+
 
 // note: add audio_recording_started_at: null 
 // to complete the feature
@@ -126,5 +120,57 @@ async function playThatAudio(recordingUrl: string | null | undefined, start: num
             void audio.play()
         },
         { once: true }
+    )
+}
+
+// transscript-messages with tool-call
+function TranscriptMessageButTool({ event }: { event: Exclude<NonNullable<CallRecordDatabaseData["transcript_with_tool_calls"]>[number], { type: "message" }> }) {
+    const isResult = event.type === "function_call_output"
+    const isKnowledgeBase = event.name === "search_knowledge_base"
+    const raw = isResult ? event.output : event.arguments
+    let formatted = raw
+    let resultReportsError = false
+    try {
+        const parsed: unknown = JSON.parse(raw)
+        formatted = JSON.stringify(parsed, null, 2)
+        resultReportsError = !!parsed && typeof parsed === "object" && "status" in parsed && parsed.status === "error"
+    } catch {
+        // Tool output can be plain text rather than JSON.
+    }
+    const isError = isResult && (event.is_error || resultReportsError)
+    const Icon = isKnowledgeBase ? BookOpenIcon : WrenchIcon
+
+    return (
+        <details className="group rounded-lg border border-dashed bg-muted/30">
+            <summary className="cursor-pointer p-4 text-sm marker:text-muted-foreground">
+                <span className="ml-1 inline-flex max-w-full flex-wrap items-center gap-2 align-middle">
+                    <Icon className="size-4 shrink-0 text-muted-foreground" />
+                    <span className="font-medium">{isKnowledgeBase ? "Knowledge base search" : event.name}</span>
+                    <Badge variant={isError ? "destructive" : "outline"}>{isResult ? (isError ? "Error" : "Result") : "Called"}</Badge>
+                </span>
+            </summary>
+            <div className="space-y-3 border-t p-4 text-sm">
+                <div className="break-all text-xs text-muted-foreground">{event.name} · {event.call_id}</div>
+                <div className="font-medium">{isResult ? "Output" : "Arguments"}</div>
+                <pre className="max-h-80 overflow-auto whitespace-pre-wrap break-words rounded-md bg-muted p-3 text-xs">{formatted || "(empty)"}</pre>
+            </div>
+        </details>
+    )
+}
+
+// transscript-messages without tool-call
+function TranscriptMessageOnlySimple({ message, url }: { message: NonNullable<CallRecordDatabaseData["transcript_object"]>[number], url?: string | null }) {
+    return (
+        <div
+            onClick={() => playThatAudio(url, message.start_timestamp)}
+            className="cursor-pointer rounded-lg bg-muted p-4 leading-6"
+        >
+            <div className="mb-1 text-xs font-medium text-muted-foreground">
+                {message.role}
+            </div>
+            <div className="whitespace-pre-wrap break-words">
+                {message.content}
+            </div>
+        </div>
     )
 }

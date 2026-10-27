@@ -16,12 +16,44 @@ type CallRecordDisconnectionReason =
 
 type CallRecordJson = Prisma.JsonValue
 
+// ====================================================
+// ======== LIVEKIT TRANSCRIPTION OBJECT TYPES ========
+// ====================================================
+
 type CallRecordTranscriptItem = {
+    type: "message"
     role: "user" | "assistant" | "system"
     content: string
     start_timestamp: number
     end_timestamp: number
 }
+
+type CallRecordTranscriptFunctionCall = {
+    type: "function_call"
+    call_id: string
+    name: string
+    arguments: string
+    start_timestamp: number
+}
+
+type CallRecordTranscriptFunctionOutput = {
+    type: "function_call_output"
+    call_id: string
+    name: string
+    output: string
+    is_error: boolean
+    start_timestamp: number
+}
+
+type CallRecordTranscriptEvent =
+    | CallRecordTranscriptItem
+    | CallRecordTranscriptFunctionCall
+    | CallRecordTranscriptFunctionOutput
+
+// ====================================================
+// ===== LIVEKIT TRANSCRIPTION OBJECT TYPES END =======
+// ====================================================
+
 
 type CallRecordAnalysis = {
     call_summary: string
@@ -56,13 +88,14 @@ type CallRecordLlmTokenUsage = { values: number[]; average: number; num_requests
 /** Prisma's generated CallRecord model with JSON columns narrowed for this app's readers. */
 export type CallRecordDatabaseData = Omit<
     CallRecord,
-    "call_type" | "channel" | "call_status" | "disconnection_reason" | "transcript_object" | "latency" | "call_analysis" | "call_cost" | "llm_token_usage"
+    "call_type" | "channel" | "call_status" | "disconnection_reason" | "transcript_object" | "transcript_with_tool_calls" | "latency" | "call_analysis" | "call_cost" | "llm_token_usage"
 > & {
     call_type: CallRecordCallType | null
     channel: CallRecordChannel
     call_status: CallRecordStatus
     disconnection_reason: CallRecordDisconnectionReason | null
     transcript_object: CallRecordTranscriptItem[] | null
+    transcript_with_tool_calls: CallRecordTranscriptEvent[] | null
     latency: CallRecordLatency | null
     call_analysis: CallRecordAnalysis | null
     call_cost: CallRecordCost | null

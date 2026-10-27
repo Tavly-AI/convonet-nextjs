@@ -19,6 +19,7 @@ export async function POST(request: Request) {
     if (!agent) { return NextResponse.json({ error: "Agent not found" }, { status: 404 }) }
 
     const chatHistory = body.report.chat_history.items
+
     const data = {
       workspaceId: agent.workspaceId,
       call_id: body.report.room,
@@ -58,28 +59,33 @@ function deriveDirectData(body: LiveKitSessionReportPayload,): Pick<CallRecordDa
 }
 
 
-function deriveTranscript(chatHistory: LiveKitSessionReportPayload["report"]["chat_history"]["items"]): Pick<CallRecordDatabaseData, "transcript" | "transcript_object" | "transcript_with_tool_calls"> {
+export function deriveTranscript(chatHistory: LiveKitSessionReportPayload["report"]["chat_history"]["items"]): Pick<CallRecordDatabaseData, "transcript" | "transcript_object" | "transcript_with_tool_calls"> {
+  const timeline = chatHistory.flatMap<NonNullable<CallRecordDatabaseData["transcript_with_tool_calls"]>[number]>((item) => {
+    const start_timestamp = Math.round(item.created_at * 1000)
 
-  const messages = chatHistory.flatMap((item) => {
-    if (item.type !== "message" || !Array.isArray(item.content) || typeof item.role !== "string") return []
-    return [{ role: item.role, content: item.content.filter((x): x is string => typeof x === "string").join(" ") }]
+    if (item.type === "function_call" && typeof item.call_id === "string" && typeof item.name === "string" && typeof item.arguments === "string") {
+      return [{ type: "function_call", call_id: item.call_id, name: item.name, arguments: item.arguments, start_timestamp }]
+    }
+    if (item.type === "function_call_output" && typeof item.call_id === "string" && typeof item.name === "string" && typeof item.output === "string") {
+      return [{ type: "function_call_output", call_id: item.call_id, name: item.name, output: item.output, is_error: item.is_error === true, start_timestamp }]
+    }
+    if (item.type === "message" && Array.isArray(item.content) && item.role) {
+      return [{
+        type: "message",
+        role: item.role,
+        content: item.content.filter((value): value is string => typeof value === "string").join(" "),
+        start_timestamp: Math.round((item.metrics?.started_speaking_at ?? item.created_at) * 1000),
+        end_timestamp: Math.round((item.metrics?.stopped_speaking_at ?? item.created_at) * 1000),
+      }]
+    }
+    return []
   })
-
-  const messagesWithTimestamp = chatHistory.flatMap((item) => {
-    if (item.type !== "message" || !Array.isArray(item.content) || typeof item.role !== "string") return []
-
-    return [{
-      role: item.role,
-      content: item.content.filter((x): x is string => typeof x === "string").join(" "),
-      start_timestamp: item.metrics?.started_speaking_at ? Math.round(item.metrics.started_speaking_at * 1000) : Math.round(item.created_at * 1000),
-      end_timestamp: item.metrics?.stopped_speaking_at ? Math.round(item.metrics.stopped_speaking_at * 1000) : Math.round(item.created_at * 1000),
-    }]
-  })
+  const messages = timeline.filter((item) => item.type === "message")
 
   return {
     transcript: messages.map(({ role, content }) => `${role}: ${content}`).join("\n"),
-    transcript_object: messagesWithTimestamp,
-    transcript_with_tool_calls: null,
+    transcript_object: messages,
+    transcript_with_tool_calls: timeline,
   }
 }
 

@@ -289,7 +289,7 @@ function LlmConversation({ roomName, error, onEnd }: { roomName: string; error: 
                 </Button>
             </div>
 
-            <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4">
+            <div className="min-h-0 max-h-[500px] flex-1 space-y-3 overflow-y-auto p-4">
                 {messages.length === 0 ? (
                     <div className="flex h-full min-h-36 items-center justify-center text-center text-sm text-muted-foreground">
                         {isReady ? "Send a message to begin testing." : "Connecting to the agent…"}
