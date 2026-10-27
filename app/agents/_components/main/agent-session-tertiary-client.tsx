@@ -19,6 +19,7 @@ import { getAgentSession } from "@/app/agents/_lib/session-storage/agent-session
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
+import type { PER_SESSION_TEST_TYPE } from "../../_lib/helper-actions"
 
 type LiveKitConnection = {
     token: string
@@ -135,7 +136,7 @@ type ChatMessage = {
     timestamp: number
 }
 
-export function AgentSessionLlmClient() {
+export function AgentSessionLlmClient({ sessionTestType }: { sessionTestType: typeof PER_SESSION_TEST_TYPE[keyof typeof PER_SESSION_TEST_TYPE] }) {
     const [connection, setConnection] = useState<LiveKitConnection | null>(null)
     const [error, setError] = useState<string | null>(null)
     const [isStarting, setIsStarting] = useState(false)
@@ -155,7 +156,10 @@ export function AgentSessionLlmClient() {
             const response = await fetch("/api/livekit/create-token", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ agentId }),
+                body: JSON.stringify({
+                    agentId,
+                    overRideAudioToChat: sessionTestType === PER_SESSION_TEST_TYPE.LLM,
+                }),
             })
             const body = (await response.json()) as TokenResponse
 

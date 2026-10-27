@@ -10,6 +10,7 @@ import { getConversationalFlowConfig } from './ingestion/get-conversational-flow
 import { createVoiceStack, type VoiceStack } from './ingestion/configure-voice-stack.ts';
 import { registerSessionDataHooks } from './data-hooks/main.ts';
 import { registerS3DualChannelRecording } from './egress/upload-s3-egress.ts';
+import { PER_SESSION_TEST_TYPE } from '../../app/agents/_lib/helper-actions.ts';
 
 dotenv.config({ path: '.env.local' });
 
@@ -18,6 +19,8 @@ export default defineAgent({
 
     const agentId = getAgentIdFromJob(ctx);
     const agentConfig = await getAgentConfig(agentId);
+
+    provisionForOverRideAgentChannelType(agentConfig, ctx.job.room?.name);
 
     const { llm, stt, tts } = await createVoiceStack(agentId, agentConfig);
     const agent = await createRuntimeAgent(agentId, agentConfig)
@@ -86,4 +89,9 @@ function getSessionStartOptions(channel: RuntimeAgentConfig["channel"]) {
       outputOptions: { transcriptionEnabled: true, audioEnabled: false, syncTranscription: false },
     }),
   };
+}
+
+function provisionForOverRideAgentChannelType(agentConfig: RuntimeAgentConfig, roomName: string | undefined) {
+  if (!roomName) { throw new Error('Room name is missing from job'); }
+  if (roomName.startsWith(`${PER_SESSION_TEST_TYPE.LLM}-`)) agentConfig.channel = 'chat';
 }

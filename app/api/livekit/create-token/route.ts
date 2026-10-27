@@ -7,11 +7,13 @@ import { randomUUID } from "crypto"
 import { VOICE_RUNTIME_AGENT_NAME } from "@/lib/constants"
 import { prisma } from "@/lib/prisma"
 import type { CallRecordDatabaseData } from "../sessionReport/types"
+import { PER_SESSION_TEST_TYPE } from "@/app/agents/_lib/helper-actions"
 
 export const runtime = "nodejs"
 
 const createTokenSchema = z.object({
     agentId: z.string().trim().min(1, "agentId is required"),
+    overRideAudioToChat: z.boolean().optional().default(false),
 })
 
 export async function POST(request: Request) {
@@ -32,7 +34,12 @@ export async function POST(request: Request) {
     if (!url || !apiKey || !apiSecret) { return NextResponse.json({ error: "LiveKit is not configured" }, { status: 500 }) }
 
     try {
-        const roomName = `call-${randomUUID()}`
+
+        // call is default
+        // test-llm is for overRideAgentChannelType
+        const roomPrefix = input.overRideAudioToChat ? PER_SESSION_TEST_TYPE.LLM : "call"
+        const roomName = `${roomPrefix}-${randomUUID()}`
+
         const identity = `user-${userId}`
         const token = new AccessToken(apiKey, apiSecret, { identity, ttl: "1h" })
 
