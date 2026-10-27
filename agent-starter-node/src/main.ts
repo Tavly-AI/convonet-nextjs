@@ -9,6 +9,7 @@ import { getAgentConfig, getAgentIdFromJob, type RuntimeAgentConfig } from './in
 import { getConversationalFlowConfig } from './ingestion/get-conversational-flow-config.ts';
 import { createVoiceStack, type VoiceStack } from './ingestion/configure-voice-stack.ts';
 import { registerSessionDataHooks } from './data-hooks/main.ts';
+import { registerToolExecutionEvents } from './data-hooks/tool-events.ts';
 import { registerS3DualChannelRecording } from './egress/upload-s3-egress.ts';
 import { PER_SESSION_TEST_TYPE } from '../../app/agents/_components/main/agent-session-tertiary-server.ts'
 
@@ -26,6 +27,7 @@ export default defineAgent({
     const agent = await createRuntimeAgent(agentId, agentConfig)
 
     const session = createSession({ llm, stt, tts, channel: agentConfig.channel, });
+    registerToolExecutionEvents(ctx, session);
     await session.start({ agent, room: ctx.room, ...getSessionStartOptions(agentConfig.channel) });
 
     if (agentConfig.channel === 'voice') {

@@ -8,11 +8,12 @@ import {
     LiveKitRoom,
     RoomAudioRenderer,
     useConnectionState,
+    useDataChannel,
     useRoomContext,
     useTranscriptions,
     useVoiceAssistant,
 } from "@livekit/components-react"
-import { ConnectionState } from "livekit-client"
+import { ConnectionState, ParticipantKind } from "livekit-client"
 import { LoaderCircle, MessageSquareText, Mic, Play, SendHorizontal, Square } from "lucide-react"
 
 import { getAgentSession } from "@/app/agents/_lib/session-storage/agent-session"
@@ -20,6 +21,8 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
 import { PER_SESSION_TEST_TYPE } from "./agent-session-tertiary-server"
+import { decodeToolExecutionEvent, TOOL_EVENTS_TOPIC, type ToolExecutionEvent } from "@/lib/livekit-tool-events"
+import { ToolExecutionCard } from "./tool-execution-card"
 
 type LiveKitConnection = {
     token: string
@@ -217,6 +220,15 @@ function LlmConversation({ roomName, error, onEnd }: { roomName: string; error: 
     const transcriptions = useTranscriptions({ room })
     const [draft, setDraft] = useState("")
     const [userMessages, setUserMessages] = useState<ChatMessage[]>([])
+    const [toolEvents, setToolEvents] = useState<ToolExecutionEvent[]>([])
+    useDataChannel(TOOL_EVENTS_TOPIC, (message) => {
+        if (message.from?.kind !== ParticipantKind.AGENT) return
+        const event = decodeToolExecutionEvent(message.payload)
+        if (!event) return
+        setToolEvents((current) => current.some((item) => item.call_id === event.call_id)
+            ? current
+            : [...current, event])
+    })
     const [isSending, setIsSending] = useState(false)
     const [sendError, setSendError] = useState<string | null>(null)
     const latestRequestAt = useRef<number | null>(null)
@@ -234,8 +246,8 @@ function LlmConversation({ roomName, error, onEnd }: { roomName: string; error: 
     ), [room.localParticipant.identity, transcriptions])
 
     const messages = useMemo(
-        () => [...userMessages, ...agentMessages].sort((left, right) => left.timestamp - right.timestamp),
-        [agentMessages, userMessages]
+        () => [...userMessages, ...agentMessages, ...toolEvents].sort((left, right) => left.timestamp - right.timestamp),
+        [agentMessages, userMessages, toolEvents]
     )
 
     useEffect(() => {
@@ -245,6 +257,10 @@ function LlmConversation({ roomName, error, onEnd }: { roomName: string; error: 
             latestRequestAt.current = null
         }
     }, [agentMessages])
+
+    useEffect(() => {
+        console.log("[LiveKit] All transcriptions:", transcriptions)
+    }, [transcriptions])
 
     useEffect(() => {
         transcriptEndRef.current?.scrollIntoView({ block: "end" })
@@ -294,7 +310,9 @@ function LlmConversation({ roomName, error, onEnd }: { roomName: string; error: 
                     <div className="flex h-full min-h-36 items-center justify-center text-center text-sm text-muted-foreground">
                         {isReady ? "Send a message to begin testing." : "Connecting to the agent…"}
                     </div>
-                ) : messages.map((message) => (
+                ) : messages.map((message) => "call_id" in message ? (
+                    <ToolExecutionCard key={`tool-${message.call_id}`} event={message} />
+                ) : (
                     <div
                         key={message.id}
                         className={cn("flex flex-col gap-1", message.role === "user" ? "items-end" : "items-start")}
