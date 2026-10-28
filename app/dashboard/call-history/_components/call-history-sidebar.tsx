@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { useState } from "react"
 import { callHistoryGetCallStatus } from "./call-history-table-client"
 
@@ -33,7 +34,7 @@ export function CallHistorySidebar({ record, onOpenChange }: { record: CallRecor
                         <div className="flex items-center justify-between"><span className="text-muted-foreground">Call successful</span><Badge variant={record.call_analysis?.call_successful ? "secondary" : "destructive"}>{record.call_analysis?.call_successful ? "Successful" : "Unsuccessful"}</Badge></div>
                         <div className="flex items-center justify-between"><span className="text-muted-foreground">Call status</span><span>{record.call_status}</span></div>
                         <div className="flex items-center justify-between"><span className="text-muted-foreground">User sentiment</span><span>{record.call_analysis?.user_sentiment}</span></div>
-                        <div className="flex items-center justify-between"><span className="text-muted-foreground">E2E latency</span><span>{record.latency?.e2e?.num ? `${record.latency.e2e.p50}ms` : "—"}</span></div>
+                        <div className="flex items-center justify-between"><span className="text-muted-foreground">E2E latency</span>{displayE2E_fullDetails(record.latency)}</div>
                         <div className="flex items-center justify-between"><span className="text-muted-foreground">End reason</span><span>{record.disconnection_reason?.replaceAll("_", " ")}</span></div>
                     </div>
                 </section>
@@ -172,5 +173,49 @@ function TranscriptMessageOnlySimple({ message, url }: { message: NonNullable<Ca
                 {message.content}
             </div>
         </div>
+    )
+}
+
+export function displayE2E_fullDetails(latency: CallRecordDatabaseData["latency"]) {
+    const sections = [
+        ["e2e", "End to end latency"],
+        ["asr", "Transcription latency"],
+        ["llm", "LLM latency"],
+        ["tts", "TTS latency"],
+        ["s2s", "Speech to speech latency"],
+        ["knowledge_base", "Knowledge base latency"],
+        ["llm_websocket_network_rtt", "LLM WebSocket network RTT"],
+    ] as const
+    const availableSections = sections.filter(([key]) => (latency?.[key]?.num ?? 0) > 0)
+
+    if (!latency || !availableSections.length) return <Button variant="outline" size="sm" disabled>Check latency details</Button>
+
+    return (
+        <Popover>
+            <PopoverTrigger render={<Button variant="outline" size="sm" />}>
+                Check latency details
+            </PopoverTrigger>
+            <PopoverContent side="top" align="end" aria-label="Latency details" className="block max-h-[var(--available-height)] w-56 overflow-y-auto p-3">
+                <div className="divide-y">
+                    {availableSections.map(([key, label]) => (
+                        <div key={key} className="py-3 first:pt-0 last:pb-0">
+                            <p className="mb-1 font-medium">{label}</p>
+                            <dl className="space-y-1 text-muted-foreground">
+                                {([
+                                    ["P90", latency[key].p90],
+                                    ["Median", latency[key].p50],
+                                    ["Min", latency[key].min],
+                                ] as const).map(([stat, value]) => (
+                                    <div key={stat} className="flex justify-between gap-4">
+                                        <dt>- {stat}</dt>
+                                        <dd className="tabular-nums">{value ?? "—"} ms</dd>
+                                    </div>
+                                ))}
+                            </dl>
+                        </div>
+                    ))}
+                </div>
+            </PopoverContent>
+        </Popover>
     )
 }

@@ -6,6 +6,7 @@ import { formatDateTime, formatDuration, getSessionStatus } from "./chat-history
 import { Badge } from "@/components/ui/badge"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { displayE2E_fullDetails } from "../../call-history/_components/call-history-sidebar"
 
 export function ChatHistorySidebar({ record, onOpenChange }: { record: CallRecordDatabaseData; onOpenChange: (open: boolean) => void }) {
     const sessionStatus = getSessionStatus(record.call_status)
@@ -28,7 +29,7 @@ export function ChatHistorySidebar({ record, onOpenChange }: { record: CallRecor
                         <div className="flex items-center justify-between"><span className="text-muted-foreground">Session outcome</span><Badge variant={analysis?.call_successful ? "secondary" : "destructive"}>{analysis ? analysis.call_successful ? "Successful" : "Unsuccessful" : "—"}</Badge></div>
                         <div className="flex items-center justify-between"><span className="text-muted-foreground">Session status</span><span>{sessionStatus.label}</span></div>
                         <div className="flex items-center justify-between"><span className="text-muted-foreground">User sentiment</span><span>{analysis?.user_sentiment ?? "—"}</span></div>
-                        <div className="flex items-center justify-between"><span className="text-muted-foreground">E2E latency</span><span>{record.latency?.e2e?.num ? `${record.latency.e2e.p50}ms` : "—"}</span></div>
+                        <div className="flex items-center justify-between"><span className="text-muted-foreground">E2E latency</span>{displayE2E_fullDetails(record.latency)}</div>
                     </div>
                 </section>
                 <section className="space-y-3 border-b p-6"><h2 className="text-xl font-medium">Summary</h2><p className="max-w-4xl leading-7 text-muted-foreground">{analysis?.call_summary ?? "—"}</p></section>
