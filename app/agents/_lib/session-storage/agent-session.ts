@@ -335,17 +335,20 @@ export const DEFAULT_POST_CALL_ANALYSIS_SETTINGS = {
 
 export type BeginMessageSettings = {
     start_speaker: "user" | "agent"
-    begin_after_user_silence_ms: number
+    begin_after_user_silence_ms: number | null
     begin_message_delay_ms: number
-    begin_message: string
+    begin_message: string | null
 }
 
-export const DEFAULT_BEGIN_MESSAGE_SETTINGS = {
+export const DEFAULT_BEGIN_MESSAGE_SETTINGS_LLM_CONFIG = {
     start_speaker: "agent",
     begin_after_user_silence_ms: 2000,
+    begin_message: "Hey I am a virtual assistant calling from Apllo Hospital.",
+} satisfies Omit<BeginMessageSettings, "begin_message_delay_ms">
+
+export const DEFAULT_BEGIN_MESSAGE_SETTINGS_CONFIG = {
     begin_message_delay_ms: 1000,
-    begin_message: "Hey I am a virtual assistant calling from Retell Hospital.",
-} satisfies BeginMessageSettings
+} satisfies Pick<BeginMessageSettings, "begin_message_delay_ms">
 
 
 // =================================================================
@@ -413,7 +416,7 @@ export type AgentSessionConfig = AgentSessionBaseSettings & {
     auto_close_message?: string | null
 }
 
-export type AgentSessionLlmConfig = Partial<BeginMessageSettings> & {
+export type AgentSessionLlmConfig = Partial<Omit<BeginMessageSettings, "begin_message_delay_ms">> & {
     model: LlmModel
     generalPrompt: string
     mcps: McpConfig[]
@@ -453,6 +456,7 @@ const EMPTY_AGENT: AgentSessionAgent = {
         ...DEFAULT_WEBHOOK_SETTINGS,
         ...DEFAULT_SECURITY_FALLBACK_SETTINGS,
         ...DEFAULT_POST_CALL_ANALYSIS_SETTINGS,
+        ...DEFAULT_BEGIN_MESSAGE_SETTINGS_CONFIG,
 
         handbook_config: DEFAULT_HANDBOOK_CONFIG,
         timezone: "America/New_York",
@@ -466,7 +470,7 @@ const EMPTY_AGENT: AgentSessionAgent = {
         model: "gpt-4.1",
         generalPrompt: "",
         mcps: [],
-        ...DEFAULT_BEGIN_MESSAGE_SETTINGS,
+        ...DEFAULT_BEGIN_MESSAGE_SETTINGS_LLM_CONFIG,
         default_dynamic_variables: {
             customer_name: "John Doe",
         },
@@ -489,6 +493,7 @@ const EMPTY_CHAT_AGENT: AgentSessionAgent = {
         ...DEFAULT_WEBHOOK_SETTINGS,
         ...DEFAULT_SECURITY_FALLBACK_SETTINGS,
         ...DEFAULT_POST_CALL_ANALYSIS_SETTINGS,
+        ...DEFAULT_BEGIN_MESSAGE_SETTINGS_CONFIG,
 
         handbook_config: DEFAULT_HANDBOOK_CONFIG,
         timezone: "America/New_York",
@@ -503,7 +508,7 @@ const EMPTY_CHAT_AGENT: AgentSessionAgent = {
         model: "gpt-4.1",
         generalPrompt: "",
         mcps: [],
-        ...DEFAULT_BEGIN_MESSAGE_SETTINGS,
+        ...DEFAULT_BEGIN_MESSAGE_SETTINGS_LLM_CONFIG,
         default_dynamic_variables: {
             customer_name: "John Doe",
         },
@@ -1140,9 +1145,12 @@ export function writeModel(model: LlmModel) {
 // =================================================================
 
 export function getBeginMessageSettings(): BeginMessageSettings {
+    const agent = getAgentSession()
     return {
-        ...DEFAULT_BEGIN_MESSAGE_SETTINGS,
-        ...(getAgentSession()?.llmConfig ?? {}),
+        start_speaker: agent?.llmConfig.start_speaker ?? DEFAULT_BEGIN_MESSAGE_SETTINGS_LLM_CONFIG.start_speaker,
+        begin_message: agent?.llmConfig.begin_message ?? null,
+        begin_after_user_silence_ms: agent?.llmConfig.begin_after_user_silence_ms ?? null,
+        begin_message_delay_ms: agent?.config.begin_message_delay_ms ?? DEFAULT_BEGIN_MESSAGE_SETTINGS_CONFIG.begin_message_delay_ms,
     }
 }
 
@@ -1154,12 +1162,14 @@ export function writeBeginMessageSettings(settings: Partial<BeginMessageSettings
         ...getBeginMessageSettings(),
         ...settings,
     }
+    const { begin_message_delay_ms, ...llmSettings } = nextSettings
 
     writeAgentSession({
         ...agent,
+        config: { ...agent.config, begin_message_delay_ms },
         llmConfig: {
             ...agent.llmConfig,
-            ...nextSettings,
+            ...llmSettings,
         },
     })
 

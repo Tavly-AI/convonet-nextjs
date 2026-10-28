@@ -1,5 +1,5 @@
 // src/main.ts
-import { ServerOptions, cli, defineAgent, inference, voice as voice2 } from "@livekit/agents";
+import { ServerOptions, cli, defineAgent, inference, voice as voice3 } from "@livekit/agents";
 import { audioEnhancement } from "@livekit/plugins-ai-coustics";
 import dotenv from "dotenv";
 import { fileURLToPath } from "url";
@@ -10423,21 +10423,21 @@ async function createVoiceStack(agentId, agentConfig) {
     language: languages.deepgram
   });
   const voiceId = agentConfig.config.voiceId?.trim() || "db6b0ed5-d5d3-463d-ae85-518a07d3c2b4";
-  let voice3 = VOICES_UPDATED.find((voice4) => voice4.voice_id === voiceId);
-  if (!voice3) {
-    voice3 = await solveCustomVoice(agentId, voiceId);
+  let voice4 = VOICES_UPDATED.find((voice5) => voice5.voice_id === voiceId);
+  if (!voice4) {
+    voice4 = await solveCustomVoice(agentId, voiceId);
   }
   let tts;
-  if (voice3?.provider === "cartesia") {
+  if (voice4?.provider === "cartesia") {
     tts = new cartesia.TTS({
-      model: formatModelId(voice3.model),
-      voice: voice3.voice_id,
+      model: formatModelId(voice4.model),
+      voice: voice4.voice_id,
       language: languages.cartesia
     });
-  } else if (voice3?.provider === "elevenlabs") {
+  } else if (voice4?.provider === "elevenlabs") {
     tts = new elevenlabs.TTS({
-      modelID: voice3.model,
-      voiceId: voice3.voice_id,
+      modelID: voice4.model,
+      voiceId: voice4.voice_id,
       language: languages.elevenlabs
     });
   } else {
@@ -10541,11 +10541,11 @@ var DEFAULT_GENERAL_PROMPT = dedent2`
 function resolveSinglePromptBeginMessage(ctx, agentConfig) {
   const {
     start_speaker = "agent",
-    begin_message = "Hey I am a virtual assistant calling from Retell Hospital."
+    begin_message = "Hey I am a virtual assistant calling from Apllo Hospital."
   } = agentConfig.llmConfig;
   if (start_speaker === "user") return;
-  const text = begin_message.trim();
-  if (text) ctx.session.say(text);
+  const text = begin_message?.trim();
+  if (text) ctx.session.generateReply({ instructions: `Use this to greet the user: ${text}` });
 }
 
 // src/conversational-flow/conversational-flow-runtime.ts
@@ -10821,6 +10821,69 @@ function derivePhoneNumbers(ctx, callType) {
     return { fromNumber: phoneNumber, toNumber: trunkPhoneNumber };
   }
   return { fromNumber: trunkPhoneNumber, toNumber: phoneNumber };
+}
+
+// src/data-hooks/tool-events.ts
+import { voice as voice2 } from "@livekit/agents";
+
+// ../app/agents/_components/main/agent-session-tertiary-server.ts
+var PER_SESSION_TEST_TYPE = {
+  AUDIO: "test-audio",
+  LLM: "test-llm"
+};
+
+// ../lib/livekit-tool-events.ts
+var TOOL_EVENTS_TOPIC = "agent.tool-events";
+var MAX_TOOL_EVENT_BYTES = 12 * 1024;
+function toolOutputReportsError(output) {
+  try {
+    const parsed = JSON.parse(output);
+    return !!parsed && typeof parsed === "object" && "status" in parsed && parsed.status === "error";
+  } catch {
+    return false;
+  }
+}
+function encodeToolExecutionEvent(event) {
+  const bounded = { ...event, is_error: event.is_error || toolOutputReportsError(event.output) };
+  const encoder = new TextEncoder();
+  const marker = "\n\u2026 [truncated]";
+  let payload = encoder.encode(JSON.stringify(bounded));
+  while (payload.byteLength > MAX_TOOL_EVENT_BYTES) {
+    const key = bounded.arguments.length > bounded.output.length ? "arguments" : "output";
+    if (bounded[key].length <= marker.length) throw new Error("Tool event metadata exceeds packet limit");
+    const content = bounded[key].endsWith(marker) ? bounded[key].slice(0, -marker.length) : bounded[key];
+    bounded[key] = content.slice(0, Math.floor(content.length / 2)) + marker;
+    payload = encoder.encode(JSON.stringify(bounded));
+  }
+  return payload;
+}
+
+// src/data-hooks/tool-events.ts
+function registerToolExecutionEvents(ctx, session) {
+  if (!ctx.job.room?.name.startsWith(`${PER_SESSION_TEST_TYPE.LLM}-`)) return;
+  const onExecuted = (event) => {
+    for (const call of event.functionCalls) {
+      const output = event.functionCallOutputs.find((item) => item.callId === call.callId);
+      if (!output) continue;
+      void (async () => {
+        const participant = ctx.room.localParticipant;
+        if (!participant) return;
+        await participant.publishData(encodeToolExecutionEvent({
+          type: "tool_executed",
+          call_id: call.callId,
+          name: call.name,
+          arguments: call.args,
+          output: output.output,
+          is_error: output.isError,
+          timestamp: event.createdAt
+        }), { reliable: true, topic: TOOL_EVENTS_TOPIC });
+      })().catch((error) => console.error("Failed to publish tool execution event", error));
+    }
+  };
+  session.on(voice2.AgentSessionEventTypes.FunctionToolsExecuted, onExecuted);
+  ctx.addShutdownCallback(async () => {
+    session.off(voice2.AgentSessionEventTypes.FunctionToolsExecuted, onExecuted);
+  });
 }
 
 // node_modules/@bufbuild/protobuf/dist/esm/private/assert.js
@@ -13619,12 +13682,6 @@ function registerS3DualChannelRecording(ctx) {
   };
 }
 
-// ../app/agents/_components/main/agent-session-tertiary-server.tsx
-var PER_SESSION_TEST_TYPE = {
-  AUDIO: "test-audio",
-  LLM: "test-llm"
-};
-
 // src/main.ts
 dotenv.config({ path: ".env.local" });
 var main_default = defineAgent({
@@ -13635,6 +13692,7 @@ var main_default = defineAgent({
     const { llm: llm2, stt, tts } = await createVoiceStack(agentId, agentConfig);
     const agent = await createRuntimeAgent(agentId, agentConfig);
     const session = createSession({ llm: llm2, stt, tts, channel: agentConfig.channel });
+    registerToolExecutionEvents(ctx, session);
     await session.start({ agent, room: ctx.room, ...getSessionStartOptions(agentConfig.channel) });
     if (agentConfig.channel === "voice") {
       const egressRecording = registerS3DualChannelRecording(ctx);
@@ -13660,7 +13718,7 @@ async function createRuntimeAgent(agentId, agentConfig) {
 }
 function createSession({ llm: llm2, stt, tts, channel }) {
   const isChat = channel === "chat";
-  return new voice2.AgentSession({
+  return new voice3.AgentSession({
     llm: llm2,
     ...isChat ? { vad: null, turnHandling: { turnDetection: null } } : {
       stt,

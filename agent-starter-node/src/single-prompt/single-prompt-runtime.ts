@@ -1,6 +1,7 @@
-import { Agent, dedent, type voice } from '@livekit/agents';
+import { Agent, dedent, voice } from '@livekit/agents';
 import { createAllAgentToolsAvailable, getTimezonLanguageInstructions } from '../sharable-code/agent-helpers.ts';
 import type { RuntimeAgentConfig } from '../ingestion/get-agent-config.ts';
+import { resolveSinglePromptBeginMessage } from './helper-functions.ts';
 
 export function createSinglePromptAgentFromData(agentConfig: RuntimeAgentConfig): Agent {
     return Agent.create({
@@ -9,7 +10,7 @@ export function createSinglePromptAgentFromData(agentConfig: RuntimeAgentConfig)
             ${getTimezonLanguageInstructions(agentConfig)}
         `,
 
-        onEnter(ctx) { resolveSinglePromptBeginMessage(ctx, agentConfig) },
+        onEnter(ctx) { resolveSinglePromptBeginMessage(ctx, agentConfig); },
 
         tools: createAllAgentToolsAvailable(agentConfig),
     });
@@ -20,16 +21,3 @@ export function createSinglePromptAgentFromData(agentConfig: RuntimeAgentConfig)
 const DEFAULT_GENERAL_PROMPT = dedent`
   You are a friendly, reliable voice assistant that answers questions, explains topics, and completes tasks with available tools.
 `;
-
-function resolveSinglePromptBeginMessage(ctx: voice.AgentContext, agentConfig: RuntimeAgentConfig,) {
-    const {
-        start_speaker = "agent",
-        begin_message = "Hey I am a virtual assistant calling from Retell Hospital.",
-    } = agentConfig.llmConfig
-
-    if (start_speaker === "user") return
-
-    const text = begin_message.trim()
-    if (text) ctx.session.say(text)
-}
-

@@ -10,13 +10,7 @@ import {
     writeBeginMessageSettings,
 } from "@/app/agents/_lib/session-storage/agent-session"
 import { Label } from "@/components/ui/label"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
+import { WebsiteCustomDropdown } from "@/components/custom/website-custom-dropdown"
 import { Slider } from "@/components/ui/slider"
 import { Textarea } from "@/components/ui/textarea"
 import { Toggle } from "@/components/ui/toggle"
@@ -38,6 +32,8 @@ export function AgentSessionStartSpeaker() {
     const searchParams = useSearchParams()
     const isChat = isChatAgentSession(searchParams)
     const [settings, setSettings] = React.useState(getBeginMessageSettings)
+    const isDynamic = settings.begin_message == null
+    const staticMessage = React.useRef(settings.begin_message ?? "")
 
     function updateSettings(patch: Partial<BeginMessageSettings>) {
         const nextSettings = { ...settings, ...patch }
@@ -49,7 +45,7 @@ export function AgentSessionStartSpeaker() {
         ? {
             id: "begin-after-user-silence",
             label: "Start after user silence (seconds)",
-            seconds: settings.begin_after_user_silence_ms / 1000,
+            seconds: (settings.begin_after_user_silence_ms ?? 2000) / 1000,
             update: (seconds: number) => updateSettings({ begin_after_user_silence_ms: Math.round(seconds * 1000) }),
         }
         : {
@@ -63,30 +59,28 @@ export function AgentSessionStartSpeaker() {
         <section className="mt-4 space-y-3">
             <Label htmlFor="start-speaker" className="text-base font-medium">Welcome message</Label>
 
-            <Select
+            <WebsiteCustomDropdown
+                id="start-speaker"
+                label="Starting speaker"
                 value={settings.start_speaker}
                 onValueChange={(value) => {
                     if (value === "user" || value === "agent") {
                         updateSettings({ start_speaker: value })
                     }
                 }}
-            >
-                <SelectTrigger id="start-speaker" className="w-full">
-                    <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                    {!isChat && <SelectItem value="user">User speaks first</SelectItem>}
-                    <SelectItem value="agent">AI speaks first</SelectItem>
-                </SelectContent>
-            </Select>
+                options={[
+                    ...(!isChat ? [{ value: "user", label: "User speaks first" }] : []),
+                    { value: "agent", label: "AI speaks first" },
+                ]}
+            />
 
             <div className="flex flex-wrap items-center justify-between gap-x-5 gap-y-3 pt-1">
-                <div className="flex items-center gap-2">
+                <div className={settings.start_speaker === "user" ? "flex items-center gap-2" : "hidden"}>
                     <span className="text-sm font-medium">AI starts speaking after silence</span>
                     <Info className="size-4 text-muted-foreground" aria-label="The AI waits for user silence before speaking" />
                     <Toggle
-                        pressed={settings.start_speaker === "user"}
-                        onPressedChange={(pressed) => updateSettings({ start_speaker: pressed ? "user" : "agent" })}
+                        pressed={settings.begin_after_user_silence_ms != null}
+                        onPressedChange={(pressed) => updateSettings({ begin_after_user_silence_ms: pressed ? 2000 : null })}
                         aria-label="AI starts speaking after silence"
                         className="h-5 w-8 justify-start rounded-full border bg-muted p-0.5 hover:bg-muted aria-pressed:justify-end aria-pressed:border-primary aria-pressed:bg-primary"
                     >
@@ -96,6 +90,7 @@ export function AgentSessionStartSpeaker() {
 
                 <Popover>
                     <PopoverTrigger
+                        disabled={settings.start_speaker === "user" && settings.begin_after_user_silence_ms == null}
                         render={
                             <button
                                 type="button"
@@ -136,20 +131,31 @@ export function AgentSessionStartSpeaker() {
                 </Popover>
             </div>
 
-            <div className="space-y-2 pt-1">
-                <Select value="static-message" disabled>
-                    <SelectTrigger className="w-full" aria-label="Opening message type">
-                        <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="static-message">Static message</SelectItem>
-                    </SelectContent>
-                </Select>
+            <div className={settings.start_speaker === "agent" ? "space-y-2 pt-1" : "hidden"}>
+                <Label htmlFor="opening-message-type" className="sr-only">Opening message type</Label>
+                <WebsiteCustomDropdown
+                    id="opening-message-type"
+                    label="Opening message type"
+                    value={isDynamic ? "dynamic" : "static"}
+                    onValueChange={(value) => {
+                        if (value !== "static" && value !== "dynamic") return
+                        staticMessage.current = settings.begin_message ?? staticMessage.current
+                        updateSettings({ begin_message: value === "dynamic" ? null : staticMessage.current })
+                    }}
+                    options={[
+                        { value: "static", label: "Static message" },
+                        { value: "dynamic", label: "Dynamic message" },
+                    ]}
+                />
                 <Textarea
                     id="begin-message"
-                    value={settings.begin_message}
+                    value={settings.begin_message ?? ""}
+                    disabled={isDynamic}
                     onChange={(event) => updateSettings({ begin_message: event.target.value })}
-                    placeholder="Hello, how can I help you today?"
+                    aria-label="Opening message"
+                    placeholder={isDynamic
+                        ? "AI generates the greeting from the general prompt."
+                        : "Hello, how can I help you today?"}
                     className="min-h-24 resize-y"
                 />
             </div>
