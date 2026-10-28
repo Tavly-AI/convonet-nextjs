@@ -22,17 +22,19 @@ export async function createVoiceStack(agentId: string, agentConfig: RuntimeAgen
     // ============================================================
 
     const model = agentConfig.llmConfig.model.trim() || "gpt-4.1";
+    const temperature = agentConfig.llmConfig.model_temperature ?? 0;
+    const strictToolSchema = agentConfig.llmConfig.tool_call_strict_mode ?? true;
 
     let llm;
 
     if (model.startsWith("gpt-")) {
-        llm = new openai.responses.LLM({ model, maxOutputTokens: 512, strictToolSchema: false });
+        llm = new openai.responses.LLM({ model, temperature, maxOutputTokens: 512, strictToolSchema });
     } else if (model.startsWith("claude-")) {
-        llm = new anthropic.LLM({ model });
+        llm = new anthropic.LLM({ model, temperature });
     } else if (model.startsWith("gemini-")) {
-        llm = new google.LLM({ model });
+        llm = new google.LLM({ model, temperature });
     } else {
-        llm = openai.LLM.withGroq({ model: "openai/gpt-oss-120b" });
+        llm = openai.LLM.withGroq({ model: "openai/gpt-oss-120b", temperature });
     }
 
     // ============================================================

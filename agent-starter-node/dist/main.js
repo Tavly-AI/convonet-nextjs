@@ -1,5 +1,5 @@
 // src/main.ts
-import { ServerOptions, cli, defineAgent, inference, voice as voice3 } from "@livekit/agents";
+import { ServerOptions, cli, defineAgent, inference, voice as voice5 } from "@livekit/agents";
 import { audioEnhancement } from "@livekit/plugins-ai-coustics";
 import dotenv from "dotenv";
 import { fileURLToPath } from "url";
@@ -10407,15 +10407,17 @@ var VOICES_UPDATED = [
 // src/ingestion/configure-voice-stack.ts
 async function createVoiceStack(agentId, agentConfig) {
   const model = agentConfig.llmConfig.model.trim() || "gpt-4.1";
+  const temperature = agentConfig.llmConfig.model_temperature ?? 0;
+  const strictToolSchema = agentConfig.llmConfig.tool_call_strict_mode ?? true;
   let llm2;
   if (model.startsWith("gpt-")) {
-    llm2 = new openai.responses.LLM({ model, maxOutputTokens: 512, strictToolSchema: false });
+    llm2 = new openai.responses.LLM({ model, temperature, maxOutputTokens: 512, strictToolSchema });
   } else if (model.startsWith("claude-")) {
-    llm2 = new anthropic.LLM({ model });
+    llm2 = new anthropic.LLM({ model, temperature });
   } else if (model.startsWith("gemini-")) {
-    llm2 = new google.LLM({ model });
+    llm2 = new google.LLM({ model, temperature });
   } else {
-    llm2 = openai.LLM.withGroq({ model: "openai/gpt-oss-120b" });
+    llm2 = openai.LLM.withGroq({ model: "openai/gpt-oss-120b", temperature });
   }
   const languages = getProviderLanguages(agentConfig.config.language);
   const stt = new deepgram.STT({
@@ -10423,21 +10425,21 @@ async function createVoiceStack(agentId, agentConfig) {
     language: languages.deepgram
   });
   const voiceId = agentConfig.config.voiceId?.trim() || "db6b0ed5-d5d3-463d-ae85-518a07d3c2b4";
-  let voice4 = VOICES_UPDATED.find((voice5) => voice5.voice_id === voiceId);
-  if (!voice4) {
-    voice4 = await solveCustomVoice(agentId, voiceId);
+  let voice6 = VOICES_UPDATED.find((voice7) => voice7.voice_id === voiceId);
+  if (!voice6) {
+    voice6 = await solveCustomVoice(agentId, voiceId);
   }
   let tts;
-  if (voice4?.provider === "cartesia") {
+  if (voice6?.provider === "cartesia") {
     tts = new cartesia.TTS({
-      model: formatModelId(voice4.model),
-      voice: voice4.voice_id,
+      model: formatModelId(voice6.model),
+      voice: voice6.voice_id,
       language: languages.cartesia
     });
-  } else if (voice4?.provider === "elevenlabs") {
+  } else if (voice6?.provider === "elevenlabs") {
     tts = new elevenlabs.TTS({
-      modelID: voice4.model,
-      voiceId: voice4.voice_id,
+      modelID: voice6.model,
+      voiceId: voice6.voice_id,
       language: languages.elevenlabs
     });
   } else {
@@ -10522,6 +10524,40 @@ function createAllAgentToolsAvailable(agentConfig) {
   ];
 }
 
+// src/single-prompt/helper-functions.ts
+import { voice } from "@livekit/agents";
+function resolveSinglePromptBeginMessage(ctx, agentConfig) {
+  const { start_speaker = "agent", begin_message, begin_after_user_silence_ms } = agentConfig.llmConfig;
+  if (start_speaker === "user" && begin_after_user_silence_ms == null) return;
+  if (start_speaker === "user")
+    return scheduleOpening(ctx, begin_after_user_silence_ms, () => void ctx.session.generateReply());
+  if (begin_message === "") return;
+  scheduleOpening(
+    ctx,
+    agentConfig.config.begin_message_delay_ms ?? 1e3,
+    () => begin_message?.trim() ? void ctx.session.say(begin_message.trim()) : void ctx.session.generateReply()
+  );
+}
+function scheduleOpening(ctx, delay, speak) {
+  const { session } = ctx;
+  if (session.userState === "speaking") return;
+  const events = voice.AgentSessionEventTypes;
+  const cancel = () => {
+    clearTimeout(timer);
+    session.off(events.UserStateChanged, onUserSpeaking);
+    session.off(events.Close, cancel);
+  };
+  const onUserSpeaking = (e) => {
+    if (e.newState === "speaking") cancel();
+  };
+  session.on(events.UserStateChanged, onUserSpeaking);
+  session.once(events.Close, cancel);
+  const timer = setTimeout(() => {
+    cancel();
+    speak();
+  }, Math.max(0, delay));
+}
+
 // src/single-prompt/single-prompt-runtime.ts
 function createSinglePromptAgentFromData(agentConfig) {
   return Agent.create({
@@ -10538,15 +10574,6 @@ function createSinglePromptAgentFromData(agentConfig) {
 var DEFAULT_GENERAL_PROMPT = dedent2`
   You are a friendly, reliable voice assistant that answers questions, explains topics, and completes tasks with available tools.
 `;
-function resolveSinglePromptBeginMessage(ctx, agentConfig) {
-  const {
-    start_speaker = "agent",
-    begin_message = "Hey I am a virtual assistant calling from Apllo Hospital."
-  } = agentConfig.llmConfig;
-  if (start_speaker === "user") return;
-  const text = begin_message?.trim();
-  if (text) ctx.session.generateReply({ instructions: `Use this to greet the user: ${text}` });
-}
 
 // src/conversational-flow/conversational-flow-runtime.ts
 import { Agent as Agent2, handoff as handoff3, tool as tool10 } from "@livekit/agents";
@@ -10769,14 +10796,14 @@ async function getConversationalFlowConfig(agentId) {
 }
 
 // src/data-hooks/main.ts
-import { voice } from "@livekit/agents";
+import { voice as voice3 } from "@livekit/agents";
 function registerSessionDataHooks({ ctx, session, agentId }) {
   const callType = deriveCallType(ctx);
   const { fromNumber, toNumber } = derivePhoneNumbers(ctx, callType);
   ctx.addShutdownCallback(async () => {
     try {
       const report = ctx.makeSessionReport(session);
-      const reportJson = voice.sessionReportToJSON(report);
+      const reportJson = voice3.sessionReportToJSON(report);
       await sendSessionReport(reportJson, agentId, ctx, callType, fromNumber, toNumber);
     } catch (error) {
       console.error("Failed to send LiveKit session report to Next.js", error);
@@ -10824,7 +10851,7 @@ function derivePhoneNumbers(ctx, callType) {
 }
 
 // src/data-hooks/tool-events.ts
-import { voice as voice2 } from "@livekit/agents";
+import { voice as voice4 } from "@livekit/agents";
 
 // ../app/agents/_components/main/agent-session-tertiary-server.ts
 var PER_SESSION_TEST_TYPE = {
@@ -10880,9 +10907,9 @@ function registerToolExecutionEvents(ctx, session) {
       })().catch((error) => console.error("Failed to publish tool execution event", error));
     }
   };
-  session.on(voice2.AgentSessionEventTypes.FunctionToolsExecuted, onExecuted);
+  session.on(voice4.AgentSessionEventTypes.FunctionToolsExecuted, onExecuted);
   ctx.addShutdownCallback(async () => {
-    session.off(voice2.AgentSessionEventTypes.FunctionToolsExecuted, onExecuted);
+    session.off(voice4.AgentSessionEventTypes.FunctionToolsExecuted, onExecuted);
   });
 }
 
@@ -13718,7 +13745,7 @@ async function createRuntimeAgent(agentId, agentConfig) {
 }
 function createSession({ llm: llm2, stt, tts, channel }) {
   const isChat = channel === "chat";
-  return new voice3.AgentSession({
+  return new voice5.AgentSession({
     llm: llm2,
     ...isChat ? { vad: null, turnHandling: { turnDetection: null } } : {
       stt,

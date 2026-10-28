@@ -416,7 +416,27 @@ export type AgentSessionConfig = AgentSessionBaseSettings & {
     auto_close_message?: string | null
 }
 
-export type AgentSessionLlmConfig = Partial<Omit<BeginMessageSettings, "begin_message_delay_ms">> & {
+// =================================================================
+// ============== LLM MODEL SETTINGS DEFAULT & TYPES ===============
+// =================================================================
+
+
+export type LLM_ModelSettings = {
+    model_temperature: number
+    tool_call_strict_mode: boolean
+}
+
+export const DEFAULT_LLM_MODEL_SETTINGS: LLM_ModelSettings = {
+    model_temperature: 0,
+    tool_call_strict_mode: true,
+}
+
+// =================================================================
+// ============ LLM MODEL SETTINGS DEFAULT & TYPES END =============
+// =================================================================
+
+
+export type AgentSessionLlmConfig = Partial<LLM_ModelSettings> & Partial<Omit<BeginMessageSettings, "begin_message_delay_ms">> & {
     model: LlmModel
     generalPrompt: string
     mcps: McpConfig[]
@@ -467,6 +487,7 @@ const EMPTY_AGENT: AgentSessionAgent = {
         generalTools: [],
     },
     llmConfig: {
+        ...DEFAULT_LLM_MODEL_SETTINGS,
         model: "gpt-4.1",
         generalPrompt: "",
         mcps: [],
@@ -505,6 +526,7 @@ const EMPTY_CHAT_AGENT: AgentSessionAgent = {
 
     },
     llmConfig: {
+        ...DEFAULT_LLM_MODEL_SETTINGS,
         model: "gpt-4.1",
         generalPrompt: "",
         mcps: [],
@@ -1139,6 +1161,31 @@ export function writeModel(model: LlmModel) {
 
     return model
 }
+
+// =================================================================
+// ===================== LLM MODEL SETTINGS ========================
+// =================================================================
+
+export function getLLM_ModelSettings(): LLM_ModelSettings {
+    const config = getAgentSession()?.llmConfig
+    return {
+        model_temperature: config?.model_temperature ?? DEFAULT_LLM_MODEL_SETTINGS.model_temperature,
+        tool_call_strict_mode: config?.tool_call_strict_mode ?? DEFAULT_LLM_MODEL_SETTINGS.tool_call_strict_mode,
+    }
+}
+
+export function writeLLM_ModelSettings(settings: LLM_ModelSettings) {
+    const agent = getAgentSession()
+    if (!agent) throw new Error("Agent session is not initialized.")
+
+    writeAgentSession({
+        ...agent,
+        llmConfig: { ...agent.llmConfig, ...settings },
+    })
+
+    return settings
+}
+
 
 // =================================================================
 // ======================== BEGIN MESSAGE ==========================
