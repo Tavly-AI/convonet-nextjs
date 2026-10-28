@@ -112,12 +112,11 @@ export default function AgentSessionTertiaryClient() {
                 <ConnectionStateIndicator className="text-sm text-muted-foreground" />
             </div>
 
-            <p className="text-sm text-muted-foreground">
-                Allow microphone access, then start speaking. The agent response will play here.
-            </p>
             {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
-            <div className="mt-auto flex items-center justify-between gap-3">
+            <AudioConversation />
+
+            <div className="mt-a`uto flex shrink-0 items-center justify-between gap-3">
                 <ControlBar
                     variation="minimal"
                     controls={{ microphone: true, camera: false, screenShare: false, chat: false }}
@@ -137,6 +136,75 @@ type ChatMessage = {
     role: "agent" | "user"
     text: string
     timestamp: number
+}
+
+function AudioConversation() {
+    const room = useRoomContext()
+    const transcriptions = useTranscriptions({ room })
+    const [toolEvents, setToolEvents] = useState<ToolExecutionEvent[]>([])
+    useDataChannel(TOOL_EVENTS_TOPIC, (message) => {
+        if (message.from?.kind !== ParticipantKind.AGENT) return
+        const event = decodeToolExecutionEvent(message.payload)
+        if (!event) return
+        setToolEvents((current) => current.some((item) => item.call_id === event.call_id)
+            ? current
+            : [...current, event])
+    })
+    const transcriptRef = useRef<HTMLDivElement>(null)
+    const speechMessages = useMemo<ChatMessage[]>(() => (
+        transcriptions
+            .filter((transcription) => transcription.text.trim())
+            .map((transcription): ChatMessage => ({
+                id: transcription.streamInfo.id,
+                role: transcription.participantInfo.identity === room.localParticipant.identity ? "user" : "agent",
+                text: transcription.text,
+                timestamp: transcription.streamInfo.timestamp,
+            }))
+    ), [room.localParticipant.identity, transcriptions])
+
+    const messages = useMemo(
+        () => [...speechMessages, ...toolEvents].sort((left, right) => left.timestamp - right.timestamp),
+        [speechMessages, toolEvents]
+    )
+
+    useEffect(() => {
+        const transcript = transcriptRef.current
+        if (transcript) transcript.scrollTop = transcript.scrollHeight
+    }, [messages])
+
+    return (
+        <div
+            ref={transcriptRef}
+            role="log"
+            aria-label="Voice conversation transcript"
+            className="min-h-0 max-h-[500px] flex-1 space-y-3 overflow-y-auto"
+        >
+            {messages.length === 0 ? (
+                <div className="flex min-h-36 items-center justify-center text-center text-sm text-muted-foreground">
+                    Start speaking to see your conversation here.
+                </div>
+            ) : messages.map((message) => "call_id" in message ? (
+                <ToolExecutionCard key={`tool-${message.call_id}`} event={message} />
+            ) : (
+                <div
+                    key={message.id}
+                    className={cn("flex flex-col gap-1", message.role === "user" ? "items-end" : "items-start")}
+                >
+                    <span className="px-1 text-xs text-muted-foreground">
+                        {message.role === "user" ? "You" : "Agent"}
+                    </span>
+                    <p
+                        className={cn(
+                            "max-w-[85%] whitespace-pre-wrap rounded-2xl px-3 py-2 text-sm",
+                            message.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted"
+                        )}
+                    >
+                        {message.text}
+                    </p>
+                </div>
+            ))}
+        </div>
+    )
 }
 
 export function AgentSessionLlmClient({ sessionTestType }: { sessionTestType: typeof PER_SESSION_TEST_TYPE[keyof typeof PER_SESSION_TEST_TYPE] }) {

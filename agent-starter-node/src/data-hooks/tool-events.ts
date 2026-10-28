@@ -4,7 +4,9 @@ import { PER_SESSION_TEST_TYPE } from '../../../app/agents/_components/main/agen
 import { encodeToolExecutionEvent, TOOL_EVENTS_TOPIC } from '../../../lib/livekit-tool-events.ts';
 
 export function registerToolExecutionEvents(ctx: JobContext, session: voice.AgentSession) {
-    if (!ctx.job.room?.name.startsWith(`${PER_SESSION_TEST_TYPE.LLM}-`)) return;
+    const roomName = ctx.job.room?.name;
+    // Browser audio sessions use call-* rooms; text tests use test-llm-* rooms.
+    if (!roomName?.startsWith('call-') && !roomName?.startsWith(`${PER_SESSION_TEST_TYPE.LLM}-`)) return;
 
     const onExecuted = (event: voice.FunctionToolsExecutedEvent) => {
         for (const call of event.functionCalls) {
