@@ -10408,10 +10408,9 @@ var VOICES_UPDATED = [
 async function createVoiceStack(agentId, agentConfig) {
   const model = agentConfig.llmConfig.model.trim() || "gpt-4.1";
   const temperature = agentConfig.llmConfig.model_temperature ?? 0;
-  const strictToolSchema = agentConfig.llmConfig.tool_call_strict_mode ?? true;
   let llm2;
   if (model.startsWith("gpt-")) {
-    llm2 = new openai.responses.LLM({ model, temperature, maxOutputTokens: 512, strictToolSchema });
+    llm2 = new openai.responses.LLM({ model, temperature, maxOutputTokens: 512 });
   } else if (model.startsWith("claude-")) {
     llm2 = new anthropic.LLM({ model, temperature });
   } else if (model.startsWith("gemini-")) {

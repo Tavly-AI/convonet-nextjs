@@ -45,6 +45,7 @@ import { CustomVoiceModal } from "./custom-voice-modal"
 import { getWorkspaceVoices, type WorkspaceVoice } from "./voices-actions"
 import { useSearchParams } from "next/navigation"
 import { isChatAgentSession } from "../main/agent-session-start-speaker"
+import { VoiceMoreSettings } from "./voice-modal-popup-more-settings"
 
 export type VoiceModalPopupProps = {
   open: boolean
@@ -282,6 +283,8 @@ export function VoiceModalPopup({
               <span className="text-sm text-muted-foreground">No voice selected</span>
             )}
           </div>
+
+          <VoiceMoreSettings provider={provider} />
         </DialogFooter>
       </DialogContent>
     </Dialog >

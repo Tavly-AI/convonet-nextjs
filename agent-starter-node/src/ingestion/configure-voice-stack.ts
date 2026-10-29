@@ -54,23 +54,30 @@ export async function createVoiceStack(agentId: string, agentConfig: RuntimeAgen
 
     const voiceId = agentConfig.config.voiceId?.trim() || "db6b0ed5-d5d3-463d-ae85-518a07d3c2b4";
 
-    let voice: TtsVoice | undefined = VOICES_UPDATED.find((voice) => voice.voice_id === voiceId);
+    let voice_updated: TtsVoice | undefined = VOICES_UPDATED.find((voice) => voice.voice_id === voiceId);
 
-    if (!voice) { voice = await solveCustomVoice(agentId, voiceId) }
+    if (!voice_updated) { voice_updated = await solveCustomVoice(agentId, voiceId) }
 
     let tts;
 
-    if (voice?.provider === "cartesia") {
+    if (voice_updated?.provider === "cartesia") {
         tts = new cartesia.TTS({
-            model: formatModelId(voice.model),
-            voice: voice.voice_id,
+            model: formatModelId(agentConfig.config.voice_model?.startsWith("sonic-") ? agentConfig.config.voice_model : voice_updated.model),
+            voice: voice_updated.voice_id,
             language: languages.cartesia,
+            speed: agentConfig.config.voice_speed ?? 1,
+            volume: agentConfig.config.volume ?? 1
         });
-    } else if (voice?.provider === "elevenlabs") {
+    } else if (voice_updated?.provider === "elevenlabs") {
         tts = new elevenlabs.TTS({
-            modelID: voice.model,
-            voiceId: voice.voice_id,
+            modelID: agentConfig.config.voice_model?.startsWith("eleven_") ? agentConfig.config.voice_model : voice_updated.model,
+            voiceId: voice_updated.voice_id,
             language: languages.elevenlabs,
+            voiceSettings: {
+                stability: 0.5,
+                similarity_boost: 0.75,
+                speed: agentConfig.config.voice_speed ?? 1,
+            },
         });
     } else {
         tts = new sarvam.TTS({

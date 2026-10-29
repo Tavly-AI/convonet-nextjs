@@ -48,13 +48,30 @@ export const DEFAULT_SPEECH_SETTINGS = {
 // =============== TTS_voiceSettings DEFAULT & TYPES =================
 // ===================================================================
 
+export const VOICE_MODEL_MAP_MORE_SETTINGS: Record<string, string> = {
+    eleven_flash_v2: "ElevenLabs Flash v2",
+    eleven_flash_v2_5: "ElevenLabs Flash v2.5",
+    eleven_multilingual_v2: "ElevenLabs Multilingual v2",
+    eleven_v3: "ElevenLabs v3",
+    eleven_v3_conversational: "ElevenLabs v3 Conversational",
+    eleven_v4: "ElevenLabs v4",
+    eleven_v4_turbo: "ElevenLabs v4 Turbo",
+    "sonic-3": "Cartesia Sonic 3",
+    "sonic-3-latest": "Cartesia Sonic 3 Latest",
+    "sonic-3.5": "Cartesia Sonic 3.5",
+    "sonic-3.6": "Cartesia Sonic 3.6",
+}
+
+
 export type TTS_voiceSettings = {
+    voice_model: keyof typeof VOICE_MODEL_MAP_MORE_SETTINGS
     voice_temperature: number
     voice_speed: number
     volume: number
 }
 
 export const DEFAULT_TTS_VOICE_SETTINGS = {
+    voice_model: "sonic-3",
     voice_temperature: 1,
     voice_speed: 1,
     volume: 1,
@@ -427,7 +444,7 @@ export type LLM_ModelSettings = {
 }
 
 export const DEFAULT_LLM_MODEL_SETTINGS: LLM_ModelSettings = {
-    model_temperature: 0,
+    model_temperature: 1,
     tool_call_strict_mode: true,
 }
 
@@ -750,6 +767,33 @@ export function writeAgentSession(agent: AgentSessionAgent, autoSave = true) {
 
 export function clearAgentSession() {
     getStorage()?.removeItem(SESSION_KEY)
+}
+
+
+// =================================================================
+// ===================== VOICE MORE SETTINGS =======================
+// =================================================================
+
+export function getVoiceMoreSettings(): TTS_voiceSettings {
+    const config = getAgentSession()?.config
+    return {
+        voice_model: config?.voice_model ?? DEFAULT_TTS_VOICE_SETTINGS.voice_model,
+        voice_temperature: config?.voice_temperature ?? DEFAULT_TTS_VOICE_SETTINGS.voice_temperature,
+        voice_speed: config?.voice_speed ?? DEFAULT_TTS_VOICE_SETTINGS.voice_speed,
+        volume: config?.volume ?? DEFAULT_TTS_VOICE_SETTINGS.volume
+    }
+}
+
+export function writeVoiceMoreSettings(settings: Partial<TTS_voiceSettings>) {
+    const agent = getAgentSession()
+    if (!agent) throw new Error("Agent session is not initialized.")
+
+    const nextSettings = { ...getVoiceMoreSettings(), ...settings }
+    writeAgentSession({
+        ...agent,
+        config: { ...agent.config, ...nextSettings },
+    })
+    return nextSettings
 }
 
 // =================================================================
