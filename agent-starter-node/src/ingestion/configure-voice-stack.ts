@@ -23,12 +23,11 @@ export async function createVoiceStack(agentId: string, agentConfig: RuntimeAgen
 
     const model = agentConfig.llmConfig.model.trim() || "gpt-4.1";
     const temperature = agentConfig.llmConfig.model_temperature ?? 0;
-    const strictToolSchema = agentConfig.llmConfig.tool_call_strict_mode ?? true;
 
     let llm;
 
     if (model.startsWith("gpt-")) {
-        llm = new openai.responses.LLM({ model, temperature, maxOutputTokens: 512, strictToolSchema });
+        llm = new openai.responses.LLM({ model, temperature, maxOutputTokens: 512 });
     } else if (model.startsWith("claude-")) {
         llm = new anthropic.LLM({ model, temperature });
     } else if (model.startsWith("gemini-")) {

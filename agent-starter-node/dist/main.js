@@ -10887,7 +10887,8 @@ function encodeToolExecutionEvent(event) {
 
 // src/data-hooks/tool-events.ts
 function registerToolExecutionEvents(ctx, session) {
-  if (!ctx.job.room?.name.startsWith(`${PER_SESSION_TEST_TYPE.LLM}-`)) return;
+  const roomName = ctx.job.room?.name;
+  if (!roomName?.startsWith("call-") && !roomName?.startsWith(`${PER_SESSION_TEST_TYPE.LLM}-`)) return;
   const onExecuted = (event) => {
     for (const call of event.functionCalls) {
       const output = event.functionCallOutputs.find((item) => item.callId === call.callId);
