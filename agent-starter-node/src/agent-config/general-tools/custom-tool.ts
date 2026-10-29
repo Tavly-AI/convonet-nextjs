@@ -44,7 +44,9 @@ export function createCustomFunctionTools(agentConfig: RuntimeAgentConfig) {
 
         const common = { name: config.name, description: config.description.trim(), execute };
 
-        return config.parameters ? tool({ ...common, parameters: config.parameters as unknown as JSONSchema7 }) : tool(common);
+        return config.parameters
+            ? tool({ ...common, parameters: { ...config.parameters, additionalProperties: false, required: Object.keys(config.parameters.properties ?? {}), } as JSONSchema7 })
+            : tool(common);
     });
 }
 
