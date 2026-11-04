@@ -125,6 +125,7 @@ async function playThatAudio(recordingUrl: string | null | undefined, start: num
 }
 
 // transscript-messages with tool-call
+// connected with calculateKBCost() in app/dashboard/billing/_actions/billing-initialize-post-service-pipeline.ts
 function TranscriptMessageButTool({ event }: { event: Exclude<NonNullable<CallRecordDatabaseData["transcript_with_tool_calls"]>[number], { type: "message" }> }) {
     const isResult = event.type === "function_call_output"
     const isKnowledgeBase = event.name === "search_knowledge_base"

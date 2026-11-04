@@ -48,7 +48,7 @@ export const DEFAULT_SPEECH_SETTINGS = {
 // =============== TTS_voiceSettings DEFAULT & TYPES =================
 // ===================================================================
 
-export const VOICE_MODEL_MAP_MORE_SETTINGS: Record<string, string> = {
+export const VOICE_MODEL_MAP_MORE_SETTINGS = {
     eleven_flash_v2: "ElevenLabs Flash v2",
     eleven_flash_v2_5: "ElevenLabs Flash v2.5",
     eleven_multilingual_v2: "ElevenLabs Multilingual v2",
@@ -60,8 +60,7 @@ export const VOICE_MODEL_MAP_MORE_SETTINGS: Record<string, string> = {
     "sonic-3-latest": "Cartesia Sonic 3 Latest",
     "sonic-3.5": "Cartesia Sonic 3.5",
     "sonic-3.6": "Cartesia Sonic 3.6",
-}
-
+} as const satisfies Record<string, string>
 
 export type TTS_voiceSettings = {
     voice_model: keyof typeof VOICE_MODEL_MAP_MORE_SETTINGS

@@ -49,7 +49,7 @@ function VoiceModelSettings({ provider }: { provider: Voice["provider"] | null }
                 value={available_models.find(m => m.value === settings.voice_model)?.value ?? ""}
                 onValueChange={value => {
                     if (available_models.some(m => m.value === value)) {
-                        setSettings(writeVoiceMoreSettings({ voice_model: value }))
+                        setSettings(writeVoiceMoreSettings({ voice_model: value as keyof typeof VOICE_MODEL_MAP_MORE_SETTINGS }))
                     }
                 }}
                 options={available_models}

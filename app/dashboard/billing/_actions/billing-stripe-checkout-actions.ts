@@ -12,9 +12,10 @@ export async function billingCreateStripCheckout(amount: string) {
 
     if (!/^\d+(\.\d{1,2})?$/.test(amount) || !Number.isSafeInteger(amountCents) || amountCents < minimumRecharge * 100) { throw new Error(`Enter at least $${minimumRecharge} USD with up to two decimal places`) }
 
-    const billingUrl = new URL("/dashboard/billing", process.env.APP_URL)
+    const billingUrl = new URL("/dashboard/billing", process.env.STRIPE_CALLBACK_URL)
     const { url } = await getStripe().checkout.sessions.create({
         mode: "payment",
+        allow_promotion_codes: true,
         managed_payments: { enabled: false },
         metadata: { workspaceId, purpose: "workspace_top_up" },
         line_items: [{

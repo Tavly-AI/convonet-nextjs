@@ -182,7 +182,7 @@ const data1 = {
     },
     {
       name: "Billing",
-      url: "#",
+      url: "/dashboard/billing",
       icon: <ReceiptTextIcon />,
     },
     {

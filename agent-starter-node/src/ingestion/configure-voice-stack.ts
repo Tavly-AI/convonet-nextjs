@@ -11,6 +11,7 @@ import * as sarvam from "@livekit/agents-plugin-sarvam";
 import { VOICES_UPDATED, type Voice } from "../../../app/agents/_data/voices-updated.ts";
 import type { RuntimeAgentConfig } from "./get-agent-config.ts";
 import type { LlmProvider } from "../../../app/agents/_components/main/agent-session-model.tsx";
+import type { BILLING_GLOBAL_CONFIG_VALUES } from "../../../app/dashboard/billing/_lib/payment-config.ts";
 
 type TtsVoice = Pick<Voice, "provider" | "voice_id" | "model">;
 export type VoiceStack = Awaited<ReturnType<typeof createVoiceStack>>;
@@ -44,7 +45,7 @@ export async function createVoiceStack(agentId: string, agentConfig: RuntimeAgen
     const languages = getProviderLanguages(agentConfig.config.language);
 
     const stt = new deepgram.STT({
-        model: "nova-3",
+        model: "nova-3" satisfies keyof typeof BILLING_GLOBAL_CONFIG_VALUES.stt.deepgram,
         language: languages.deepgram,
     });
 

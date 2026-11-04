@@ -28,7 +28,7 @@ export default defineAgent({
 
     const session = createSession({ llm, stt, tts, channel: agentConfig.channel, });
     registerToolExecutionEvents(ctx, session);
-    await session.start({ agent, room: ctx.room, ...getSessionStartOptions(agentConfig.channel) });
+    await session.start({ agent, room: ctx.room, ...getSessionStartOptions(agentConfig) });
 
     if (agentConfig.channel === 'voice') {
       const egressRecording = registerS3DualChannelRecording(ctx);
@@ -79,18 +79,24 @@ function createSession({ llm, stt, tts, channel }: VoiceStack & { channel: Runti
   });
 }
 
-function getSessionStartOptions(channel: RuntimeAgentConfig["channel"]) {
-  const isChat = channel === 'chat';
+function getSessionStartOptions(agentConfig: RuntimeAgentConfig) {
+  const isChat = agentConfig.channel === 'chat';
 
   return {
     record: { audio: false },
     inputOptions: isChat
       ? { textEnabled: true, audioEnabled: false, deleteRoomOnClose: true }
-      : { deleteRoomOnClose: true, noiseCancellation: audioEnhancement({ model: 'quailVfS' }) },
+      : { deleteRoomOnClose: true, ...resolveDenoisingConfig(agentConfig.config.denoising_mode) },
     ...(isChat && {
       outputOptions: { transcriptionEnabled: true, audioEnabled: false, syncTranscription: false },
     }),
   };
+}
+
+// https://docs.livekit.io/transport/media/noise-cancellation/
+function resolveDenoisingConfig(mode: RuntimeAgentConfig["config"]["denoising_mode"]) {
+  if (mode === 'no-denoise') return {}
+  return { noiseCancellation: audioEnhancement({ model: mode === 'noise-and-background-speech-cancellation' ? 'quailVfS' : 'quailL', }), }
 }
 
 function provisionForOverRideAgentChannelType(agentConfig: RuntimeAgentConfig, roomName: string | undefined) {

@@ -6,6 +6,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useSidebar } from "@/components/ui/sidebar"
 import type { CallRecordDatabaseData } from "@/app/api/livekit/sessionReport/types"
 import { cn } from "@/lib/utils"
+import { InfoIcon } from "lucide-react"
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover"
 
 export function CallHistoryTableClient({ callRecords }: { callRecords: CallRecordDatabaseData[] }) {
     const [selectedRecord, setSelectedRecord] = useState<CallRecordDatabaseData | null>(null)
@@ -20,7 +26,7 @@ export function CallHistoryTableClient({ callRecords }: { callRecords: CallRecor
             <div className="flex min-h-0 flex-1 flex-col gap-5 xl:flex-row">
                 <div className="min-h-0 flex-1 overflow-hidden rounded-xl border">
                     <Table className="min-w-[1750px]">
-                        <TableHeader className="bg-muted/60"><TableRow className="hover:bg-transparent"><TableHead className="h-12 pl-4">Time</TableHead><TableHead>Duration</TableHead><TableHead>Call Type</TableHead><TableHead>End Reason</TableHead><TableHead>Session Status</TableHead><TableHead>User Sentiment</TableHead><TableHead>From</TableHead><TableHead>To</TableHead><TableHead>Channel</TableHead><TableHead>Session Outcome</TableHead><TableHead className="pr-4">End to End Latency</TableHead></TableRow></TableHeader>
+                        <TableHeader className="bg-muted/60"><TableRow className="hover:bg-transparent"><TableHead className="h-12 pl-4">Time</TableHead><TableHead>Duration</TableHead><TableHead>Call Type</TableHead><TableHead>Cost</TableHead><TableHead>End Reason</TableHead><TableHead>Session Status</TableHead><TableHead>User Sentiment</TableHead><TableHead>From</TableHead><TableHead>To</TableHead><TableHead>Channel</TableHead><TableHead>Session Outcome</TableHead><TableHead className="pr-4">End to End Latency</TableHead></TableRow></TableHeader>
                         <TableBody>
                             {callRecords.map((record) => {
                                 const duration = formatDuration(record.duration_ms)
@@ -32,6 +38,7 @@ export function CallHistoryTableClient({ callRecords }: { callRecords: CallRecor
                                     <TableCell className="h-14 pl-4 font-medium">{startedAt}</TableCell>
                                     <TableCell>{duration}</TableCell>
                                     <TableCell>{formatChannelType(record.call_type)}</TableCell>
+                                    <TableCell><Billing_CallCost_Charges_BreakDown_Modal record={record} /></TableCell>
                                     <TableCell>{formatLabel(record.disconnection_reason)}</TableCell>
                                     <TableCell><StatusValue label={formatLabel(record.call_status)} tone={getStatusTone(record.call_status)} /></TableCell>
                                     <TableCell><StatusValue label={sentiment} tone={getSentimentTone(sentiment)} /></TableCell>
@@ -42,7 +49,7 @@ export function CallHistoryTableClient({ callRecords }: { callRecords: CallRecor
                                     <TableCell className="pr-4">{formatLatency(record.latency?.e2e)}</TableCell>
                                 </TableRow>
                             })}
-                            {callRecords.length === 0 && <TableRow><TableCell colSpan={11} className="h-24 text-center text-muted-foreground">No calls yet.</TableCell></TableRow>}
+                            {callRecords.length === 0 && <TableRow><TableCell colSpan={12} className="h-24 text-center text-muted-foreground">No calls yet.</TableCell></TableRow>}
                         </TableBody>
                     </Table>
                 </div>
@@ -164,4 +171,118 @@ function getSessionOutcome(callAnalysis: CallRecordDatabaseData["call_analysis"]
 function formatLatency(latency: NonNullable<CallRecordDatabaseData["latency"]>["e2e"] | undefined) {
     if (!latency || latency.num === 0) return "—"
     return `${latency.p50}ms`
+}
+
+// attached with billing_callCost in app/dashboard/billing/_actions/billing-initialize-post-service-pipeline.ts
+const billingUnitByProduct: Record<string, "message" | "dial" | "min" | undefined> = {
+    telephony: "min",
+    tts: "min",
+    stt: "min",
+    llm: "min",
+    chat_llm: "message",
+    short_call_surcharge: undefined,
+    kb: "min",
+    batch_call: "dial",
+    safety_guardrails: "min",
+    pii_removal: "min",
+    advanced_denoising: "min",
+    llm_token_surcharge: "min",
+}
+
+export function Billing_CallCost_Charges_BreakDown_Modal({ record }: { record: CallRecordDatabaseData }) {
+    const [open, setOpen] = useState(false)
+    const callCost = record.call_cost
+
+    if (!callCost) return <span className="text-muted-foreground">—</span>
+
+    const minutes = (callCost?.total_duration_seconds ?? (record.duration_ms ?? 0) / 1000) / 60
+    const products = (callCost.product_costs ?? []).filter(item => (item.cost ?? 0) !== 0)
+    const total = callCost?.combined_cost ?? products.reduce((sum, item) => sum + (item.cost ?? 0), 0)
+    const rate = minutes > 0 ? total / minutes : 0
+
+    const formatCost = (value?: number | null) => `$${(value ?? 0).toFixed(4)}`
+    const formatRate = (value?: number | null) => `$${(value ?? 0).toFixed(4)}/min`
+
+    return (
+        <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger
+                render={
+                    <button
+                        type="button"
+                        onClick={(e) => e.stopPropagation()}
+                        className="inline-flex items-center gap-1.5 hover:text-primary"
+                    />
+                }
+            >
+                ${total.toFixed(3)}
+                <InfoIcon className="size-3.5 text-muted-foreground" />
+            </PopoverTrigger>
+
+            <PopoverContent
+                align="start"
+                side="bottom"
+                className="w-[390px] space-y-3 p-3"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <div className="rounded-lg bg-muted/60 p-3">
+                    <p className="text-xs text-muted-foreground">Total cost</p>
+                    <p className="text-lg font-semibold">{formatCost(total)}</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                    <div className="rounded-lg bg-muted/60 p-3">
+                        <p className="text-xs text-muted-foreground">Duration</p>
+                        <p className="text-sm font-medium">
+                            {formatDuration(minutes * 60000)}
+                            <span className="ml-1 text-xs text-muted-foreground">
+                                ({minutes.toFixed(3)} min)
+                            </span>
+                        </p>
+                    </div>
+
+                    <div className="rounded-lg bg-muted/60 p-3">
+                        <p className="text-xs text-muted-foreground">Average per minute</p>
+                        <p className="text-sm font-medium">{formatRate(rate)}</p>
+                    </div>
+                </div>
+
+                <div className="border-t pt-3">
+                    <div className="mb-2 flex items-center justify-between text-xs font-medium">
+                        <span>Service</span>
+                        <span>Cost</span>
+                    </div>
+
+                    <div className="space-y-2">
+                        {products.map((item, index) => (
+                            <div
+                                key={`${item.product}-${index}`}
+                                className="flex items-center justify-between gap-3 text-xs"
+                            >
+                                <div>
+                                    <p className="font-medium capitalize">
+                                        {item.product.replaceAll("_", " ")}
+                                    </p>
+                                    <p className="text-muted-foreground">
+                                        {formatCost(item.unit_price)}{billingUnitByProduct[item.product] ? `/${billingUnitByProduct[item.product]}` : ""}
+                                    </p>
+                                </div>
+
+                                <div className="text-right">
+                                    <p className="font-medium">{formatCost(item.cost)}</p>
+                                    <p className="text-muted-foreground">
+                                        {formatDuration(callCost.total_duration_seconds * 1000)}
+                                    </p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                <div className="flex items-center justify-between border-t pt-3 text-sm font-semibold">
+                    <span>Total</span>
+                    <span>{formatCost(total)}</span>
+                </div>
+            </PopoverContent>
+        </Popover>
+    )
 }

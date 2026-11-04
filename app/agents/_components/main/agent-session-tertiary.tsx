@@ -21,7 +21,9 @@ export default function AgentSessionTertiaryTab() {
     // ================= RESOLVE SESSION TEST =====================
     // ============================================================
 
-    const [sessionTestType, setSessionTestType] = useState<"test-llm" | "test-audio">("test-audio")
+    const [sessionTestType, setSessionTestType] = useState<typeof PER_SESSION_TEST_TYPE[keyof typeof PER_SESSION_TEST_TYPE]>(
+        isChat ? PER_SESSION_TEST_TYPE.LLM : PER_SESSION_TEST_TYPE.AUDIO
+    )
 
     return (
         <>

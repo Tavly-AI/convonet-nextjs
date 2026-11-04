@@ -50,6 +50,7 @@ import {
 } from "@/app/agents/_lib/session-storage/agent-session"
 import { GeneralToolForm } from "./general-tool-form"
 import { isChatAgentSession } from "../main/agent-session-start-speaker"
+import { AGENT_CHANNELS } from "@/lib/constants"
 
 const TOOL_OPTIONS = [
   {
@@ -57,49 +58,49 @@ const TOOL_OPTIONS = [
     label: "End Call",
     description: "End the conversation when its conditions are met.",
     icon: PhoneOffIcon,
-    channels: ["voice"],
+    channels: [AGENT_CHANNELS.VOICE],
   },
   {
     type: "transfer_call" as const,
     label: "Call Transfer",
     description: "Route the caller to a person or external number.",
     icon: ArrowRightLeftIcon,
-    channels: ["voice"],
+    channels: [AGENT_CHANNELS.VOICE],
   },
   {
     type: "agent_swap" as const,
     label: "Agent Transfer",
     description: "Switch the conversation to another AI agent.",
     icon: Repeat2Icon,
-    channels: ["voice"],
+    channels: [AGENT_CHANNELS.VOICE],
   },
   {
     type: "check_availability_cal" as const,
     label: "Check Availability",
     description: "Check Cal.com availability for an event type.",
     icon: CalendarDaysIcon,
-    channels: ["voice", "chat"],
+    channels: [AGENT_CHANNELS.VOICE, AGENT_CHANNELS.CHAT],
   },
   {
     type: "book_appointment_cal" as const,
     label: "Book Appointment",
     description: "Book a Cal.com appointment for an event type.",
     icon: CalendarCheckIcon,
-    channels: ["voice", "chat"],
+    channels: [AGENT_CHANNELS.VOICE, AGENT_CHANNELS.CHAT],
   },
   {
     type: "press_digit" as const,
     label: "Press Digit",
     description: "Send DTMF digits while navigating an IVR.",
     icon: HashIcon,
-    channels: ["voice"],
+    channels: [AGENT_CHANNELS.VOICE],
   },
   {
     type: "code" as const,
     label: "Code",
     description: "Run JavaScript in Retell's sandbox during the conversation.",
     icon: Code2Icon,
-    channels: ["voice", "chat"],
+    channels: [AGENT_CHANNELS.VOICE, AGENT_CHANNELS.CHAT],
   },
   {
     type: "extract_dynamic_variable" as const,
@@ -120,7 +121,7 @@ const TOOL_OPTIONS = [
     label: "Custom Function",
     description: "Call your own API during the conversation.",
     icon: BracesIcon,
-    channels: ["voice", "chat"],
+    channels: [AGENT_CHANNELS.VOICE, AGENT_CHANNELS.CHAT],
   },
 ]
 
@@ -199,7 +200,7 @@ export function GeneralToolsEditor() {
             placeholder="Add a function"
             label="Functions"
             options={TOOL_OPTIONS.filter(
-              ({ type, channels }) => channels.includes(isChatAgent ? "chat" : "voice")
+              ({ type, channels }) => (channels as readonly string[]).includes(isChatAgent ? AGENT_CHANNELS.CHAT : AGENT_CHANNELS.VOICE)
             ).map(({ type, label, description, icon }) => ({
               value: type,
               label,

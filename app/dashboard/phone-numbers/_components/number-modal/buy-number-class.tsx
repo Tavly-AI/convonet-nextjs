@@ -7,6 +7,7 @@ import { setupLiveKitNumber, updateLiveKitNumber } from "../../_lib/livekit-setu
 import { updateCurrentWorkspaceTelnyxSipTrunk } from "../../_lib/telnyx-subaccount-actions"
 import { updateCurrentWorkspaceTwilioSipTrunk } from "../../_lib/twillio-subaccount-actions"
 import type { PhoneNumberProvider } from "./filters"
+import { chargeUserAfterPhoneNumberPurchase, checkPhoneBalanceBeforePhoneNumberPurchase, createPhoneNumberPurchaseCronJob } from "../../_lib/phoner-number-purchase-cron-job"
 
 type PurchasedNumber = {
     sid: string
@@ -45,9 +46,18 @@ type SipTrunkSetup = {
 }
 
 export async function buyNumber(phoneNumber: string, provider: PhoneNumberProvider) {
+
+    // CHECK BALANCE
+    try {
+        const balanceCheck = await checkPhoneBalanceBeforePhoneNumberPurchase()
+        if (!balanceCheck.success) { toast.error(balanceCheck.error); return }
+    } catch (error) {
+        toast.error(error instanceof Error ? error.message : "Failed to check balance.")
+        return
+    }
+
     // TWILLIO PURCHASE NUMBER API
     let purchasedNumber: PurchasedNumber
-
     try {
         const route = provider === "telnyx" ? "/api/telnyx/purchase-number" : "/api/twillio/purchase-number"
         const response = await fetch(route, {
@@ -126,6 +136,10 @@ export async function buyNumber(phoneNumber: string, provider: PhoneNumberProvid
                 transport: "tls",
             })
         }
+
+        // Schedule monthly billing, then charge the initial purchase.
+        await chargeUserAfterPhoneNumberPurchase({ phoneNumber })
+        await createPhoneNumberPurchaseCronJob({ phoneNumber })
 
         toast.success("Phone number purchased successfully.")
     } catch (error) {

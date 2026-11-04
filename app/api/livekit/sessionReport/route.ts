@@ -5,7 +5,8 @@ import { Prisma } from "@/generated/prisma/client"
 import { prisma } from "@/lib/prisma"
 import type { CallRecordDatabaseData, LiveKitSessionReportPayload } from "./types"
 import { calculateLatencyStats, checkIsSessionReportPayload } from "./helper-functions"
-import type { PostCallAnalysisSettings } from "@/app/agents/_lib/session-storage/agent-session"
+import type { AgentSessionAgent, PostCallAnalysisSettings } from "@/app/agents/_lib/session-storage/agent-session"
+import { billingInitializePostServiceBillingPipeline } from "@/app/dashboard/billing/_actions/billing-initialize-post-service-pipeline"
 
 export async function POST(request: Request) {
   try {
@@ -14,7 +15,7 @@ export async function POST(request: Request) {
 
     const agent = await prisma.agent.findUnique({
       where: { id: body.agentId },
-      select: { workspaceId: true, channel: true, config: true },
+      select: { workspaceId: true, channel: true, config: true, llmConfig: true },
     })
     if (!agent) { return NextResponse.json({ error: "Agent not found" }, { status: 404 }) }
 
@@ -38,6 +39,17 @@ export async function POST(request: Request) {
       where: { call_id: data.call_id },
       create: data,
       update: data,
+    })
+
+    await billingInitializePostServiceBillingPipeline({
+      body,
+      agent: {
+        ...agent,
+        channel: agent.channel === "chat" ? "chat" : "voice",
+        config: agent.config as AgentSessionAgent["config"],
+        llmConfig: agent.llmConfig as AgentSessionAgent["llmConfig"],
+      },
+      durationMs: data.duration_ms ?? 0,
     })
 
     return NextResponse.json({ received: true })

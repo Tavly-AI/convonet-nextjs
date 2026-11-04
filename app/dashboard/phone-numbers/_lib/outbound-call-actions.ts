@@ -5,7 +5,7 @@ import { LiveKitAPI, SipCallError } from "livekit-server-sdk"
 import { z } from "zod"
 
 import { getCurrentWorkspaceId } from "@/app/agents/_lib/helper-actions"
-import { INTERNATION_PHONE_NUMBER_SCHEMA, VOICE_RUNTIME_AGENT_NAME } from "@/lib/constants"
+import { AGENT_CHANNELS, INTERNATION_PHONE_NUMBER_SCHEMA, VOICE_RUNTIME_AGENT_NAME } from "@/lib/constants"
 import { prisma } from "@/lib/prisma"
 
 const startOutboundTestCallSchema = z.object({
@@ -49,7 +49,7 @@ export async function startOutboundTestCall(input: { phoneNumberId: string; dest
     where: {
       id: agentId,
       workspaceId,
-      channel: "voice",
+      channel: AGENT_CHANNELS.VOICE,
     },
     select: { id: true },
   })

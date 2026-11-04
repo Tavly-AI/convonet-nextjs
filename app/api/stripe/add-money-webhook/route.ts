@@ -6,7 +6,7 @@ import { Prisma } from "@/generated/prisma/client"
 import { BILLING_GLOBAL_CONFIG_VALUES } from "@/app/dashboard/billing/_lib/payment-config"
 import type Stripe from "stripe"
 
-const { currency, minimumRecharge } = BILLING_GLOBAL_CONFIG_VALUES.config
+const { currency } = BILLING_GLOBAL_CONFIG_VALUES.config
 
 export async function POST(request: Request) {
 
@@ -18,10 +18,10 @@ export async function POST(request: Request) {
     if (session.metadata?.purpose !== "workspace_top_up" || session.payment_status !== "paid") { return NextResponse.json({ received: true }) }
 
     const workspaceId = session.metadata.workspaceId
-    if (!workspaceId || session.mode !== "payment" || session.currency !== currency || !session.amount_total || session.amount_total < minimumRecharge * 100) { return NextResponse.json({ error: "Invalid top-up payment" }, { status: 400 }) }
+    if (!workspaceId || session.mode !== "payment" || session.currency !== currency || !session.amount_total) { return NextResponse.json({ error: "Invalid top-up payment" }, { status: 400 }) }
 
     try {
-        await creditWorkspace(workspaceId, session.amount_total, session.id)
+        await creditWorkspace(workspaceId, session.amount_subtotal ?? session.amount_total, session.id)
         revalidatePath("/dashboard/billing")
         return NextResponse.json({ received: true })
     } catch (error) {

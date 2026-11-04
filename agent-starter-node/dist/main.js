@@ -465,7 +465,7 @@ function createCustomFunctionTools(agentConfig) {
       }
     };
     const common = { name: config.name, description: config.description.trim(), execute };
-    return config.parameters ? tool6({ ...common, parameters: config.parameters }) : tool6(common);
+    return config.parameters ? tool6({ ...common, parameters: { ...config.parameters, additionalProperties: false, required: Object.keys(config.parameters.properties ?? {}) } }) : tool6(common);
   });
 }
 function requestUrl(config) {
@@ -10424,22 +10424,29 @@ async function createVoiceStack(agentId, agentConfig) {
     language: languages.deepgram
   });
   const voiceId = agentConfig.config.voiceId?.trim() || "db6b0ed5-d5d3-463d-ae85-518a07d3c2b4";
-  let voice6 = VOICES_UPDATED.find((voice7) => voice7.voice_id === voiceId);
-  if (!voice6) {
-    voice6 = await solveCustomVoice(agentId, voiceId);
+  let voice_updated = VOICES_UPDATED.find((voice6) => voice6.voice_id === voiceId);
+  if (!voice_updated) {
+    voice_updated = await solveCustomVoice(agentId, voiceId);
   }
   let tts;
-  if (voice6?.provider === "cartesia") {
+  if (voice_updated?.provider === "cartesia") {
     tts = new cartesia.TTS({
-      model: formatModelId(voice6.model),
-      voice: voice6.voice_id,
-      language: languages.cartesia
+      model: formatModelId(agentConfig.config.voice_model?.startsWith("sonic-") ? agentConfig.config.voice_model : voice_updated.model),
+      voice: voice_updated.voice_id,
+      language: languages.cartesia,
+      speed: agentConfig.config.voice_speed ?? 1,
+      volume: agentConfig.config.volume ?? 1
     });
-  } else if (voice6?.provider === "elevenlabs") {
+  } else if (voice_updated?.provider === "elevenlabs") {
     tts = new elevenlabs.TTS({
-      modelID: voice6.model,
-      voiceId: voice6.voice_id,
-      language: languages.elevenlabs
+      modelID: agentConfig.config.voice_model?.startsWith("eleven_") ? agentConfig.config.voice_model : voice_updated.model,
+      voiceId: voice_updated.voice_id,
+      language: languages.elevenlabs,
+      voiceSettings: {
+        stability: 0.5,
+        similarity_boost: 0.75,
+        speed: agentConfig.config.voice_speed ?? 1
+      }
     });
   } else {
     tts = new sarvam.TTS({
@@ -13720,7 +13727,7 @@ var main_default = defineAgent({
     const agent = await createRuntimeAgent(agentId, agentConfig);
     const session = createSession({ llm: llm2, stt, tts, channel: agentConfig.channel });
     registerToolExecutionEvents(ctx, session);
-    await session.start({ agent, room: ctx.room, ...getSessionStartOptions(agentConfig.channel) });
+    await session.start({ agent, room: ctx.room, ...getSessionStartOptions(agentConfig) });
     if (agentConfig.channel === "voice") {
       const egressRecording = registerS3DualChannelRecording(ctx);
       await egressRecording.start();
@@ -13759,15 +13766,19 @@ function createSession({ llm: llm2, stt, tts, channel }) {
     }
   });
 }
-function getSessionStartOptions(channel) {
-  const isChat = channel === "chat";
+function getSessionStartOptions(agentConfig) {
+  const isChat = agentConfig.channel === "chat";
   return {
     record: { audio: false },
-    inputOptions: isChat ? { textEnabled: true, audioEnabled: false, deleteRoomOnClose: true } : { deleteRoomOnClose: true, noiseCancellation: audioEnhancement({ model: "quailVfS" }) },
+    inputOptions: isChat ? { textEnabled: true, audioEnabled: false, deleteRoomOnClose: true } : { deleteRoomOnClose: true, ...resolveDenoisingConfig(agentConfig.config.denoising_mode) },
     ...isChat && {
       outputOptions: { transcriptionEnabled: true, audioEnabled: false, syncTranscription: false }
     }
   };
+}
+function resolveDenoisingConfig(mode) {
+  if (mode === "no-denoise") return {};
+  return { noiseCancellation: audioEnhancement({ model: mode === "noise-and-background-speech-cancellation" ? "quailVfS" : "quailL" }) };
 }
 function provisionForOverRideAgentChannelType(agentConfig, roomName) {
   if (!roomName) {

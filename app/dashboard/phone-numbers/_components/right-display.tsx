@@ -27,6 +27,7 @@ import {
 } from "./main-display/delete-phone-number"
 import { PhoneNumberForm } from "./main-display/phone-number-form"
 import { OutboundCallMaker } from "./main-display/outbound-call-maker"
+import { AGENT_CHANNELS } from "@/lib/constants"
 
 export const releasableNumberProviders = ["twilio", "custom"] as const
 
@@ -39,7 +40,7 @@ export async function RightDisplay({
   const agents = await prisma.agent.findMany({
     where: {
       workspaceId,
-      channel: "voice",
+      channel: AGENT_CHANNELS.VOICE,
     },
     orderBy: { updatedAt: "desc" },
     select: {
