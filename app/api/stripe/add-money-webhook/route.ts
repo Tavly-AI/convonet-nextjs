@@ -3,7 +3,7 @@ import { revalidatePath } from "next/cache"
 import { getStripe } from "@/lib/stripe"
 import { prisma } from "@/lib/prisma"
 import { Prisma } from "@/generated/prisma/client"
-import { BILLING_GLOBAL_CONFIG_VALUES } from "@/app/dashboard/billing/_lib/payment-config"
+import { BILLING_GLOBAL_CONFIG_VALUES } from "@/app/dashboard/billing/_lib/billing-payment-config"
 import type Stripe from "stripe"
 
 const { currency } = BILLING_GLOBAL_CONFIG_VALUES.config

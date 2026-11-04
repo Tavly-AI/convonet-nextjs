@@ -1,7 +1,7 @@
 import "server-only"
 import { parsePhoneNumberFromString } from "libphonenumber-js/max"
 
-import { BILLING_GLOBAL_CONFIG_VALUES } from "../_lib/payment-config"
+import { BILLING_GLOBAL_CONFIG_VALUES } from "../_lib/billing-payment-config"
 import { AGENT_CHANNELS } from "@/lib/constants"
 import type { BillingGlobalTypes } from "../_lib/billing-global-types"
 import { billing_DB_chargeCall } from "./billing-db-actions"

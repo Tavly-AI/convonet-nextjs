@@ -15,7 +15,7 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog"
 
-import { BILLING_GLOBAL_CONFIG_VALUES } from "../_lib/payment-config"
+import { BILLING_GLOBAL_CONFIG_VALUES } from "../_lib/billing-payment-config"
 import { billingCreateStripCheckout } from "../_actions/billing-stripe-checkout-actions"
 
 const MINIMUM_RECHARGE = BILLING_GLOBAL_CONFIG_VALUES.config.minimumRecharge

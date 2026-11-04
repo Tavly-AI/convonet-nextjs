@@ -2,7 +2,7 @@
 
 import { getCurrentWorkspaceId } from "@/app/agents/_lib/helper-actions"
 import { getStripe } from "@/lib/stripe"
-import { BILLING_GLOBAL_CONFIG_VALUES } from "../_lib/payment-config"
+import { BILLING_GLOBAL_CONFIG_VALUES } from "../_lib/billing-payment-config"
 
 const { currency, minimumRecharge } = BILLING_GLOBAL_CONFIG_VALUES.config
 
