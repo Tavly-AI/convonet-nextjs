@@ -27,7 +27,7 @@ export default defineAgent({
     const { llm, stt, tts } = await createVoiceStack(agentId, agentConfig);
     const agent = await createRuntimeAgent(agentId, agentConfig)
 
-    const session = createSession({ llm, stt, tts, channel: agentConfig.channel, });
+    const session = createSession({ llm, stt, tts }, agentConfig);
     registerToolExecutionEvents(ctx, session);
     await session.start({ agent, room: ctx.room, ...getSessionStartOptions(agentConfig) });
 
@@ -63,7 +63,7 @@ async function createRuntimeAgent(agentId: string, agentConfig: RuntimeAgentConf
   return createSinglePromptAgentFromData(agentConfig)
 }
 
-function createSession({ llm, stt, tts, channel }: VoiceStack & { channel: RuntimeAgentConfig["channel"] }) {
+function createSession({ llm, stt, tts }: VoiceStack, { channel, config }: RuntimeAgentConfig) {
   const isChat = channel === 'chat';
 
   return new voice.AgentSession({
@@ -74,7 +74,8 @@ function createSession({ llm, stt, tts, channel }: VoiceStack & { channel: Runti
         stt, tts, expressive: false,
         turnHandling: {
           turnDetection: new inference.TurnDetector(),
-          interruption: { mode: 'adaptive' },
+          endpointing: resolveSpeechSettingsResponsiveness(config),
+          interruption: resolveSpeechSettingsInterruptionSensitivity(config),
           preemptiveGeneration: { enabled: false },
         },
       }),
@@ -106,6 +107,9 @@ function provisionForOverRideAgentChannelType(agentConfig: RuntimeAgentConfig, r
   if (roomName.startsWith(`${PER_SESSION_TEST_TYPE.LLM}-`)) agentConfig.channel = 'chat';
 }
 
+// ==============================================================================
+// ======================== SPEECH SETTINGS =====================================
+// ==============================================================================
 
 async function resolveAmbientSound(ctx: Parameters<Parameters<typeof defineAgent>[0]["entry"]>[0], session: voice.AgentSession, agentConfig: RuntimeAgentConfig,) {
   if (agentConfig.channel !== 'voice') return;
@@ -122,4 +126,28 @@ async function resolveAmbientSound(ctx: Parameters<Parameters<typeof defineAgent
   session.once(voice.AgentSessionEventTypes.Close, () => { void backgroundAudio.close(); });
 
   await backgroundAudio.start({ room: ctx.room, agentSession: session });
+}
+
+// https://docs.livekit.io/reference/agents/turn-handling-options/#dynamic-endpointing
+function resolveSpeechSettingsResponsiveness(config: RuntimeAgentConfig["config"]): Partial<voice.EndpointingOptions> {
+  const responsiveness = Math.max(0, Math.min(1, config.responsiveness ?? 0.84));
+
+  return {
+    mode: config.enable_dynamic_responsiveness ? 'dynamic' : 'fixed',
+    // Map patient (0) to 1500 ms and eager (1) to 100 ms.
+    minDelay: Math.round(1500 - responsiveness * 1400),
+  };
+}
+
+// https://docs.livekit.io/reference/agents/turn-handling-options/#interruptionoptions
+function resolveSpeechSettingsInterruptionSensitivity(config: RuntimeAgentConfig["config"]) {
+  const sensitivity = Math.max(0, Math.min(1, config.interruption_sensitivity ?? 0.9));
+
+  return {
+    enabled: sensitivity > 0,
+    mode: 'adaptive' as const,
+    // Custom slider mapping; adaptive detection also controls interruption timing.
+    minDuration: Math.round(1000 * (1 - sensitivity)),
+    minWords: Math.ceil(3 * (1 - sensitivity)),
+  };
 }

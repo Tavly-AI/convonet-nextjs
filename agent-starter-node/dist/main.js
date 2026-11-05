@@ -2,6 +2,7 @@
 import { ServerOptions, cli, defineAgent, inference, voice as voice5 } from "@livekit/agents";
 import { audioEnhancement } from "@livekit/plugins-ai-coustics";
 import dotenv from "dotenv";
+import { existsSync } from "fs";
 import { fileURLToPath } from "url";
 
 // src/single-prompt/single-prompt-runtime.ts
@@ -13725,7 +13726,7 @@ var main_default = defineAgent({
     provisionForOverRideAgentChannelType(agentConfig, ctx.job.room?.name);
     const { llm: llm2, stt, tts } = await createVoiceStack(agentId, agentConfig);
     const agent = await createRuntimeAgent(agentId, agentConfig);
-    const session = createSession({ llm: llm2, stt, tts, channel: agentConfig.channel });
+    const session = createSession({ llm: llm2, stt, tts }, agentConfig);
     registerToolExecutionEvents(ctx, session);
     await session.start({ agent, room: ctx.room, ...getSessionStartOptions(agentConfig) });
     if (agentConfig.channel === "voice") {
@@ -13734,6 +13735,7 @@ var main_default = defineAgent({
     }
     await ctx.connect();
     registerSessionDataHooks({ ctx, session, agentId });
+    await resolveAmbientSound(ctx, session, agentConfig);
   }
 });
 cli.runApp(
@@ -13750,7 +13752,7 @@ async function createRuntimeAgent(agentId, agentConfig) {
   }
   return createSinglePromptAgentFromData(agentConfig);
 }
-function createSession({ llm: llm2, stt, tts, channel }) {
+function createSession({ llm: llm2, stt, tts }, { channel, config }) {
   const isChat = channel === "chat";
   return new voice5.AgentSession({
     llm: llm2,
@@ -13760,11 +13762,20 @@ function createSession({ llm: llm2, stt, tts, channel }) {
       expressive: false,
       turnHandling: {
         turnDetection: new inference.TurnDetector(),
+        endpointing: resolveSpeechSettingsResponsiveness(config),
         interruption: { mode: "adaptive" },
         preemptiveGeneration: { enabled: false }
       }
     }
   });
+}
+function resolveSpeechSettingsResponsiveness(config) {
+  const responsiveness = Math.max(0, Math.min(1, config.responsiveness ?? 0.84));
+  return {
+    mode: config.enable_dynamic_responsiveness ? "dynamic" : "fixed",
+    // Map patient (0) to 1500 ms and eager (1) to 100 ms.
+    minDelay: Math.round(1500 - responsiveness * 1400)
+  };
 }
 function getSessionStartOptions(agentConfig) {
   const isChat = agentConfig.channel === "chat";
@@ -13785,6 +13796,22 @@ function provisionForOverRideAgentChannelType(agentConfig, roomName) {
     throw new Error("Room name is missing from job");
   }
   if (roomName.startsWith(`${PER_SESSION_TEST_TYPE.LLM}-`)) agentConfig.channel = "chat";
+}
+async function resolveAmbientSound(ctx, session, agentConfig) {
+  if (agentConfig.channel !== "voice") return;
+  const ambientSound = agentConfig.config.ambient_sound;
+  if (!ambientSound || ambientSound === "none") return;
+  const source = fileURLToPath(new URL(`../assets/background-sounds/${ambientSound}.mp3`, import.meta.url));
+  if (!existsSync(source)) {
+    console.warn(`Background sound file missing: ${source}`);
+    return;
+  }
+  const backgroundAudio = new voice5.BackgroundAudioPlayer({ ambientSound: { source, volume: 0.3 } });
+  ctx.addShutdownCallback(() => backgroundAudio.close());
+  session.once(voice5.AgentSessionEventTypes.Close, () => {
+    void backgroundAudio.close();
+  });
+  await backgroundAudio.start({ room: ctx.room, agentSession: session });
 }
 export {
   main_default as default
