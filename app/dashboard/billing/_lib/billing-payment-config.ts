@@ -15,6 +15,8 @@ export const BILLING_GLOBAL_CONFIG_VALUES = {
 
     kb: {
         pricePerMinute: 0.005,
+        freeKnowledgeBases: 10,
+        pricePerAdditionalKnowledgeBasePerMonth: 8,
     },
 
     safetyGuardrails: {

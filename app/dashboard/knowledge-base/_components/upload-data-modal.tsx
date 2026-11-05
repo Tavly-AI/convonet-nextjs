@@ -37,6 +37,8 @@ import { UPLOAD_FILE_ACCEPT, UPLOAD_FILE_TYPES } from "../_lib/upload-file-types
 import { HandleTxtFiles } from "./handle-txt-files"
 import { HandleGoogleFiles } from "./handle-google-files"
 import { HandleWebPages } from "./handle-web-pages"
+import { knowledgeBase_chargeUserAfterKnowledgeBaseCreation, knowledgeBase_createKnowledgeBaseMonthlyCronJob, knowledgeBase_checkKnowledgeBaseBalance, knowledgeBase_DB_getWorkspaceKnowledgeBaseCount } from "../_lib/knowledge-base-monthly-charges-cron-job"
+import { BILLING_GLOBAL_CONFIG_VALUES } from "../../billing/_lib/billing-payment-config"
 
 
 type PendingDocument = {
@@ -123,10 +125,12 @@ export function UploadDataModal({
 
   async function handleSave() {
 
+
     // ==================================================
     // ================ EARLY RETURN ====================
     // ==================================================
 
+    if (isSaving) return
     if (!knowledgeBaseName.trim()) return
     if (!documents.length) {
       toast.error("Add at least one document.")
@@ -135,6 +139,23 @@ export function UploadDataModal({
 
     try {
       setIsSaving(true)
+
+      // ==================================================
+      // =============== HANDLE PAYMENT ===================
+      // ==================================================
+
+      if (!isExistingKnowledgeBase) {
+        const count = await knowledgeBase_DB_getWorkspaceKnowledgeBaseCount()
+
+        if (count >= BILLING_GLOBAL_CONFIG_VALUES.kb.freeKnowledgeBases) {
+          toast.info(`Additional knowledge bases cost $${BILLING_GLOBAL_CONFIG_VALUES.kb.pricePerAdditionalKnowledgeBasePerMonth}/month each.`)
+        }
+
+        if (count >= BILLING_GLOBAL_CONFIG_VALUES.kb.freeKnowledgeBases) {
+          const balance = await knowledgeBase_checkKnowledgeBaseBalance()
+          if (!balance.success) { toast.error(balance.error); return }
+        }
+      }
 
 
       // ==================================================
@@ -170,10 +191,12 @@ export function UploadDataModal({
           files,
         })
       } else {
-        await createKnowledgeBaseTable({
+        const { knowledgeBaseId } = await createKnowledgeBaseTable({
           knowledgeBaseName,
           files,
         })
+        await knowledgeBase_chargeUserAfterKnowledgeBaseCreation({ knowledgeBaseId })
+        await knowledgeBase_createKnowledgeBaseMonthlyCronJob({ knowledgeBaseId })
       }
 
       toast.success(isExistingKnowledgeBase ? "Files added to knowledge base." : "Knowledge base uploaded.")
@@ -199,6 +222,7 @@ export function UploadDataModal({
     }
   }
   function handleOpenChange(nextOpen: boolean) {
+    if (isSaving) return
     if (nextOpen) {
       resetModal()
     }
@@ -343,7 +367,7 @@ export function UploadDataModal({
               Cancel
             </DialogClose>
             <Button disabled={isSaveDisabled || isSaving} onClick={handleSave}>
-              {isSaving ? "Uploading..." : "Save"}
+              {isSaving ? "Saving..." : "Save"}
             </Button>
           </DialogFooter>
         </div>
