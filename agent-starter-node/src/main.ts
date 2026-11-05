@@ -12,6 +12,7 @@ import { createVoiceStack, type VoiceStack } from './ingestion/configure-voice-s
 import { registerSessionDataHooks } from './data-hooks/main.ts';
 import { registerToolExecutionEvents } from './data-hooks/tool-events.ts';
 import { registerS3DualChannelRecording } from './egress/upload-s3-egress.ts';
+import { resolveSpeechSettingsPronunciation } from './agent-config/speech-settings/speech-settings-pronounciation.ts';
 import { PER_SESSION_TEST_TYPE } from '../../app/agents/_components/main/agent-session-tertiary-server.ts'
 
 dotenv.config({ path: '.env.local' });
@@ -29,6 +30,7 @@ export default defineAgent({
 
     const session = createSession({ llm, stt, tts }, agentConfig);
     registerToolExecutionEvents(ctx, session);
+    registerSpeechSettingsReminders(ctx, session, agentConfig);
     await session.start({ agent, room: ctx.room, ...getSessionStartOptions(agentConfig) });
 
     if (agentConfig.channel === 'voice') {
@@ -72,6 +74,9 @@ function createSession({ llm, stt, tts }: VoiceStack, { channel, config }: Runti
       ? { vad: null, turnHandling: { turnDetection: null } }
       : {
         stt, tts, expressive: false,
+        ttsTextTransforms: resolveSpeechSettingsPronunciation(tts, config.pronunciation_dictionary),
+        userAwayTimeout: (config.reminder_trigger_ms ?? 10000) > 0 && (config.reminder_max_count ?? 1) > 0
+          ? (config.reminder_trigger_ms ?? 10000) / 1000 : null,
         turnHandling: {
           turnDetection: new inference.TurnDetector(),
           endpointing: resolveSpeechSettingsResponsiveness(config),
@@ -110,6 +115,73 @@ function provisionForOverRideAgentChannelType(agentConfig: RuntimeAgentConfig, r
 // ==============================================================================
 // ======================== SPEECH SETTINGS =====================================
 // ==============================================================================
+
+// https://docs.livekit.io/agents/logic/sessions/#handling-inactive-users
+function registerSpeechSettingsReminders(ctx: Parameters<Parameters<typeof defineAgent>[0]["entry"]>[0], session: voice.AgentSession, { channel, config }: RuntimeAgentConfig) {
+  const interval = config.reminder_trigger_ms ?? 10000;
+  const maxCount = Math.floor(config.reminder_max_count ?? 1);
+  if (channel !== 'voice' || interval <= 0 || maxCount <= 0) return;
+
+  const events = voice.AgentSessionEventTypes;
+  let count = 0;
+  let hasSpoken = false;
+  let closed = false;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  let reply: voice.SpeechHandle | undefined;
+
+  async function remind() {
+    if (closed || !hasSpoken || session.userState !== 'away' || session.agentState !== 'listening') return;
+    if (count >= maxCount) {
+      cleanup();
+      session.shutdown();
+      return;
+    }
+    count++;
+    try {
+      reply = session.generateReply({
+        instructions: 'The user has been silent. Briefly check whether they are still present, using the conversation language and context. Do not call tools or end the call.',
+        toolChoice: 'none',
+      });
+      await reply.waitForPlayout();
+    } catch (error) {
+      if (!closed) console.warn('[Reminders] Failed:', error);
+    }
+  }
+
+  function onStateChanged(event: voice.UserStateChangedEvent | voice.AgentStateChangedEvent) {
+    clearTimeout(timer);
+    if (event.type === events.UserStateChanged && event.newState !== 'away') {
+      reply?.interrupt(true);
+      return;
+    }
+    if (event.type === events.AgentStateChanged && event.newState === 'speaking') hasSpoken = true;
+    if (hasSpoken && session.userState === 'away' && session.agentState === 'listening') {
+      timer = setTimeout(remind, event.type === events.UserStateChanged ? 0 : interval);
+    }
+  }
+
+  function onUserTranscribed(event: voice.UserInputTranscribedEvent) {
+    if (!event.isFinal || !event.transcript.trim()) return;
+    count = 0;
+    clearTimeout(timer);
+    reply?.interrupt(true);
+  }
+
+  function cleanup() {
+    closed = true;
+    clearTimeout(timer);
+    reply?.interrupt(true);
+    session.off(events.UserStateChanged, onStateChanged);
+    session.off(events.AgentStateChanged, onStateChanged);
+    session.off(events.UserInputTranscribed, onUserTranscribed);
+  }
+
+  session.on(events.UserStateChanged, onStateChanged);
+  session.on(events.AgentStateChanged, onStateChanged);
+  session.on(events.UserInputTranscribed, onUserTranscribed);
+  session.once(events.Close, cleanup);
+  ctx.addShutdownCallback(async () => { cleanup(); });
+}
 
 async function resolveAmbientSound(ctx: Parameters<Parameters<typeof defineAgent>[0]["entry"]>[0], session: voice.AgentSession, agentConfig: RuntimeAgentConfig,) {
   if (agentConfig.channel !== 'voice') return;

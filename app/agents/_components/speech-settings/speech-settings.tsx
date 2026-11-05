@@ -11,18 +11,11 @@ import {
   getSpeechSettings,
   writeSpeechSettings,
 } from "@/app/agents/_lib/session-storage/agent-session"
+import { WebsiteCustomDropdown } from "@/components/custom/website-custom-dropdown"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { Slider } from "@/components/ui/slider"
 import { CheckRow, Field } from "../functions/general-tool-form"
 
@@ -53,10 +46,10 @@ export const SPEECH_SETTINGS_AMBIENT_BACKGROUND_SOUND_OPTIONS = [
   // { value: "white_noise", label: "White Noise" },
 ] as const
 
-const ALPHABETS = [
+export const SPEECH_SETTINGS_ALPHABETS = [
   { value: "ipa", label: "IPA" },
-  { value: "pinyin", label: "PINYIN" },
-  { value: "jyutping", label: "JYUTPING" },
+  // { value: "pinyin", label: "PINYIN" },
+  // { value: "jyutping", label: "JYUTPING" },
 ] as const
 
 export function SpeechSettings() {
@@ -85,23 +78,14 @@ export function SpeechSettings() {
     <div className="space-y-5 border-t px-5 py-4 bg-gray-400/10 rounded-3xl">
       <Section title="Background Sound" description="Add subtle background audio to make calls feel more natural.">
         <Field label="">
-          <Select
+          <WebsiteCustomDropdown
             value={settings.ambient_sound}
             onValueChange={(ambient_sound) =>
-              updateSettings({ ambient_sound: ambient_sound ?? DEFAULT_SETTINGS.ambient_sound })
+              updateSettings({ ambient_sound: ambient_sound as SpeechSettingsConfig["ambient_sound"] })
             }
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {SPEECH_SETTINGS_AMBIENT_BACKGROUND_SOUND_OPTIONS.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            options={[...SPEECH_SETTINGS_AMBIENT_BACKGROUND_SOUND_OPTIONS]}
+            label="Background Sound"
+          />
         </Field>
       </Section>
 
@@ -204,7 +188,7 @@ function PronunciationEditor({
             }
             placeholder="Word or phrase"
           />
-          <Select
+          <WebsiteCustomDropdown
             value={entry.alphabet}
             onValueChange={(alphabet) =>
               onChange(value.map((item, itemIndex) =>
@@ -216,18 +200,9 @@ function PronunciationEditor({
                   : item
               ))
             }
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {ALPHABETS.map((alphabet) => (
-                <SelectItem key={alphabet.value} value={alphabet.value}>
-                  {alphabet.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            options={[...SPEECH_SETTINGS_ALPHABETS]}
+            label="Alphabet"
+          />
           <Button
             type="button"
             size="icon"

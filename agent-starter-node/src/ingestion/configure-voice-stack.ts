@@ -74,6 +74,7 @@ export async function createVoiceStack(agentId: string, agentConfig: RuntimeAgen
             modelID: agentConfig.config.voice_model?.startsWith("eleven_") ? agentConfig.config.voice_model : voice_updated.model,
             voiceId: voice_updated.voice_id,
             language: languages.elevenlabs,
+            enableSsmlParsing: Boolean(agentConfig.config.pronunciation_dictionary?.length),
             voiceSettings: {
                 stability: 0.5,
                 similarity_boost: 0.75,
