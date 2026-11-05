@@ -8,6 +8,7 @@ import type { LlmModel } from "../../_components/main/agent-session-model-server
 import { conversational_flow_session_storage } from "@/app/agents-conversational-flow/_lib/flow-sessionStorage"
 import { subflow_session_storage } from "@/app/agents-conversational-flow/_lib/flow-subflow-sessonStorage"
 import type { MainflowSubflowConfig } from "@/app/agents-conversational-flow/_types/global-cf-types"
+import type { SPEECH_SETTINGS_AMBIENT_BACKGROUND_SOUND_OPTIONS } from "../../_components/speech-settings/speech-settings"
 
 const SESSION_KEY = "agent-session"
 
@@ -24,7 +25,7 @@ export type AgentLanguage = string | string[]
 // ===================================================================
 
 export type SpeechSettings = {
-    ambient_sound: string
+    ambient_sound: (typeof SPEECH_SETTINGS_AMBIENT_BACKGROUND_SOUND_OPTIONS)[number]["value"]
     ambient_sound_volume: number
     enable_backchannel: boolean
     backchannel_frequency: number

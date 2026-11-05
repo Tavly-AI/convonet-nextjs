@@ -42,6 +42,7 @@ RUN pnpm install --frozen-lockfile --prod
 RUN npx livekit-agents download-files
 
 COPY --chown=appuser:appuser dist ./dist
+COPY --chown=appuser:appuser assets ./assets
 
 USER appuser
 

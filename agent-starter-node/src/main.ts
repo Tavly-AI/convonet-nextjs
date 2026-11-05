@@ -1,6 +1,7 @@
 import { ServerOptions, cli, defineAgent, inference, voice } from '@livekit/agents';
 import { audioEnhancement } from '@livekit/plugins-ai-coustics';
 import dotenv from 'dotenv';
+import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { createSinglePromptAgentFromData } from './single-prompt/single-prompt-runtime.ts';
 import { createConversationalFlowAgentFromData } from './conversational-flow/conversational-flow-runtime.ts';
@@ -37,6 +38,7 @@ export default defineAgent({
 
     await ctx.connect();
     registerSessionDataHooks({ ctx, session, agentId });
+    await resolveAmbientSound(ctx, session, agentConfig);
   },
 });
 
@@ -102,4 +104,22 @@ function resolveDenoisingConfig(mode: RuntimeAgentConfig["config"]["denoising_mo
 function provisionForOverRideAgentChannelType(agentConfig: RuntimeAgentConfig, roomName: string | undefined) {
   if (!roomName) { throw new Error('Room name is missing from job'); }
   if (roomName.startsWith(`${PER_SESSION_TEST_TYPE.LLM}-`)) agentConfig.channel = 'chat';
+}
+
+
+async function resolveAmbientSound(ctx: Parameters<Parameters<typeof defineAgent>[0]["entry"]>[0], session: voice.AgentSession, agentConfig: RuntimeAgentConfig,) {
+  if (agentConfig.channel !== 'voice') return;
+
+  const ambientSound = agentConfig.config.ambient_sound;
+  if (!ambientSound || ambientSound === 'none') return;
+
+  const source = fileURLToPath(new URL(`../assets/background-sounds/${ambientSound}.mp3`, import.meta.url));
+  if (!existsSync(source)) { console.warn(`Background sound file missing: ${source}`); return; }
+
+  const backgroundAudio = new voice.BackgroundAudioPlayer({ ambientSound: { source, volume: 0.3 }, });
+
+  ctx.addShutdownCallback(() => backgroundAudio.close());
+  session.once(voice.AgentSessionEventTypes.Close, () => { void backgroundAudio.close(); });
+
+  await backgroundAudio.start({ room: ctx.room, agentSession: session });
 }

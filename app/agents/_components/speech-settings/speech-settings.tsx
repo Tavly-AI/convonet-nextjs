@@ -40,17 +40,17 @@ const DEFAULT_SETTINGS = {
   pronunciation_dictionary: [],
 } satisfies SpeechSettingsConfig
 
-const BACKGROUND_SOUND_OPTIONS = [
+export const SPEECH_SETTINGS_AMBIENT_BACKGROUND_SOUND_OPTIONS = [
   { value: "none", label: "None" },
   { value: "office", label: "Office" },
   { value: "cafe", label: "Cafe" },
-  { value: "call_center", label: "Call Center" },
+  // { value: "call_center", label: "Call Center" },
   { value: "street", label: "Street" },
-  { value: "restaurant", label: "Restaurant" },
+  // { value: "restaurant", label: "Restaurant" },
   { value: "airport", label: "Airport" },
-  { value: "keyboard", label: "Keyboard Typing" },
+  // { value: "keyboard", label: "Keyboard Typing" },
   { value: "rain", label: "Rain" },
-  { value: "white_noise", label: "White Noise" },
+  // { value: "white_noise", label: "White Noise" },
 ] as const
 
 const ALPHABETS = [
@@ -95,7 +95,7 @@ export function SpeechSettings() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {BACKGROUND_SOUND_OPTIONS.map((option) => (
+              {SPEECH_SETTINGS_AMBIENT_BACKGROUND_SOUND_OPTIONS.map((option) => (
                 <SelectItem key={option.value} value={option.value}>
                   {option.label}
                 </SelectItem>
