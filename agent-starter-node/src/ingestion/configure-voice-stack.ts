@@ -12,6 +12,8 @@ import { VOICES_UPDATED, type Voice } from "../../../app/agents/_data/voices-upd
 import type { RuntimeAgentConfig } from "./get-agent-config.ts";
 import type { LlmProvider } from "../../../app/agents/_components/main/agent-session-model.tsx";
 import type { BILLING_GLOBAL_CONFIG_VALUES } from "../../../app/dashboard/billing/_lib/billing-payment-config.ts";
+import { realtime_transcription_resolveBoostedKeywords } from "../agent-config/realtime-transcription-settings/realtime-transcription-boosted-keywords.ts";
+import { realtime_transcription_resolveTranscriptionMode } from "../agent-config/realtime-transcription-settings/realtime-transcription-transcription-mode.ts";
 
 type TtsVoice = Pick<Voice, "provider" | "voice_id" | "model">;
 export type VoiceStack = Awaited<ReturnType<typeof createVoiceStack>>;
@@ -47,6 +49,10 @@ export async function createVoiceStack(agentId: string, agentConfig: RuntimeAgen
     const stt = new deepgram.STT({
         model: "nova-3" satisfies keyof typeof BILLING_GLOBAL_CONFIG_VALUES.stt.deepgram,
         language: languages.deepgram,
+        ...(agentConfig.channel === 'voice' ? {
+            ...realtime_transcription_resolveTranscriptionMode(agentConfig.config),
+            ...realtime_transcription_resolveBoostedKeywords(agentConfig.config),
+        } : {}),
     });
 
     // ============================================================

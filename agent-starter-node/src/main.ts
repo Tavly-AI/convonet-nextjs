@@ -1,5 +1,4 @@
 import { ServerOptions, cli, defineAgent, inference, voice } from '@livekit/agents';
-import { audioEnhancement } from '@livekit/plugins-ai-coustics';
 import dotenv from 'dotenv';
 import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -13,6 +12,7 @@ import { registerSessionDataHooks } from './data-hooks/main.ts';
 import { registerToolExecutionEvents } from './data-hooks/tool-events.ts';
 import { registerS3DualChannelRecording } from './egress/upload-s3-egress.ts';
 import { resolveSpeechSettingsPronunciation } from './agent-config/speech-settings/speech-settings-pronounciation.ts';
+import { realtime_transcription_resolveDenoisingMode } from './agent-config/realtime-transcription-settings/realtime-transcription-denoising-mode.ts';
 import { PER_SESSION_TEST_TYPE } from '../../app/agents/_components/main/agent-session-tertiary-server.ts'
 
 dotenv.config({ path: '.env.local' });
@@ -94,17 +94,11 @@ function getSessionStartOptions(agentConfig: RuntimeAgentConfig) {
     record: { audio: false },
     inputOptions: isChat
       ? { textEnabled: true, audioEnabled: false, deleteRoomOnClose: true }
-      : { deleteRoomOnClose: true, ...resolveDenoisingConfig(agentConfig.config.denoising_mode) },
+      : { deleteRoomOnClose: true, ...realtime_transcription_resolveDenoisingMode(agentConfig.config) },
     ...(isChat && {
       outputOptions: { transcriptionEnabled: true, audioEnabled: false, syncTranscription: false },
     }),
   };
-}
-
-// https://docs.livekit.io/transport/media/noise-cancellation/
-function resolveDenoisingConfig(mode: RuntimeAgentConfig["config"]["denoising_mode"]) {
-  if (mode === 'no-denoise') return {}
-  return { noiseCancellation: audioEnhancement({ model: mode === 'noise-and-background-speech-cancellation' ? 'quailVfS' : 'quailL', }), }
 }
 
 function provisionForOverRideAgentChannelType(agentConfig: RuntimeAgentConfig, roomName: string | undefined) {

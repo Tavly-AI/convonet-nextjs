@@ -37,7 +37,7 @@ export const SPEECH_SETTINGS_AMBIENT_BACKGROUND_SOUND_OPTIONS = [
   { value: "none", label: "None" },
   { value: "office", label: "Office" },
   { value: "cafe", label: "Cafe" },
-  // { value: "call_center", label: "Call Center" },
+  { value: "call_center", label: "Call Center" },
   { value: "street", label: "Street" },
   // { value: "restaurant", label: "Restaurant" },
   { value: "airport", label: "Airport" },

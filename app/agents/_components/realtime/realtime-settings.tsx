@@ -32,9 +32,9 @@ const DENOISING_OPTIONS: { value: DenoisingMode; label: string }[] = [
   { value: "no-denoise", label: "No denoising" },
 ]
 
-const STT_OPTIONS: { value: SttMode; label: string; hint?: string }[] = [
-  { value: "fast", label: "Optimize for speed", hint: "Provider Config" },
-  { value: "accurate", label: "Optimize for accuracy", hint: "Provider Config" },
+const STT_OPTIONS: { value: SttMode; label: string; }[] = [
+  { value: "fast", label: "Optimize for speed" },
+  { value: "accurate", label: "Optimize for accuracy" },
   { value: "custom", label: "Custom Settings" },
 ]
 
@@ -82,7 +82,6 @@ export function RealtimeTranscriptionSettings() {
               key={option.value}
               name="stt_mode"
               label={option.label}
-              hint={option.hint}
               checked={settings.stt_mode === option.value}
               onChange={() =>
                 updateSettings({
@@ -99,20 +98,23 @@ export function RealtimeTranscriptionSettings() {
 
         {settings.stt_mode === "custom" && (
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            <Field label="Provider">
-              <Input
-                value={settings.custom_stt_config?.provider ?? ""}
-                onChange={(event) =>
-                  updateSettings({
-                    custom_stt_config: {
-                      ...(settings.custom_stt_config ?? {}),
-                      provider: event.target.value || undefined,
-                    },
-                  })
-                }
-                placeholder="azure"
-              />
-            </Field>
+            <div className="hidden">
+              <Field label="Provider">
+                <Input
+                  value={settings.custom_stt_config?.provider ?? ""}
+                  onChange={(event) =>
+                    updateSettings({
+                      custom_stt_config: {
+                        ...(settings.custom_stt_config ?? {}),
+                        provider: event.target.value || undefined,
+                      },
+                    })
+                  }
+                  placeholder="azure"
+                  className=""
+                />
+              </Field>
+            </div>
             <Field label="Endpointing ms">
               <Input
                 type="number"
@@ -162,13 +164,11 @@ export function RealtimeTranscriptionSettings() {
 function RadioRow({
   name,
   label,
-  hint,
   checked,
   onChange,
 }: {
   name: string
   label: string
-  hint?: string
   checked: boolean
   onChange: () => void
 }) {
@@ -182,7 +182,6 @@ function RadioRow({
         className="size-4 accent-foreground"
       />
       <span>{label}</span>
-      {hint && <span className="border-b text-sm">{hint}</span>}
     </Label>
   )
 }
