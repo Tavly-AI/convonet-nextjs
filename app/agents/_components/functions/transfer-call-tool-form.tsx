@@ -74,10 +74,9 @@ export function TransferCallForm({
                       transfer_destination: {
                         type: "predefined",
                         number: event.target.value,
-                        extension:
-                          value.transfer_destination.type === "predefined"
-                            ? value.transfer_destination.extension
-                            : "",
+                        extension: value.transfer_destination.type === "predefined"
+                          ? value.transfer_destination.extension ?? ""
+                          : "",
                       },
                     })
                   }

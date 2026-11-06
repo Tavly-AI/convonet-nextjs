@@ -339,7 +339,7 @@ function CustomFunctionForm({
           <Field label="Method">
             <Select
               value={method}
-              onValueChange={(method) => onChange({ ...value, method: method as CustomFunctionTool["method"] })}
+              onValueChange={(method) => onChange({ ...value, method: method as NonNullable<CustomFunctionTool["method"]> })}
             >
               <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -455,7 +455,7 @@ function CustomFunctionForm({
                 <Select
                   value={value.execution_message_type ?? "prompt"}
                   onValueChange={(execution_message_type) =>
-                    onChange({ ...value, execution_message_type: execution_message_type as CustomFunctionTool["execution_message_type"] })
+                    onChange({ ...value, execution_message_type: execution_message_type as NonNullable<CustomFunctionTool["execution_message_type"]> })
                   }
                 >
                   <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
@@ -569,7 +569,7 @@ return { ok: true, formatted_total: "$" + amount.toFixed(2) };`}
                 <Select
                   value={value.execution_message_type ?? "prompt"}
                   onValueChange={(execution_message_type) =>
-                    onChange({ ...value, execution_message_type: execution_message_type as CodeTool["execution_message_type"] })
+                    onChange({ ...value, execution_message_type: execution_message_type as NonNullable<CodeTool["execution_message_type"]> })
                   }
                 >
                   <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
