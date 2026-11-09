@@ -198,10 +198,13 @@ async function resolveAmbientSound(ctx: Parameters<Parameters<typeof defineAgent
 function resolveSpeechSettingsResponsiveness(config: RuntimeAgentConfig["config"]): Partial<voice.EndpointingOptions> {
   const responsiveness = Math.max(0, Math.min(1, config.responsiveness ?? 0.84));
 
+  // added custom-boundaries so user cannot select extreme values i guess ?
+  const boundedResponsiveness = Math.max(0.2, Math.min(0.8, responsiveness));
+
   return {
     mode: config.enable_dynamic_responsiveness ? 'dynamic' : 'fixed',
-    // Map patient (0) to 1500 ms and eager (1) to 100 ms.
-    minDelay: Math.round(1500 - responsiveness * 1400),
+    // Limit response delays to 380–1220 ms to avoid overly eager or patient extremes.
+    minDelay: Math.round(1500 - boundedResponsiveness * 1400),
   };
 }
 

@@ -359,7 +359,7 @@ export function UploadDataModal({
           <p className="text-sm text-muted-foreground">
             {isExistingKnowledgeBase
               ? "New uploads will be added to the selected knowledge base."
-              : "Your first 10 knowledge bases are included at no extra charge."}
+              : `Your first ${BILLING_GLOBAL_CONFIG_VALUES.kb.freeKnowledgeBases} knowledge bases are free. Additional knowledge bases cost $${BILLING_GLOBAL_CONFIG_VALUES.kb.pricePerAdditionalKnowledgeBasePerMonth}/month each.`}
           </p>
 
           <DialogFooter className="flex-row items-center justify-end gap-2">

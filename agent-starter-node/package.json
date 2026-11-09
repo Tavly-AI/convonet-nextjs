@@ -14,7 +14,7 @@
     "format:check": "prettier --check \"**/*.{ts,js,json,md}\"",
     "test": "vitest --run",
     "test:watch": "vitest",
-    "dev": "AGENT_PORT=8081 node src/main.ts dev",
+    "dev": "AGENT_PORT=8081 node --import tsx src/main.ts dev",
     "start": "node dist/main.js start"
   },
   "engines": {
@@ -29,6 +29,7 @@
     "globals": "^16.5.0",
     "jiti": "^2.6.1",
     "tsup": "^8.5.1",
+    "tsx": "^4.23.15",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.58.1",
     "vitest": "^4.1.4"

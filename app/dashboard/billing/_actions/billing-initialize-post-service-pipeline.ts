@@ -18,7 +18,7 @@ export async function billingInitializePostServiceBillingPipeline(input: Billing
     const billing_llmCost_butChatAgent = agent.channel === AGENT_CHANNELS.CHAT ? calculateLLMCostButChatAgent(body, agent.llmConfig.model) : 0
 
     // addons
-    const billing_surchargeCost = calculateShortCallSurcharge(sessionDurationMs)
+    const billing_surchargeCost = agent.channel === AGENT_CHANNELS.VOICE ? calculateShortCallSurcharge(sessionDurationMs) : 0
     const billing_kbCost = calculateKBCost(sessionDurationMinutes, body)
     const billing_batchCallCost = await calculateBatchCallCost(body.report.room, agent.workspaceId)
     const billing_safetyGuardrailsCost = calculateSafteyGuardRails_Costs(sessionDurationMinutes, agent.config)

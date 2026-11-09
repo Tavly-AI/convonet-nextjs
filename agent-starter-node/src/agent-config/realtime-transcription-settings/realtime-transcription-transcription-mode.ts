@@ -1,6 +1,6 @@
 import type { STTOptions } from '@livekit/agents-plugin-deepgram';
 import type { RuntimeAgentConfig } from '../../ingestion/get-agent-config.ts';
-import { BILLING_GLOBAL_CONFIG_VALUES } from '@/app/dashboard/billing/_lib/billing-payment-config.ts';
+import { BILLING_GLOBAL_CONFIG_VALUES } from '../../../../app/dashboard/billing/_lib/billing-payment-config.ts';
 
 export function realtime_transcription_resolveTranscriptionMode(config: RuntimeAgentConfig['config']): Pick<STTOptions, 'endpointing'> {
 

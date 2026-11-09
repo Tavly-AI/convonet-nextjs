@@ -1,4 +1,4 @@
-import { LLM_MODELS } from "@/app/agents/_components/main/agent-session-model-server";
+import { LLM_MODELS } from "../../../agents/_components/main/agent-session-model-server.tsx";
 import type { VOICE_MODEL_MAP_MORE_SETTINGS } from "@/app/agents/_lib/session-storage/agent-session";
 
 export const BILLING_GLOBAL_CONFIG_VALUES = {
