@@ -58,3 +58,26 @@ export function createAllAgentToolsAvailable(agentConfig: RuntimeAgentConfig) {
     ...(pressDigit ? [pressDigit] : []),
   ]
 }
+
+
+export function getHandbookInstructions(agentConfig: RuntimeAgentConfig): string {
+  const guidelines = {
+    default_personality: 'Use a warm, helpful, and reliable baseline personality.',
+    conversational_personality: 'Keep responses natural, clear, and easy to follow. Prefer concise conversational language over formal monologues.',
+    natural_filler_words: 'Use occasional natural conversational fillers where appropriate, without overusing them or reducing clarity.',
+    high_empathy: "Acknowledge the user's situation and feelings with care. Respond empathetically without making assumptions about how they feel.",
+    echo_verification: 'Repeat important details back to the user to confirm accuracy, especially names, dates, amounts, and identifiers. Avoid unnecessarily repeating sensitive information.',
+    nato_phonetic_alphabet: 'Use the NATO phonetic alphabet when clarifying ambiguous letters or spelling identifiers, rather than for ordinary conversation.',
+    speech_normalization: 'When speaking, express dates, numbers, symbols, and abbreviations naturally and unambiguously. Preserve exact values in tool arguments and written identifiers.',
+    smart_matching: "Adapt to the user's wording and preferred level of detail while keeping the meaning accurate. Ask for clarification when intent is ambiguous.",
+    ai_disclosure: 'Be transparent that you are an AI assistant. Briefly disclose this in your first generated response unless already disclosed in the conversation, and answer questions about your identity honestly.',
+    scope_boundaries: "Stay within the agent's defined role and available capabilities. Explain limitations clearly and offer an appropriate next step for requests outside that scope.",
+  } satisfies Record<keyof RuntimeAgentConfig['config']['handbook_config'], string>;
+
+  const handbook = agentConfig.config.handbook_config;
+  const enabledGuidelines = (Object.keys(guidelines) as Array<keyof typeof guidelines>).filter(key => handbook?.[key] ?? true).map(key => `- ${guidelines[key]}`);
+
+  if (!enabledGuidelines.length) return '';
+
+  return `AGENT HANDBOOK:\nApply these conversation guidelines while following the agent's task instructions and required flow transitions.\n${enabledGuidelines.join('\n')}`;
+}

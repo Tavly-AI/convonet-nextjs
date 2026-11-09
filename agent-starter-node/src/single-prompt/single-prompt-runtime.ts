@@ -1,13 +1,16 @@
 import { Agent, dedent, voice } from '@livekit/agents';
-import { createAllAgentToolsAvailable, getTimezonLanguageInstructions } from '../sharable-code/agent-helpers.ts';
+import { createAllAgentToolsAvailable, getHandbookInstructions, getTimezonLanguageInstructions } from '../sharable-code/agent-helpers.ts';
 import type { RuntimeAgentConfig } from '../ingestion/get-agent-config.ts';
 import { resolveSinglePromptBeginMessage } from './helper-functions.ts';
+import { getSafetyGuardrailInstructions } from '../agent-config/security-fallback-settings/security-fallback-saftey-guardrails.ts';
 
 export function createSinglePromptAgentFromData(agentConfig: RuntimeAgentConfig): Agent {
     return Agent.create({
         instructions: dedent` 
             ${agentConfig.llmConfig.generalPrompt.trim() || DEFAULT_GENERAL_PROMPT}
+            ${getHandbookInstructions(agentConfig)}
             ${getTimezonLanguageInstructions(agentConfig)}
+            ${getSafetyGuardrailInstructions(agentConfig)}
         `,
 
         onEnter(ctx) { resolveSinglePromptBeginMessage(ctx, agentConfig); },

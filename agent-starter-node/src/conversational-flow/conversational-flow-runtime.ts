@@ -2,7 +2,8 @@ import { Agent, handoff, tool, type voice } from "@livekit/agents"
 
 import type { CF } from "../../../app/agents-conversational-flow/_types/global-cf-types.ts"
 import type { RuntimeAgentConfig } from "../ingestion/get-agent-config.ts"
-import { createAllAgentToolsAvailable } from "../sharable-code/agent-helpers.ts"
+import { createAllAgentToolsAvailable, getHandbookInstructions } from "../sharable-code/agent-helpers.ts"
+import { getSafetyGuardrailInstructions } from "../agent-config/security-fallback-settings/security-fallback-saftey-guardrails.ts"
 
 type FlowNode = CF["Node"]["data"]
 
@@ -23,11 +24,13 @@ export function createConversationalFlowAgentFromData(nodes: FlowNode[], agentCo
         return Agent.create({
             instructions: `
                 ${agentConfig.llmConfig.generalPrompt.trim() || "You are a helpful voice assistant."}\n\n
+                ${getHandbookInstructions(agentConfig)}
                 ${node.instruction.text.trim() || "Continue helping the caller."}\n\n
                 FLOW TRANSITIONS: ${defineConnectedToolInstructions(node, getNode)}
                 AVAILABLE CONNECTED TOOLS: ${defineChainedToolInstructions(node, getNode)}
                 LOGIC SPLITS: ${defineLogicSplitInstructions(node, getNode)}
                 IMPORTANT: After every user response, check the transition conditions. If a condition is satisfied, you MUST immediately call its transition tool instead of responding to the user.
+                ${getSafetyGuardrailInstructions(agentConfig)}
             `,
 
             onEnter(ctx) { resolveFirstNodeBeginMessage(ctx, node, nodes) },
