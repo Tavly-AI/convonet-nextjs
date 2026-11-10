@@ -314,9 +314,11 @@ model CallRecord {
 
   transcript_object            Json?
   transcript_with_tool_calls   Json?
+  scrubbed_post_session_transcript_with_tool_calls Json?
   
   recording_url                         String?
   recording_multi_channel_url           String?
+  scrubbed_recording_url                String?
   public_log_url                         String?
   knowledge_base_retrieved_contents_url  String?
 

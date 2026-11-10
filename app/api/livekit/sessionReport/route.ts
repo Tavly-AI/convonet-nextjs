@@ -7,6 +7,8 @@ import type { CallRecordDatabaseData, LiveKitSessionReportPayload } from "./type
 import { calculateLatencyStats, checkIsSessionReportPayload } from "./helper-functions"
 import type { AgentSessionAgent, PostCallAnalysisSettings } from "@/app/agents/_lib/session-storage/agent-session"
 import { billingInitializePostServiceBillingPipeline } from "@/app/dashboard/billing/_actions/billing-initialize-post-service-pipeline"
+import { SCRUBBED_POST_SESSION_TRANSCRIPT_WITH_TOOL_CALLS_INNGEST_CONSTANTS } from "@/app/dashboard/batch-call/_lib/batch-call-inngest-constants"
+import { scrubbedPostSessionTranscriptWithToolCallsInngestClient } from "./scrubbed_post_session_pipeline-inggest-actions"
 
 export async function POST(request: Request) {
   try {
@@ -39,6 +41,13 @@ export async function POST(request: Request) {
       where: { call_id: data.call_id },
       create: data,
       update: data,
+    })
+
+    await scrubbedPostSessionTranscriptWithToolCallsInngestClient.send({
+      name: SCRUBBED_POST_SESSION_TRANSCRIPT_WITH_TOOL_CALLS_INNGEST_CONSTANTS.events.created,
+      data: {
+        callId: data.call_id,
+      },
     })
 
     await billingInitializePostServiceBillingPipeline({

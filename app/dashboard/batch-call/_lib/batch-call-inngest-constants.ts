@@ -44,3 +44,31 @@ export const BATCH_CALL_INNGEST_CONSTANTS = {
         },
     },
 } as const
+
+
+
+
+const SCRUBBED_POST_SESSION_TRANSCRIPT_WITH_TOOL_CALLS_PIPELINE_NAME = "scrubbed-post-session-transcript-with-tool-calls-pipeline"
+const SCRUBBED_POST_SESSION_TRANSCRIPT_WITH_TOOL_CALLS_PIPELINE_VERSION = "v1"
+
+export const SCRUBBED_POST_SESSION_TRANSCRIPT_WITH_TOOL_CALLS_INNGEST_CONSTANTS = {
+    app: {
+        clientId: `${SCRUBBED_POST_SESSION_TRANSCRIPT_WITH_TOOL_CALLS_PIPELINE_NAME}-${SCRUBBED_POST_SESSION_TRANSCRIPT_WITH_TOOL_CALLS_PIPELINE_VERSION}`,
+    },
+
+    functions: {
+        process: `${SCRUBBED_POST_SESSION_TRANSCRIPT_WITH_TOOL_CALLS_PIPELINE_NAME}-process-${SCRUBBED_POST_SESSION_TRANSCRIPT_WITH_TOOL_CALLS_PIPELINE_VERSION}`,
+    },
+
+    events: {
+        created: `${SCRUBBED_POST_SESSION_TRANSCRIPT_WITH_TOOL_CALLS_PIPELINE_NAME}/created-${SCRUBBED_POST_SESSION_TRANSCRIPT_WITH_TOOL_CALLS_PIPELINE_VERSION}`,
+    },
+
+    steps: {
+        process: {
+            getCall: "get-call-transcript_with_tool_calls-and-agent-details",
+            redactAudio: "call-assembly-ai-pipeline-get-raw-replacements-and-raw-audio-url",
+            saveScrubbedTranscript: "save-scrubbed-transcript-and-scrubbed-audio-url-in-db",
+        },
+    },
+} as const
