@@ -3,7 +3,8 @@
 import { getCurrentWorkspaceId } from "@/app/agents/_lib/helper-actions"
 import { revalidatePath } from "next/cache"
 import { prisma } from "@/lib/prisma"
-import { BATCH_CALL_TOTAL_CONCURRENCY, batchCallCreateSchema, type BatchCallGlobalType } from "../_lib/batch-call-global-types"
+import { batchCallCreateSchema, type BatchCallGlobalType } from "../_lib/batch-call-global-types"
+import { BILLING_GLOBAL_CONFIG_VALUES } from "../../billing/_lib/billing-payment-config"
 
 export async function batchCall_DB_list() {
     const workspaceId = await getCurrentWorkspaceId()
@@ -91,5 +92,5 @@ export async function batchCall_DB_getAvailableWorkSpaceConnuruncy() {
         where: { workspaceId, tasks: { some: { workerTaskStatus: { notIn: ["completed", "failed"] } } } },
         _sum: { reserved_concurrency: true },
     })
-    return Math.max(0, BATCH_CALL_TOTAL_CONCURRENCY - (reserved._sum.reserved_concurrency ?? 0))
+    return Math.max(0, BILLING_GLOBAL_CONFIG_VALUES.concurrency.freeConcurrentCalls - (reserved._sum.reserved_concurrency ?? 0))
 }

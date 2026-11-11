@@ -35,6 +35,11 @@ export const BILLING_GLOBAL_CONFIG_VALUES = {
         pricePerDial: 0.005,
     },
 
+    concurrency: {
+        freeConcurrentCalls: 5,
+        pricePerAdditionalConcurrentCallPerMonth: 8,
+    },
+
     telephony: {
         twilio: {
             // Country rates: https://docs.retellai.com/deploy/international-call

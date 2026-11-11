@@ -202,7 +202,7 @@ const data2 = {
   goBack: [
     {
       name: "Limits",
-      url: "/settings/limits",
+      url: "/dashboard/settings/limits",
       icon: <RulerIcon />,
     },
     {

@@ -6,7 +6,8 @@ import type { PhoneNumberWithConfig } from "@/app/dashboard/phone-numbers/_lib/p
 import { ChevronLeft, Clock3Icon, Download, Phone, UploadCloud, Users } from "lucide-react"
 import { TIMEZONES_GLOBAL_CONFIG } from "@/app/agents/_components/main/agent-session-timezone"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { BATCH_CALL_TOTAL_CONCURRENCY, type BatchCallGlobalType } from "../_lib/batch-call-global-types"
+import type { BatchCallGlobalType } from "../_lib/batch-call-global-types"
+import { BILLING_GLOBAL_CONFIG_VALUES } from "../../billing/_lib/billing-payment-config"
 
 
 import { Button } from "@/components/ui/button"
@@ -407,7 +408,7 @@ function ReservedConcurrencyInput({ availableWorkspaceConcurrency }: { available
             </div>
 
             <p className="rounded-md bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
-                {availableWorkspaceConcurrency} of {BATCH_CALL_TOTAL_CONCURRENCY} slots available across unfinished batches.
+                {availableWorkspaceConcurrency} of {BILLING_GLOBAL_CONFIG_VALUES.concurrency.freeConcurrentCalls} slots available across unfinished batches.
             </p>
         </section>
     )

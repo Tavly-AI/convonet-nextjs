@@ -26,6 +26,8 @@ model User {
 model Workspace {
   id            String         @id @default(cuid())
   name          String
+  concurrentCallsLimit Int     @default(5)
+  concurrencyBillingStartedAt DateTime?
   customVoices  Json?
   users         User[]
   agents        Agent[]
