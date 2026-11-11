@@ -4,7 +4,7 @@ import { batchCall_DB_getAvailableWorkSpaceConnuruncy } from "../_actions/batch-
 
 export async function BatchCallAbsoluteModal() {
     const phoneNumbers = await getPhoneNumbers()
-    const availableWorkspaceConcurrency = await batchCall_DB_getAvailableWorkSpaceConnuruncy()
+    const { availableWorkspaceConcurrency, totalWorkspaceConcurrency } = await batchCall_DB_getAvailableWorkSpaceConnuruncy()
 
-    return <BatchCallAbsoluteModalClient phoneNumbers={phoneNumbers} availableWorkspaceConcurrency={availableWorkspaceConcurrency} />
+    return <BatchCallAbsoluteModalClient phoneNumbers={phoneNumbers} availableWorkspaceConcurrency={availableWorkspaceConcurrency} totalWorkspaceConcurrency={totalWorkspaceConcurrency} />
 }

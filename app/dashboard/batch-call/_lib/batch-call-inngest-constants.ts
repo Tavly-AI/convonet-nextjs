@@ -35,7 +35,7 @@ export const BATCH_CALL_INNGEST_CONSTANTS = {
             task: {
                 processing: (id: string) => `${STEP_PREFIX}-mark-task-processing-${id}`,
                 dispatch: (id: string) => `${STEP_PREFIX}-dispatch-outbound-call-${id}`,
-                cpsWait: (id: string) => `${STEP_PREFIX}-enforce-calls-per-second-${id}`,
+                cpsWait: (id: string) => `${STEP_PREFIX}-wait-cps-${id}`,
             },
         },
 

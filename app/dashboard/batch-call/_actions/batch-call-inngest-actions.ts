@@ -105,6 +105,7 @@ export const batchCallInngestProcess = batchCallInngestClient.createFunction(
             // ===============================================================
 
             await step.sleep(BATCH_CALL_INNGEST_CONSTANTS.steps.scheduler.task.cpsWait(task.id), `${Math.ceil(1000 / BATCH_CALL_MAX_CPS)}ms`,)
+
         }
 
         return { batchCallId, totalTasks: batchCallData.tasks.length, status: "completed" }
@@ -135,6 +136,32 @@ export const batchCallInngestTaskProcess = batchCallInngestClient.createFunction
     {
         id: BATCH_CALL_INNGEST_CONSTANTS.functions.dialer,
         retries: 0,
+
+        // ===============================================================
+        // =================== RESOLVE CALL PER SEC 2 ======================
+        // ===============================================================
+
+        throttle: {
+            limit: BATCH_CALL_MAX_CPS,
+            period: "1s",
+            burst: 0,
+            key: "event.data.workspaceId",
+        },
+
+        // ===============================================================
+        // ================== RESOLVE CONNCURRENCY 2 =====================
+        // ===============================================================
+
+        concurrency: {
+            limit: 100,
+            key: "event.data.workspaceId",
+        },
+
+        // ===============================================================
+        // ================ RESOLVE CONNCURRENCY 2 END ===================
+        // ===============================================================
+
+
         triggers: [{ event: BATCH_CALL_INNGEST_CONSTANTS.events.callDispatch }],
     },
     async ({ event, step }) => {

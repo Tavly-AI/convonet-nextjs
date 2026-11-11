@@ -4,7 +4,6 @@ import { getCurrentWorkspaceId } from "@/app/agents/_lib/helper-actions"
 import { revalidatePath } from "next/cache"
 import { prisma } from "@/lib/prisma"
 import { batchCallCreateSchema, type BatchCallGlobalType } from "../_lib/batch-call-global-types"
-import { BILLING_GLOBAL_CONFIG_VALUES } from "../../billing/_lib/billing-payment-config"
 
 export async function batchCall_DB_list() {
     const workspaceId = await getCurrentWorkspaceId()
@@ -37,6 +36,9 @@ export async function batchCall_DB_create(input: BatchCallGlobalType["request"])
     })
 
     if (!phoneNumber) { throw new Error("Outbound phone number not found") }
+
+    const { availableWorkspaceConcurrency } = await batchCall_DB_getAvailableWorkSpaceConnuruncy()
+    if ((parsed.reserved_concurrency ?? 1) > availableWorkspaceConcurrency) { throw new Error(`Only ${availableWorkspaceConcurrency} concurrent call slots are available. Reduce concurrency or wait for unfinished batches to finish.`) }
 
     const batch = await prisma.batchCall.create({
         data: {
@@ -88,9 +90,18 @@ export async function batchCallGetTriggerTimestamp(batchCallId: string, workspac
 
 export async function batchCall_DB_getAvailableWorkSpaceConnuruncy() {
     const workspaceId = await getCurrentWorkspaceId()
-    const reserved = await prisma.batchCall.aggregate({
-        where: { workspaceId, tasks: { some: { workerTaskStatus: { notIn: ["completed", "failed"] } } } },
-        _sum: { reserved_concurrency: true },
-    })
-    return Math.max(0, BILLING_GLOBAL_CONFIG_VALUES.concurrency.freeConcurrentCalls - (reserved._sum.reserved_concurrency ?? 0))
+    const [workspace, reserved] = await Promise.all([
+        prisma.workspace.findUniqueOrThrow({
+            where: { id: workspaceId },
+            select: { concurrentCallsLimit: true },
+        }),
+        prisma.batchCall.aggregate({
+            where: { workspaceId, tasks: { some: { workerTaskStatus: { notIn: ["completed", "failed"] } } } },
+            _sum: { reserved_concurrency: true },
+        }),
+    ])
+    return {
+        totalWorkspaceConcurrency: workspace.concurrentCallsLimit,
+        availableWorkspaceConcurrency: Math.max(0, workspace.concurrentCallsLimit - (reserved._sum.reserved_concurrency ?? 0)),
+    }
 }

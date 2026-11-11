@@ -1,6 +1,5 @@
 import { INTERNATION_PHONE_NUMBER_SCHEMA } from "@/lib/constants"
 import { z } from "zod"
-import { BILLING_GLOBAL_CONFIG_VALUES } from "../../billing/_lib/billing-payment-config"
 
 export const BATCH_CALL_MAX_CPS = 1
 
@@ -59,7 +58,7 @@ export const batchCallCreateSchema = z.object({
         ignore_e164_validation: z.boolean().optional(),
     })).min(1, "Add at least one recipient").max(1000, "Upload at most 1,000 recipients"),
     trigger_timestamp: z.number().int().nonnegative().optional(),
-    reserved_concurrency: z.number().int().min(1).max(BILLING_GLOBAL_CONFIG_VALUES.concurrency.freeConcurrentCalls).optional(),
+    reserved_concurrency: z.number().int().min(1).optional(),
     call_time_window: z.object({
         windows: z.array(z.object({
             start: z.number().int().min(0).max(1439),

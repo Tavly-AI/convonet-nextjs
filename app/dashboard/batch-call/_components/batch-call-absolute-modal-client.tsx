@@ -7,7 +7,6 @@ import { ChevronLeft, Clock3Icon, Download, Phone, UploadCloud, Users } from "lu
 import { TIMEZONES_GLOBAL_CONFIG } from "@/app/agents/_components/main/agent-session-timezone"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import type { BatchCallGlobalType } from "../_lib/batch-call-global-types"
-import { BILLING_GLOBAL_CONFIG_VALUES } from "../../billing/_lib/billing-payment-config"
 
 
 import { Button } from "@/components/ui/button"
@@ -28,7 +27,7 @@ import { WebsiteCustomDropdown } from "@/components/custom/website-custom-dropdo
 import { batchCall_DB_create } from "../_actions/batch-call-db-actions"
 import { batchCallParseFile } from "../_lib/batch-call-parse-files"
 
-export function BatchCallAbsoluteModalClient({ phoneNumbers, availableWorkspaceConcurrency }: { phoneNumbers: PhoneNumberWithConfig[]; availableWorkspaceConcurrency: number }) {
+export function BatchCallAbsoluteModalClient({ phoneNumbers, availableWorkspaceConcurrency, totalWorkspaceConcurrency }: { phoneNumbers: PhoneNumberWithConfig[]; availableWorkspaceConcurrency: number; totalWorkspaceConcurrency: number }) {
     const [batchCallTasks, setTasks] = useState<BatchCallGlobalType["task"][]>([])
     const [open, setOpen] = useState(false)
     const [isSubmitting, setIsSubmitting] = useState(false)
@@ -49,7 +48,7 @@ export function BatchCallAbsoluteModalClient({ phoneNumbers, availableWorkspaceC
                     </div>
                 </DialogHeader>
                 <div className="grid min-h-0 flex-1 overflow-y-auto lg:grid-cols-[400px_1fr]">
-                    <LeftSideForm phoneNumbers={phoneNumbers} batchCallTasks={batchCallTasks} setTasks={setTasks} onClose={() => setOpen(false)} isSubmitting={isSubmitting} setIsSubmitting={setIsSubmitting} availableWorkspaceConcurrency={availableWorkspaceConcurrency} />
+                    <LeftSideForm phoneNumbers={phoneNumbers} batchCallTasks={batchCallTasks} setTasks={setTasks} onClose={() => setOpen(false)} isSubmitting={isSubmitting} setIsSubmitting={setIsSubmitting} availableWorkspaceConcurrency={availableWorkspaceConcurrency} totalWorkspaceConcurrency={totalWorkspaceConcurrency} />
                     <RightSideForm batchCallTasks={batchCallTasks} />
                 </div>
                 <DialogFooter className="shrink-0 border-t bg-card px-6 py-4">
@@ -69,7 +68,7 @@ export function BatchCallAbsoluteModalClient({ phoneNumbers, availableWorkspaceC
     )
 }
 
-function LeftSideForm({ phoneNumbers, batchCallTasks, setTasks, onClose, isSubmitting, setIsSubmitting, availableWorkspaceConcurrency }: {
+function LeftSideForm({ phoneNumbers, batchCallTasks, setTasks, onClose, isSubmitting, setIsSubmitting, availableWorkspaceConcurrency, totalWorkspaceConcurrency }: {
     phoneNumbers: PhoneNumberWithConfig[]
     batchCallTasks: BatchCallGlobalType["task"][]
     setTasks: (tasks: BatchCallGlobalType["task"][]) => void
@@ -77,6 +76,7 @@ function LeftSideForm({ phoneNumbers, batchCallTasks, setTasks, onClose, isSubmi
     isSubmitting: boolean
     setIsSubmitting: (value: boolean) => void
     availableWorkspaceConcurrency: number
+    totalWorkspaceConcurrency: number
 }) {
 
     const [uploadError, setUploadError] = useState("")
@@ -226,7 +226,7 @@ function LeftSideForm({ phoneNumbers, batchCallTasks, setTasks, onClose, isSubmi
 
             <HandleScheduleInput />
             <CallTimeWindowInput />
-            <ReservedConcurrencyInput availableWorkspaceConcurrency={availableWorkspaceConcurrency} />
+            <ReservedConcurrencyInput availableWorkspaceConcurrency={availableWorkspaceConcurrency} totalWorkspaceConcurrency={totalWorkspaceConcurrency} />
         </form>
     )
 }
@@ -361,7 +361,7 @@ function HandleScheduleInput() {
 }
 
 
-function ReservedConcurrencyInput({ availableWorkspaceConcurrency }: { availableWorkspaceConcurrency: number }) {
+function ReservedConcurrencyInput({ availableWorkspaceConcurrency, totalWorkspaceConcurrency }: { availableWorkspaceConcurrency: number; totalWorkspaceConcurrency: number }) {
     const [reservedConcurrency, setReservedConcurrency] = useState(1)
 
     return (
@@ -408,7 +408,7 @@ function ReservedConcurrencyInput({ availableWorkspaceConcurrency }: { available
             </div>
 
             <p className="rounded-md bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
-                {availableWorkspaceConcurrency} of {BILLING_GLOBAL_CONFIG_VALUES.concurrency.freeConcurrentCalls} slots available across unfinished batches.
+                {availableWorkspaceConcurrency} of {totalWorkspaceConcurrency} slots available across unfinished batches.
             </p>
         </section>
     )
