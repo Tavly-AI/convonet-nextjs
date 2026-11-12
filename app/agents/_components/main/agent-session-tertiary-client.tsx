@@ -39,6 +39,16 @@ export default function AgentSessionTertiaryClient() {
     const [error, setError] = useState<string | null>(null)
     const [isStarting, setIsStarting] = useState(false)
 
+    // handle max call duration
+    useEffect(() => {
+        if (!connection) return
+        const timer = setTimeout(
+            () => setConnection(null),
+            getAgentSession()?.config.max_call_duration_ms ?? 3_600_000,
+        )
+        return () => clearTimeout(timer)
+    }, [connection])
+
     async function startTest() {
         const agentId = getAgentSession()?.id
 

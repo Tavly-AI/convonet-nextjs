@@ -14,6 +14,7 @@ import { registerS3DualChannelRecording } from './egress/upload-s3-egress.ts';
 import { resolveSpeechSettingsPronunciation } from './agent-config/speech-settings/speech-settings-pronounciation.ts';
 import { realtime_transcription_resolveDenoisingMode } from './agent-config/realtime-transcription-settings/realtime-transcription-denoising-mode.ts';
 import { registerCallSettingsDetectVoicemail } from './agent-config/call-settings/call-settings-detect-voicemail.ts';
+import { registerCallSettingsUserDtmf } from './agent-config/call-settings/call-settings-user-dtmf.ts';
 import { PER_SESSION_TEST_TYPE } from '../../app/agents/_components/main/agent-session-tertiary-server.ts'
 
 dotenv.config({ path: '.env.local' });
@@ -34,6 +35,7 @@ export default defineAgent({
     registerSpeechSettingsReminders(ctx, session, agentConfig);
     await session.start({ agent, room: ctx.room, ...getSessionStartOptions(agentConfig) });
     registerCallSettingsDetectVoicemail(ctx, session, agentConfig);
+    registerCallSettingsUserDtmf(ctx, session, agentConfig);
 
     if (agentConfig.channel === 'voice') {
       const egressRecording = registerS3DualChannelRecording(ctx);

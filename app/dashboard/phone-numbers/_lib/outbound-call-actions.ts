@@ -51,7 +51,7 @@ export async function startOutboundTestCall(input: { phoneNumberId: string; dest
       workspaceId,
       channel: AGENT_CHANNELS.VOICE,
     },
-    select: { id: true },
+    select: { id: true, config: true },
   })
 
   if (!agent) { throw new Error("The selected outbound call agent is unavailable.") }
@@ -108,8 +108,8 @@ export async function startOutboundTestCall(input: { phoneNumberId: string; dest
         participantIdentity,
         participantName: "Test Call Recipient",
         waitUntilAnswered: false,
-        ringingTimeout: 30,
-        maxCallDuration: 60 * 15,
+        ringingTimeout: ((agent.config as { ring_duration_ms?: number }).ring_duration_ms ?? 30_000) / 1000,
+        maxCallDuration: ((agent.config as { max_call_duration_ms?: number })?.max_call_duration_ms ?? 3_600_000) / 1000,
       }
     )
 

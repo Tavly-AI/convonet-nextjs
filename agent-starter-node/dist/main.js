@@ -1,5 +1,5 @@
 // src/main.ts
-import { ServerOptions, cli, defineAgent, inference, voice as voice6 } from "@livekit/agents";
+import { ServerOptions, cli, defineAgent, inference, voice as voice8 } from "@livekit/agents";
 import dotenv from "dotenv";
 import { existsSync } from "fs";
 import { fileURLToPath } from "url";
@@ -9,6 +9,132 @@ import { Agent, dedent as dedent2 } from "@livekit/agents";
 
 // src/sharable-code/agent-helpers.ts
 import { dedent } from "@livekit/agents";
+
+// src/agent-config/mcp-settings/mcp-tools.ts
+import { llm } from "@livekit/agents";
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
+import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
+
+// src/agent-config/mcp-settings/mcp-schema.ts
+function strictMcpSchema(input) {
+  const convert = (value) => typeof value === "boolean" ? value : strictMcpSchema(value);
+  const schema = { ...input };
+  for (const key of ["definitions", "$defs", "properties"]) {
+    if (schema[key]) schema[key] = Object.fromEntries(Object.entries(schema[key]).map(([name, child]) => [name, convert(child)]));
+  }
+  for (const key of ["anyOf", "oneOf", "allOf"]) {
+    if (schema[key]) schema[key] = schema[key].map(convert);
+  }
+  if (schema.items) schema.items = Array.isArray(schema.items) ? schema.items.map(convert) : convert(schema.items);
+  if (schema.properties || [schema.type].flat().includes("object")) {
+    schema.properties = Object.fromEntries(Object.entries(schema.properties ?? {}).map(([name, child]) => [name, input.required?.includes(name) ? child : { anyOf: [child, { type: "null" }] }]));
+    schema.required = Object.keys(schema.properties);
+    schema.additionalProperties = false;
+  }
+  return schema;
+}
+function mcpArguments(args, schema) {
+  function clean(value, definition, refs = /* @__PURE__ */ new Set()) {
+    if (typeof definition === "boolean") return value;
+    if (definition.$ref?.startsWith("#/") && !refs.has(definition.$ref)) {
+      const ref = definition.$ref;
+      const target = ref.slice(2).split("/").reduce((node, key) => node && typeof node === "object" ? node[key.replace(/~1/g, "/").replace(/~0/g, "~")] : void 0, schema);
+      if (target !== void 0) return clean(value, target, /* @__PURE__ */ new Set([...refs, ref]));
+    }
+    if (Array.isArray(value) && definition.items && !Array.isArray(definition.items)) {
+      return value.map((item) => clean(item, definition.items));
+    }
+    if (value && typeof value === "object" && !Array.isArray(value)) {
+      return Object.fromEntries(Object.entries(value).flatMap(([key, item]) => {
+        const child = definition.properties?.[key];
+        if (child === void 0) return [[key, item]];
+        if (item === null && !definition.required?.includes(key) && !allowsNull(child)) return [];
+        return [[key, clean(item, child)]];
+      }));
+    }
+    return value;
+  }
+  return clean(args, schema);
+}
+function allowsNull(schema) {
+  if (typeof schema === "boolean") return schema;
+  return [schema.type].flat().includes("null") || !!schema.enum?.includes(null) || !!schema.anyOf?.some(allowsNull) || !!schema.oneOf?.some(allowsNull) || !schema.type && !schema.$ref && !schema.enum && !schema.anyOf && !schema.oneOf;
+}
+
+// src/agent-config/mcp-settings/mcp-tools.ts
+function createMcpToolsets({ llmConfig }) {
+  return (llmConfig.mcps ?? []).map((config, serverIndex) => {
+    const id = `mcp_${serverIndex}`;
+    const timeout = Number.isFinite(config.timeout_ms) && config.timeout_ms > 0 ? Math.floor(config.timeout_ms) : 12e4;
+    const client = new Client({ name: "voice-agent", version: "1.0.0" });
+    return llm.Toolset.create({
+      id,
+      tools: [],
+      setup: async ({ updateTools }) => {
+        let timer;
+        try {
+          const url = new URL(config.url);
+          if (!["http:", "https:"].includes(url.protocol)) throw new Error("Invalid MCP protocol");
+          Object.entries(config.query_params ?? {}).forEach(([key, value]) => url.searchParams.set(key, value));
+          const headers = config.headers ?? {};
+          const transport = url.pathname.replace(/\/$/, "").endsWith("/sse") ? new SSEClientTransport(url, {
+            requestInit: { headers },
+            eventSourceInit: {
+              fetch: (input, init) => {
+                const merged = new Headers(init?.headers);
+                for (const [key, value] of Object.entries(headers)) merged.set(key, value);
+                return fetch(input, { ...init, headers: merged });
+              }
+            }
+          }) : new StreamableHTTPClientTransport(url, { requestInit: { headers } });
+          await Promise.race([
+            client.connect(transport, { timeout }),
+            new Promise((_, reject) => {
+              timer = setTimeout(() => reject(new Error("MCP connection timed out")), timeout);
+            })
+          ]);
+          clearTimeout(timer);
+          const tools = [];
+          let cursor;
+          do {
+            const page = await client.listTools(cursor ? { cursor } : {}, { timeout });
+            for (const remote of page.tools) tools.push(llm.tool({
+              // Indexes avoid collisions between servers and locally defined tools.
+              name: `${id}_${tools.length}_${remote.name.replace(/[^a-zA-Z0-9_-]/g, "_")}`.slice(0, 64),
+              description: `${config.name}: ${remote.description ?? remote.name}`,
+              parameters: strictMcpSchema(remote.inputSchema),
+              execute: async (args, { abortSignal }) => {
+                try {
+                  const result = await client.callTool(
+                    { name: remote.name, arguments: mcpArguments(args, remote.inputSchema) },
+                    void 0,
+                    { timeout, signal: abortSignal }
+                  );
+                  if (result.isError) throw new llm.ToolError("MCP tool reported an error.");
+                  return result.structuredContent ?? result.content;
+                } catch (error) {
+                  if (abortSignal.aborted) throw error;
+                  throw new llm.ToolError("MCP tool request failed.");
+                }
+              }
+            }));
+            cursor = page.nextCursor;
+          } while (cursor);
+          updateTools(tools);
+        } catch {
+          console.warn(`[MCP] Server ${serverIndex + 1} unavailable; continuing without its tools.`);
+          await client.close().catch(() => {
+          });
+          updateTools([]);
+        } finally {
+          clearTimeout(timer);
+        }
+      },
+      aclose: () => client.close()
+    });
+  });
+}
 
 // src/agent-config/general-tools/agent-swap.ts
 import { handoff, tool } from "@livekit/agents";
@@ -642,7 +768,7 @@ function createPressDigitTool(agentConfig) {
 }
 
 // src/agent-config/general-tools/retrieve-knowledge-base.ts
-import { llm, tool as tool9 } from "@livekit/agents";
+import { llm as llm2, tool as tool9 } from "@livekit/agents";
 import { z as z5 } from "zod";
 function createRetrieveKnowledgeBaseFunctionTools(agentConfig) {
   const { knowledge_base_ids = [], kb_config } = agentConfig.llmConfig;
@@ -666,7 +792,7 @@ function createRetrieveKnowledgeBaseFunctionTools(agentConfig) {
       } catch (error) {
         if (abortSignal.aborted) throw error;
         console.error("Knowledge-base retrieval failed:", error);
-        throw new llm.ToolError("Knowledge-base search is temporarily unavailable. Do not treat this as no matching information.");
+        throw new llm2.ToolError("Knowledge-base search is temporarily unavailable. Do not treat this as no matching information.");
       }
     }
   })];
@@ -10468,6 +10594,10 @@ var BILLING_GLOBAL_CONFIG_VALUES = {
   batchCall: {
     pricePerDial: 5e-3
   },
+  concurrency: {
+    freeConcurrentCalls: 5,
+    pricePerAdditionalConcurrentCallPerMonth: 8
+  },
   telephony: {
     twilio: {
       // Country rates: https://docs.retellai.com/deploy/international-call
@@ -10562,15 +10692,15 @@ function realtime_transcription_resolveTranscriptionMode(config) {
 async function createVoiceStack(agentId, agentConfig) {
   const model = agentConfig.llmConfig.model.trim() || "gpt-4.1";
   const temperature = agentConfig.llmConfig.model_temperature ?? 0;
-  let llm2;
+  let llm3;
   if (model.startsWith("gpt-")) {
-    llm2 = new openai.responses.LLM({ model, temperature, maxOutputTokens: 512 });
+    llm3 = new openai.responses.LLM({ model, temperature, maxOutputTokens: 512 });
   } else if (model.startsWith("claude-")) {
-    llm2 = new anthropic.LLM({ model, temperature });
+    llm3 = new anthropic.LLM({ model, temperature });
   } else if (model.startsWith("gemini-")) {
-    llm2 = new google.LLM({ model, temperature });
+    llm3 = new google.LLM({ model, temperature });
   } else {
-    llm2 = openai.LLM.withGroq({ model: "openai/gpt-oss-120b", temperature });
+    llm3 = openai.LLM.withGroq({ model: "openai/gpt-oss-120b", temperature });
   }
   const languages = getProviderLanguages(agentConfig.config.language);
   const stt = new deepgram.STT({
@@ -10582,7 +10712,7 @@ async function createVoiceStack(agentId, agentConfig) {
     } : {}
   });
   const voiceId = agentConfig.config.voiceId?.trim() || "db6b0ed5-d5d3-463d-ae85-518a07d3c2b4";
-  let voice_updated = VOICES_UPDATED.find((voice7) => voice7.voice_id === voiceId);
+  let voice_updated = VOICES_UPDATED.find((voice9) => voice9.voice_id === voiceId);
   if (!voice_updated) {
     voice_updated = await solveCustomVoice(agentId, voiceId);
   }
@@ -10615,7 +10745,7 @@ async function createVoiceStack(agentId, agentConfig) {
       sampleRate: 22050
     });
   }
-  return { llm: llm2, stt, tts };
+  return { llm: llm3, stt, tts };
 }
 function getProviderLanguages(language) {
   const DEFAULT_AGENT_LANGUAGE = "en-US";
@@ -10676,6 +10806,7 @@ function createAllAgentToolsAvailable(agentConfig) {
   const pressDigit = createPressDigitTool(agentConfig);
   const agentSwaps = createAgentSwapTools(agentConfig, createSinglePromptAgentFromData);
   return [
+    ...createMcpToolsets(agentConfig),
     endCallTool,
     createAwarenessTools(agentConfig),
     createCheckAvailabilityTool(agentConfig),
@@ -14013,6 +14144,162 @@ function realtime_transcription_resolveDenoisingMode(config) {
   };
 }
 
+// src/agent-config/call-settings/call-settings-detect-voicemail.ts
+import { voice as voice6 } from "@livekit/agents";
+function registerCallSettingsDetectVoicemail(ctx, session, { channel, config }) {
+  const option = config.voicemail_option;
+  if (!shouldDetectCallSettings(channel, config)) return;
+  const action = option?.action;
+  const handlesVoicemail = action !== void 0 && action.type !== "bridge_transfer";
+  const prompt = option?.detection_prompt?.trim();
+  let detector;
+  let closed = false;
+  let handlingVoicemail = false;
+  let closing;
+  function cleanup() {
+    closed = true;
+    session.off(voice6.AgentSessionEventTypes.Close, cleanup);
+    return closing ??= (detector?.aclose() ?? Promise.resolve()).catch((error) => {
+      console.warn("[Voicemail] Failed to close detection:", error);
+    });
+  }
+  async function detect() {
+    try {
+      detector = new voice6.AMD(session, { interruptOnMachine: false, waitUntilFinished: true, ...prompt ? { prompt } : {} });
+      session.once(voice6.AgentSessionEventTypes.Close, cleanup);
+      ctx.addShutdownCallback(cleanup);
+      const prediction = await detector.execute();
+      if (closed) return;
+      if (prediction.category === voice6.AMDCategory.MACHINE_IVR) {
+        if (await resolveCallSettingsAndroidIosScreening(config, prediction.category, session, closed)) return;
+        if (await resolveCallSettingsIvrDetection(config, prediction.category, session, closed)) return;
+      }
+      if (!handlesVoicemail || prediction.category !== voice6.AMDCategory.MACHINE_VM) return;
+      handlingVoicemail = true;
+      session.input.setAudioEnabled(false);
+      await session.interrupt({ force: true }).await;
+      if (closed) return;
+      if (action?.type === "hangup") return;
+      if (action?.type === "static_text") {
+        if (!action.text.trim()) return;
+        const speech = session.say(action.text, { allowInterruptions: false });
+        await speech.waitForPlayout();
+      } else if (action?.type === "prompt") {
+        if (!action.text.trim()) return;
+        const speech = session.generateReply({
+          instructions: `You have reached voicemail. Leave only a voicemail message following these instructions:
+${action.text}
+Do not ask questions, call tools, or continue the conversation.`,
+          toolChoice: "none",
+          allowInterruptions: false
+        });
+        await speech.waitForPlayout();
+      }
+    } catch (error) {
+      if (!closed) console.warn("[Voicemail] Failed:", error);
+    } finally {
+      if (handlingVoicemail && !closed) session.shutdown({ drain: false });
+      await cleanup();
+    }
+  }
+  void detect();
+}
+function shouldDetectCallSettings(channel, config) {
+  return channel === "voice" && Boolean(config.voicemail_option || config.ivr_option || config.call_screening_option);
+}
+async function resolveCallSettingsIvrDetection(config, category, session, closed) {
+  if (!config.ivr_option || category !== voice6.AMDCategory.MACHINE_IVR) return false;
+  session.input.setAudioEnabled(false);
+  await session.interrupt({ force: true }).await;
+  if (!closed) session.shutdown({ drain: false });
+  return true;
+}
+async function resolveCallSettingsAndroidIosScreening(config, category, session, closed) {
+  const option = config.call_screening_option;
+  if (!option || category !== voice6.AMDCategory.MACHINE_IVR) return false;
+  const identity = option.agent_identity.trim();
+  const purpose = option.call_purpose.trim();
+  const response = [identity && `Hi, this is ${identity}.`, purpose && `I'm calling to ${purpose}.`].filter(Boolean).join(" ");
+  if (response && !closed) await session.say(response, { allowInterruptions: false }).waitForPlayout();
+  return true;
+}
+
+// src/agent-config/call-settings/call-settings-user-dtmf.ts
+import { voice as voice7 } from "@livekit/agents";
+import { RoomEvent } from "@livekit/rtc-node";
+function resolveUserDtmfSettings({ channel, config }) {
+  if (channel !== "voice" || !config.allow_user_dtmf) return null;
+  const options = config.user_dtmf_options;
+  if (!options) return null;
+  const { digit_limit, timeout_ms, termination_key } = options;
+  if (!Number.isSafeInteger(digit_limit) || digit_limit <= 0 || !Number.isSafeInteger(timeout_ms) || timeout_ms <= 0 || !/^[0-9*#]$/.test(termination_key)) return null;
+  return { digitLimit: digit_limit, timeoutMs: timeout_ms, terminationKey: termination_key, allowInterruption: config.allow_dtmf_interruption ?? false };
+}
+function registerCallSettingsUserDtmf(ctx, session, agent) {
+  const settings = resolveUserDtmfSettings(agent);
+  if (!settings) return;
+  const { digitLimit, timeoutMs: timeoutMs2, terminationKey, allowInterruption } = settings;
+  const events = voice7.AgentSessionEventTypes;
+  let buffer = "";
+  let timer;
+  let closed = false;
+  let replying = false;
+  const pending = [];
+  async function drain() {
+    if (closed || replying || !pending.length) return;
+    if (!allowInterruption && session.agentState !== "listening") return;
+    replying = true;
+    try {
+      const reply = session.generateReply({ userInput: `User keypad input: ${pending.shift()}` });
+      await reply.waitForPlayout();
+    } catch {
+      if (!closed) console.warn("[DTMF] Failed to respond to keypad input.");
+    } finally {
+      replying = false;
+      if (!closed) void drain();
+    }
+  }
+  function submit() {
+    clearTimeout(timer);
+    timer = void 0;
+    if (closed || !buffer) return;
+    pending.push(buffer);
+    buffer = "";
+    void drain();
+  }
+  function onDtmf(_code, digit) {
+    if (closed || !/^[0-9*#]$/.test(digit)) return;
+    if (allowInterruption) {
+      try {
+        void session.interrupt({ force: true }).await.catch(() => {
+          if (!closed) console.warn("[DTMF] Failed to interrupt speech.");
+        });
+      } catch {
+        if (!closed) console.warn("[DTMF] Failed to interrupt speech.");
+      }
+    }
+    if (digit === terminationKey) return submit();
+    buffer += digit;
+    if (buffer.length >= digitLimit) return submit();
+    clearTimeout(timer);
+    timer = setTimeout(submit, timeoutMs2);
+  }
+  function cleanup() {
+    if (closed) return;
+    closed = true;
+    clearTimeout(timer);
+    buffer = "";
+    pending.length = 0;
+    ctx.room.off(RoomEvent.DtmfReceived, onDtmf);
+    session.off(events.AgentStateChanged, drain);
+    session.off(events.Close, cleanup);
+  }
+  ctx.room.on(RoomEvent.DtmfReceived, onDtmf);
+  session.on(events.AgentStateChanged, drain);
+  session.once(events.Close, cleanup);
+  ctx.addShutdownCallback(async () => cleanup());
+}
+
 // src/main.ts
 dotenv.config({ path: ".env.local" });
 var main_default = defineAgent({
@@ -14020,12 +14307,14 @@ var main_default = defineAgent({
     const agentId = getAgentIdFromJob(ctx);
     const agentConfig = await getAgentConfig(agentId);
     provisionForOverRideAgentChannelType(agentConfig, ctx.job.room?.name);
-    const { llm: llm2, stt, tts } = await createVoiceStack(agentId, agentConfig);
+    const { llm: llm3, stt, tts } = await createVoiceStack(agentId, agentConfig);
     const agent = await createRuntimeAgent(agentId, agentConfig);
-    const session = createSession({ llm: llm2, stt, tts }, agentConfig);
+    const session = createSession({ llm: llm3, stt, tts }, agentConfig);
     registerToolExecutionEvents(ctx, session);
     registerSpeechSettingsReminders(ctx, session, agentConfig);
     await session.start({ agent, room: ctx.room, ...getSessionStartOptions(agentConfig) });
+    registerCallSettingsDetectVoicemail(ctx, session, agentConfig);
+    registerCallSettingsUserDtmf(ctx, session, agentConfig);
     if (agentConfig.channel === "voice") {
       const egressRecording = registerS3DualChannelRecording(ctx);
       await egressRecording.start();
@@ -14049,10 +14338,10 @@ async function createRuntimeAgent(agentId, agentConfig) {
   }
   return createSinglePromptAgentFromData(agentConfig);
 }
-function createSession({ llm: llm2, stt, tts }, { channel, config }) {
+function createSession({ llm: llm3, stt, tts }, { channel, config }) {
   const isChat = channel === "chat";
-  return new voice6.AgentSession({
-    llm: llm2,
+  return new voice8.AgentSession({
+    llm: llm3,
     ...isChat ? { vad: null, turnHandling: { turnDetection: null } } : {
       stt,
       tts,
@@ -14088,7 +14377,7 @@ function registerSpeechSettingsReminders(ctx, session, { channel, config }) {
   const interval = config.reminder_trigger_ms ?? 1e4;
   const maxCount = Math.floor(config.reminder_max_count ?? 1);
   if (channel !== "voice" || interval <= 0 || maxCount <= 0) return;
-  const events = voice6.AgentSessionEventTypes;
+  const events = voice8.AgentSessionEventTypes;
   let count = 0;
   let hasSpoken = false;
   let closed = false;
@@ -14154,9 +14443,9 @@ async function resolveAmbientSound(ctx, session, agentConfig) {
     console.warn(`Background sound file missing: ${source}`);
     return;
   }
-  const backgroundAudio = new voice6.BackgroundAudioPlayer({ ambientSound: { source, volume: 0.3 } });
+  const backgroundAudio = new voice8.BackgroundAudioPlayer({ ambientSound: { source, volume: 0.3 } });
   ctx.addShutdownCallback(() => backgroundAudio.close());
-  session.once(voice6.AgentSessionEventTypes.Close, () => {
+  session.once(voice8.AgentSessionEventTypes.Close, () => {
     void backgroundAudio.close();
   });
   await backgroundAudio.start({ room: ctx.room, agentSession: session });
