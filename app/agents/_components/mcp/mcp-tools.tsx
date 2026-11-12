@@ -9,10 +9,10 @@ import {
 } from "lucide-react"
 
 import { KeyValueEditor, type KeyValue } from "@/app/agents/_components/shared/key-value-editor"
-import type { McpConfig } from "@/app/agents/_lib/mcp/mcp"
 import {
   getMcps,
   writeMcps,
+  type McpConfig,
 } from "@/app/agents/_lib/session-storage/agent-session"
 import { Button } from "@/components/ui/button"
 import {

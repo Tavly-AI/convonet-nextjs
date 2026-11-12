@@ -45,6 +45,7 @@
     "@livekit/agents-plugin-sarvam": "^1.8.0",
     "@livekit/plugins-ai-coustics": "^0.2.14",
     "@livekit/rtc-node": "^0.13.31",
+    "@modelcontextprotocol/sdk": "^1.32.2",
     "dotenv": "^17.4.1",
     "livekit-server-sdk": "^2.14.0",
     "zod": "^4.4.3"

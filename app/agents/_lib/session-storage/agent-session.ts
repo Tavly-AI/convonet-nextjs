@@ -2,7 +2,6 @@
 
 import { autoSaveAgentSession } from "@/app/agents/actions"
 import type { GeneralTool } from "@/app/agents/_lib/functions/general-tools"
-import type { McpConfig } from "@/app/agents/_lib/mcp/mcp"
 import { getAgentTemplates } from "../../_data/templates-data-list"
 import type { LlmModel } from "../../_components/main/agent-session-model-server"
 import { conversational_flow_session_storage } from "@/app/agents-conversational-flow/_lib/flow-sessionStorage"
@@ -19,6 +18,20 @@ export type PronunciationDictionaryEntry = {
 }
 
 export type AgentLanguage = string | string[]
+
+
+// ===================================================================
+// ========================== MCP TYPES ==============================
+// ===================================================================
+
+
+export type McpConfig = {
+    name: string
+    url: string
+    headers: Record<string, string>
+    query_params: Record<string, string>
+    timeout_ms: number
+}
 
 // ===================================================================
 // =============== SPEECH SETTINGS DEFAULT & TYPES ===================

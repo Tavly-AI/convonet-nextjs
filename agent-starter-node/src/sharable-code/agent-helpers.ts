@@ -1,4 +1,5 @@
 import { dedent } from '@livekit/agents';
+import { createMcpToolsets } from '../agent-config/mcp-settings/mcp-tools.ts';
 import { createAgentSwapTools } from '../agent-config/general-tools/agent-swap.ts';
 import { createBookAppointmentTool } from '../agent-config/general-tools/book-appointment.ts';
 import { createCallTransferTool } from '../agent-config/general-tools/call-transfer.ts';
@@ -46,6 +47,7 @@ export function createAllAgentToolsAvailable(agentConfig: RuntimeAgentConfig) {
   const agentSwaps = createAgentSwapTools(agentConfig, createSinglePromptAgentFromData)
 
   return [
+    ...createMcpToolsets(agentConfig),
     endCallTool,
     createAwarenessTools(agentConfig),
     createCheckAvailabilityTool(agentConfig),
