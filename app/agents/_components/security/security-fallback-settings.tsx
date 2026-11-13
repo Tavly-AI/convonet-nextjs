@@ -172,7 +172,7 @@ export function SecurityFallbackSettings() {
         <div className="space-y-8 border-t px-5 py-6 bg-gray-400/10 rounded-3xl">
             <Section
                 title="Data Storage Settings"
-                description="Control how Retell stores transcripts, recordings, logs, and call data."
+                description="Control how we store transcripts, recordings, logs, and call data."
             >
                 <div className="grid gap-4 sm:grid-cols-2">
                     <Field label="Storage mode">
