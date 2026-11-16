@@ -36,6 +36,7 @@ import {
   KeyRoundIcon,
   BoxIcon,
   ChartNoAxesCombinedIcon,
+  CpuIcon,
 } from "lucide-react"
 import { COMPANY_LOGO, COMPANY_NAME } from "@/lib/constants"
 import { usePathname } from "next/navigation"
@@ -169,15 +170,17 @@ const data1 = {
       url: "/dashboard/chat-history",
       icon: <MessageCircleIcon />,
     },
+  ],
+  monitor: [
     {
       name: "Analytics",
       url: "/dashboard/analytics",
       icon: <ChartNoAxesCombinedIcon />,
     },
     {
-      name: "Contacts",
+      name: "AI Quality Assurance",
       url: "#",
-      icon: <UserIcon />,
+      icon: <CpuIcon />,
     },
   ],
   system: [
@@ -264,6 +267,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <NavDocuments title="BUILD" items={data1.build} />
             <NavDocuments title="DEPLOY" items={data1.deploy} />
             <NavDocuments title="DATA" items={data1.data} />
+            <NavDocuments title="MONITOR" items={data1.monitor} />
             <NavDocuments title="SYSTEM" items={data1.system} />
           </>
         )}
