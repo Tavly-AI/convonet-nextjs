@@ -37,7 +37,7 @@ export function LLMModelSelect() {
             <LLMModelDropdown
                 value={model}
                 onValueChange={changeModel}
-                className="w-40 rounded-r-none"
+                className="w-38 rounded-r-none"
             />
 
             <div className="-ml-px">

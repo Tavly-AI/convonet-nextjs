@@ -36,7 +36,7 @@ export function AgentSessionPrimaryTab({ isConversationalFlow }: { isConversatio
 
           <LanguageSelect />
 
-          <div className="ml-auto flex items-center gap-2">
+          <div className="flex basis-full items-center gap-2">
             <AgentHandbookDialog />
 
             <TimezoneSelect />
