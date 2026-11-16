@@ -35,6 +35,7 @@ import {
   ShieldCheckIcon,
   KeyRoundIcon,
   BoxIcon,
+  ChartNoAxesCombinedIcon,
 } from "lucide-react"
 import { COMPANY_LOGO, COMPANY_NAME } from "@/lib/constants"
 import { usePathname } from "next/navigation"
@@ -167,6 +168,11 @@ const data1 = {
       name: "Chat History",
       url: "/dashboard/chat-history",
       icon: <MessageCircleIcon />,
+    },
+    {
+      name: "Analytics",
+      url: "/dashboard/analytics",
+      icon: <ChartNoAxesCombinedIcon />,
     },
     {
       name: "Contacts",
