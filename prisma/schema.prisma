@@ -30,6 +30,7 @@ model Workspace {
   concurrencyBillingStartedAt DateTime?
   customVoices  Json?
   users         User[]
+  analyticsDashboards AnalyticsDashboard[]
   agents        Agent[]
   agentVersions AgentVersion[]
   conversationalFlows ConversationalFlow[]
@@ -44,6 +45,21 @@ model Workspace {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model AnalyticsDashboard {
+  id          String    @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  name   String
+  charts Json   @default("[]")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([workspaceId, name])
+  @@index([workspaceId, updatedAt])
 }
 
 model Billing {

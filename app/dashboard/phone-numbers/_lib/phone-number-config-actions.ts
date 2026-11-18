@@ -7,6 +7,16 @@ import { z } from "zod"
 import { getCurrentWorkspaceId } from "@/app/agents/_lib/helper-actions"
 import { updateLiveKitInboundAgentDispatch } from "@/app/dashboard/phone-numbers/_lib/livekit-setup-number"
 import { prisma } from "@/lib/prisma"
+import { AGENT_CHANNELS } from "@/lib/constants"
+
+export async function getVoiceAgents() {
+  const workspaceId = await getCurrentWorkspaceId()
+  return prisma.agent.findMany({
+    where: { workspaceId, channel: AGENT_CHANNELS.VOICE },
+    select: { id: true, name: true },
+    orderBy: { updatedAt: "desc" },
+  })
+}
 
 const phoneNumberIdSchema = z.object({
   phoneNumberId: z.string().trim().min(1),

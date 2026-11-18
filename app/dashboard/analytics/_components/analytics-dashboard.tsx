@@ -5,18 +5,36 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import type { DateRange } from "react-day-picker"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { CalendarDays, Ellipsis, ListFilter, MessageSquare, Phone, Plus, Share, Ungroup } from "lucide-react"
+import { CalendarDays, MessageSquare, Phone } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useSidebar } from "@/components/ui/sidebar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
 import type { AnalyticsGlobalTypes } from "../_lib/analytics-globla-types"
 import { AnalyticsDisplayChartGroup } from "./analytics-display-chart-group"
+import { AnalyticsDashboardFilterModal } from "./analytics-dashboard-filter-modal"
+import { AnalyticsDashboardAddChart } from "./analytics-dashboard-add-chart"
+import { AnalyticsDashboardLoading } from "./analytics-dashboard-loading"
 
 export function AnalyticsDashboard({ allSortsOfAnalyticsData }: { allSortsOfAnalyticsData: AnalyticsGlobalTypes["Data"][] }) {
 
     const { state: sidebarState, isMobile } = useSidebar()
+    const router = useRouter()
+    const pathname = usePathname()
+    const searchParams = useSearchParams()
+    const dualDashboardType: AnalyticsGlobalTypes["DualDashboardType"] = searchParams.get("dual-dashboard-type") === "chat-dashboard" ? "chat-dashboard" : "call-dashboard"
     const charts = [...allSortsOfAnalyticsData]
+    const [pending, startTransition] = useTransition()
+
+    function changeDashboard(value: string) {
+        const params = new URLSearchParams(searchParams.toString())
+        if (value === "chats") params.set("dual-dashboard-type", "chat-dashboard")
+        else params.delete("dual-dashboard-type")
+        const query = params.toString()
+        startTransition(() => router.push(query ? `${pathname}?${query}` : pathname, { scroll: false }))
+    }
+
+    if (pending) return <AnalyticsDashboardLoading />
 
     return (
         <main className={cn(
@@ -24,14 +42,14 @@ export function AnalyticsDashboard({ allSortsOfAnalyticsData }: { allSortsOfAnal
             !isMobile && sidebarState === "expanded" && "max-w-[calc(100vw-var(--sidebar-width)-2rem)]",
         )}>
             <h1 className="text-xl font-semibold tracking-tight">Analytics</h1>
-            <Tabs defaultValue="calls" className="min-w-0 flex-1 gap-5">
+            <Tabs value={dualDashboardType === "chat-dashboard" ? "chats" : "calls"} onValueChange={changeDashboard} className="min-w-0 flex-1 gap-5">
                 <div className="border-b">
                     <TabsList variant="line" aria-label="Analytics dashboards" className="h-10 max-w-full justify-start gap-4">
                         <TabsTrigger value="calls" className="px-0">
                             <Phone className="size-4" aria-hidden="true" />
                             Call Dashboard
                         </TabsTrigger>
-                        <TabsTrigger value="chats" className="px-0" disabled>
+                        <TabsTrigger value="chats" className="px-0">
                             <MessageSquare className="size-4" aria-hidden="true" />
                             Chat Dashboard
                         </TabsTrigger>
@@ -40,30 +58,13 @@ export function AnalyticsDashboard({ allSortsOfAnalyticsData }: { allSortsOfAnal
                 <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="flex flex-wrap items-center gap-2">
                         <SelectRangePickerModal />
-                        {/* <Button type="button" variant="outline">
-                            <ListFilter aria-hidden="true" />
-                            Filter
-                        </Button>
-                        <Button type="button" variant="outline">
-                            <Ungroup aria-hidden="true" />
-                            Breakdown
-                        </Button> */}
+                        <AnalyticsDashboardFilterModal />
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
-                        {/* <Button type="button" variant="outline">
-                            <Share aria-hidden="true" />
-                            Share
-                        </Button>
-                        <Button type="button" variant="outline">
-                            <Plus aria-hidden="true" />
-                            Add Chart
-                        </Button>
-                        <Button type="button" variant="outline" size="icon" aria-label="More options">
-                            <Ellipsis aria-hidden="true" />
-                        </Button> */}
+                        <AnalyticsDashboardAddChart />
                     </div>
                 </div>
-                <TabsContent value="calls">
+                <TabsContent value={dualDashboardType === "chat-dashboard" ? "chats" : "calls"}>
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
                         {charts.map((card, index) => {
                             return (
@@ -75,7 +76,6 @@ export function AnalyticsDashboard({ allSortsOfAnalyticsData }: { allSortsOfAnal
                         })}
                     </div>
                 </TabsContent>
-                <TabsContent value="chats" />
             </Tabs>
         </main>
     )

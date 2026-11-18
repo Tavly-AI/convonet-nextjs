@@ -1,8 +1,12 @@
 import "server-only"
+import { analytics_getAnalyticsDashboardLayout_data } from "./analytics-dashboard-layout-data-actions"
 import type { CallRecordDatabaseData } from "@/app/api/livekit/sessionReport/types"
 import { getCurrentUserId } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { AGENT_CHANNELS } from "@/lib/constants"
 import type { AnalyticsGlobalTypes } from "./analytics-globla-types"
+import type { Prisma } from "@/generated/prisma/client"
+import { analytics_filter_modal_filter_params } from "./analytics-dashboard-filter-modal-params"
 
 type AnalyticsRecords = Awaited<ReturnType<typeof getAnalyticsRecords>>
 
@@ -10,7 +14,7 @@ type AnalyticsData = AnalyticsGlobalTypes["Data"]
 type UserSentiment = NonNullable<CallRecordDatabaseData["call_analysis"]>["user_sentiment"]
 type E2eLatency = NonNullable<CallRecordDatabaseData["latency"]>["e2e"]
 
-export async function analytics_GetAllSortsOfData_FromDb(startTime: Date, endTime: Date): Promise<AnalyticsData[]> {
+export async function analytics_GetAllSortsOfData_FromDb(startTime: Date, endTime: Date, filters: AnalyticsGlobalTypes["AnalyticsFilterType"][] = [], dualDashboardType: AnalyticsGlobalTypes["DualDashboardType"] = "call-dashboard"): Promise<AnalyticsData[]> {
     const userId = await getCurrentUserId()
     if (!userId) return []
 
@@ -20,34 +24,68 @@ export async function analytics_GetAllSortsOfData_FromDb(startTime: Date, endTim
     })
     if (!user?.workspaceId) return []
 
-    const records = await getAnalyticsRecords(user.workspaceId, startTime, endTime)
-    const [callCounts, callSuccess, averageCallDuration, userSentiment, averageCallP99Latency, disconnectionReason, callPickedUpRate, callStatus, callDirection] = await Promise.all([
-        getCallCounts(records),
-        getCallSuccess(records),
-        getAverageCallDuration(records),
-        getUserSentiment(records),
-        getAverageCallP99Latency(records),
-        getDisconnectionReason(records),
-        getCallPickedUpRate(records),
-        getCallStatus(records),
-        getCallDirection(records),
+    const [records, layout] = await Promise.all([
+        getAnalyticsRecords(user.workspaceId, startTime, endTime, filters, dualDashboardType),
+        analytics_getAnalyticsDashboardLayout_data(),
     ])
-    return [callCounts, callSuccess, averageCallDuration, userSentiment, averageCallP99Latency, disconnectionReason, callPickedUpRate, callStatus, callDirection]
+    const metrics = {
+        call_count: (records: AnalyticsRecords) => getCallCounts(records, dualDashboardType),
+        call_success: (records: AnalyticsRecords) => getCallSuccess(records, dualDashboardType),
+        combined_cost: getCombinedCost,
+        average_call_duration: getAverageCallDuration,
+        user_sentiment: getUserSentiment,
+        average_call_p99_latency: getAverageCallP99Latency,
+        disconnection_reason: getDisconnectionReason,
+        call_picked_up_rate: getCallPickedUpRate,
+        call_status: (records: AnalyticsRecords) => getCallStatus(records, dualDashboardType),
+        call_direction: getCallDirection,
+    } satisfies Record<AnalyticsGlobalTypes["DashboardLayout"]["charts"][number]["metric"], (records: AnalyticsRecords) => Promise<AnalyticsData>>
+
+    const filtered_charts = filterDashboardCharts(layout.charts, dualDashboardType)
+
+    return Promise.all(filtered_charts.map(async chart => ({
+        // Older saved layouts may still contain the removed chat_count metric.
+        ...await metrics[(chart.metric as string) === "chat_count" ? "call_count" : chart.metric](records),
+        type: chart.type,
+    })))
 }
 
 // PRIVATE FUNCTIONS
 
-async function getAnalyticsRecords(workspaceId: string, startTime: Date, endTime: Date) {
+function filterDashboardCharts(charts: AnalyticsGlobalTypes["DashboardLayout"]["charts"], dualDashboardType: AnalyticsGlobalTypes["DualDashboardType"]) {
+    const chatMetrics: AnalyticsGlobalTypes["DashboardLayout"]["charts"][number]["metric"][] = ["call_count", "call_success", "user_sentiment", "call_status", "combined_cost"]
+    return charts.filter(chart => dualDashboardType !== "chat-dashboard" || chatMetrics.includes((chart.metric as string) === "chat_count" ? "call_count" : chart.metric))
+}
+
+// filter model options from param
+function filterWhere({ field, operator, value }: AnalyticsGlobalTypes["AnalyticsFilterType"]): Prisma.CallRecordWhereInput {
+    const [column, ...path] = field.split(".")
+    const operation = operator === "eq" ? "equals" : operator === "neq" ? "not" : operator
+
+    if (column === "duration_ms" && typeof value === "number" && !Number.isInteger(value)) {
+        if (operator === "eq") return { OR: [] }
+        if (operator === "neq") return { duration_ms: { not: null } }
+        value = operator === "gt" ? Math.floor(value) : Math.ceil(value)
+    }
+    if (operator === "contains" && typeof value === "string") value = value.replace(/[\\%_]/g, "\\$&")
+    return { [column]: { ...(path.length ? { path } : {}), [operation]: value } }
+}
+
+async function getAnalyticsRecords(workspaceId: string, startTime: Date, endTime: Date, filters: AnalyticsGlobalTypes["AnalyticsFilterType"][], dualDashboardType: AnalyticsGlobalTypes["DualDashboardType"]) {
     return prisma.callRecord.findMany({
-        where: { workspaceId, channel: "voice", createdAt: { gte: startTime, lte: endTime } },
+        where: {
+            workspaceId, channel: dualDashboardType === "chat-dashboard" ? AGENT_CHANNELS.CHAT : AGENT_CHANNELS.VOICE, createdAt: { gte: startTime, lte: endTime },
+            AND: filters.filter(analytics_filter_modal_filter_params.isValid).map(filterWhere),
+        },
         select: {
             start_timestamp: true, createdAt: true, duration_ms: true, call_analysis: true,
-            latency: true, disconnection_reason: true, call_status: true, call_type: true,
+            latency: true, disconnection_reason: true, call_status: true, call_type: true, call_cost: true,
         },
     })
 }
 
-async function getCallCounts(records: AnalyticsRecords): Promise<AnalyticsData> {
+async function getCallCounts(records: AnalyticsRecords, dualDashboardType: AnalyticsGlobalTypes["DualDashboardType"]): Promise<AnalyticsData> {
+    const title = dualDashboardType === "chat-dashboard" ? "Chat Counts" : "Call Counts"
     const days = new Map<string, number>()
 
     for (const record of records) {
@@ -56,15 +94,15 @@ async function getCallCounts(records: AnalyticsRecords): Promise<AnalyticsData> 
     }
 
     return {
-        title: "Call Counts", type: "column", format: "number",
+        title, type: "column", format: "number",
         data: [...days].sort(([a], [b]) => a.localeCompare(b)).map(([time, value]) => ({
-            time, metric: "Call counts", value,
+            time, metric: title, value,
             label: new Date(time).toLocaleDateString("en-US", { month: "short", day: "2-digit", timeZone: "UTC" }),
         })),
     }
 }
 
-async function getCallSuccess(records: AnalyticsRecords): Promise<AnalyticsData> {
+async function getCallSuccess(records: AnalyticsRecords, dualDashboardType: AnalyticsGlobalTypes["DualDashboardType"]): Promise<AnalyticsData> {
     const days = new Map<string, { successful: number; unsuccessful: number }>()
 
     for (const record of records) {
@@ -78,7 +116,7 @@ async function getCallSuccess(records: AnalyticsRecords): Promise<AnalyticsData>
     }
 
     return {
-        title: "Call Successful / Unsuccessful", type: "donut", format: "number",
+        title: dualDashboardType === "chat-dashboard" ? "Chat Successful / Unsuccessful" : "Call Successful / Unsuccessful", type: "donut", format: "number",
         data: [...days].sort(([a], [b]) => a.localeCompare(b)).flatMap(([time, day]) => [
             { time, metric: "Successful", label: "Successful", value: day.successful },
             { time, metric: "Unsuccessful", label: "Unsuccessful", value: day.unsuccessful },
@@ -220,7 +258,7 @@ async function getCallPickedUpRate(records: AnalyticsRecords): Promise<Analytics
 }
 
 
-async function getCallStatus(records: AnalyticsRecords): Promise<AnalyticsData> {
+async function getCallStatus(records: AnalyticsRecords, dualDashboardType: AnalyticsGlobalTypes["DualDashboardType"]): Promise<AnalyticsData> {
     const days = new Map<string, Map<string, number>>()
 
     for (const record of records) {
@@ -231,7 +269,7 @@ async function getCallStatus(records: AnalyticsRecords): Promise<AnalyticsData> 
     }
 
     return {
-        title: "Call Status", type: "donut", format: "number",
+        title: dualDashboardType === "chat-dashboard" ? "Chat Status" : "Call Status", type: "donut", format: "number",
         data: [...days].sort(([a], [b]) => a.localeCompare(b)).flatMap(([time, day]) =>
             [...day].sort(([a], [b]) => a.localeCompare(b)).map(([status, value]) => ({
                 time, metric: status, value,
@@ -264,5 +302,24 @@ async function getCallDirection(records: AnalyticsRecords): Promise<AnalyticsDat
                 time, metric: direction, label: labels[direction], value: day[direction],
             })),
         ),
+    }
+}
+
+
+async function getCombinedCost(records: AnalyticsRecords): Promise<AnalyticsData> {
+    const days = new Map<string, number>()
+    for (const record of records) {
+        const cost = record.call_cost
+        const value = cost && typeof cost === "object" && !Array.isArray(cost) ? cost.combined_cost : undefined
+        if (typeof value !== "number" || !Number.isFinite(value)) continue
+        const time = (record.start_timestamp === null ? record.createdAt : new Date(Number(record.start_timestamp))).toISOString().slice(0, 10)
+        days.set(time, (days.get(time) ?? 0) + value)
+    }
+    return {
+        title: "Combined Cost", type: "number", format: "currency",
+        data: [...days].sort(([a], [b]) => a.localeCompare(b)).map(([time, value]) => ({
+            time, metric: "Combined Cost", value,
+            label: new Date(time).toLocaleDateString("en-US", { month: "short", day: "2-digit", timeZone: "UTC" }),
+        })),
     }
 }
