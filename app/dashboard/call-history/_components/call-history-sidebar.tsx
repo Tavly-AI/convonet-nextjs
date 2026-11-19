@@ -2,6 +2,7 @@
 
 import type { CallRecordDatabaseData } from "@/app/api/livekit/sessionReport/types"
 import { BookOpenIcon, HeadphonesIcon, PhoneIcon, WrenchIcon } from "lucide-react"
+import { WebsiteCustomCopyButton } from "@/components/custom/website-custom-copy-button"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet"
@@ -28,7 +29,16 @@ export function CallHistorySidebar({ record, onOpenChange }: { record: CallRecor
                         <SheetTitle className="flex items-center gap-2 text-2xl"><PhoneIcon className="size-5" />{startedAt} · {record.call_type?.replace("_", " ")}</SheetTitle>
                         <Badge variant={callStatus.variant}>{callStatus.label}</Badge>
                     </div>
-                    <SheetDescription className="space-y-1"><span className="block">Agent: {record.agent_id}</span><span className="block">Call ID: {record.call_id}</span></SheetDescription>
+                    <SheetDescription className="space-y-1">
+                        <span className="flex items-center gap-1">
+                            <span className="break-all">Agent: {record.agent_id ?? "—"}</span>
+                            {record.agent_id && <WebsiteCustomCopyButton value={record.agent_id} label="Agent ID" />}
+                        </span>
+                        <span className="flex items-center gap-1">
+                            <span className="break-all">Call ID: {record.call_id}</span>
+                            <WebsiteCustomCopyButton value={record.call_id} label="Call ID" />
+                        </span>
+                    </SheetDescription>
                     <div className="flex flex-wrap items-center gap-x-6 gap-y-2 pt-2 mb-3 text-sm text-muted-foreground"><span>Duration: {Math.floor((record.duration_ms ?? 0) / 60000)}m {Math.floor(((record.duration_ms ?? 0) % 60000) / 1000)}s</span><span>Cost: $${record.call_cost?.combined_cost?.toFixed(2) ?? "—"}</span><span>LLM tokens: {record.llm_token_usage?.average ?? "—"}</span></div>
                     <PlayAudio key={`${record.call_id}-${recordingUrl}`} url={recordingUrl} />
                 </SheetHeader>
