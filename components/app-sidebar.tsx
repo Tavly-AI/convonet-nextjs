@@ -37,6 +37,7 @@ import {
   BoxIcon,
   ChartNoAxesCombinedIcon,
   CpuIcon,
+  RadioIcon,
 } from "lucide-react"
 import { COMPANY_LOGO, COMPANY_NAME } from "@/lib/constants"
 import { usePathname } from "next/navigation"
@@ -173,14 +174,14 @@ const data1 = {
   ],
   monitor: [
     {
+      name: "Live Monitoring",
+      url: "/dashboard/live-monitoring",
+      icon: <RadioIcon />,
+    },
+    {
       name: "Analytics",
       url: "/dashboard/analytics",
       icon: <ChartNoAxesCombinedIcon />,
-    },
-    {
-      name: "AI Quality Assurance",
-      url: "#",
-      icon: <CpuIcon />,
     },
   ],
   system: [
