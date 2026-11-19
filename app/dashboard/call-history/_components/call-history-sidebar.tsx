@@ -16,6 +16,10 @@ export function CallHistorySidebar({ record, onOpenChange }: { record: CallRecor
     const startedAt = record.start_timestamp ? new Intl.DateTimeFormat("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(Number(record.start_timestamp))) : "—"
     const callStatus = callHistoryGetCallStatus(record.call_status)
 
+    // resolve scrubbed recordingUrl and transcript
+    const recordingUrl = record.scrubbed_recording_url ?? record.recording_multi_channel_url
+    const transcript = record.scrubbed_post_session_transcript_with_tool_calls ?? record.transcript_with_tool_calls
+
     return (
         <Sheet open onOpenChange={onOpenChange}>
             <SheetContent className="w-full gap-0 overflow-y-auto p-0 sm:max-w-3xl min-w-2xl">
@@ -26,7 +30,7 @@ export function CallHistorySidebar({ record, onOpenChange }: { record: CallRecor
                     </div>
                     <SheetDescription className="space-y-1"><span className="block">Agent: {record.agent_id}</span><span className="block">Call ID: {record.call_id}</span></SheetDescription>
                     <div className="flex flex-wrap items-center gap-x-6 gap-y-2 pt-2 mb-3 text-sm text-muted-foreground"><span>Duration: {Math.floor((record.duration_ms ?? 0) / 60000)}m {Math.floor(((record.duration_ms ?? 0) % 60000) / 1000)}s</span><span>Cost: $${record.call_cost?.combined_cost?.toFixed(2) ?? "—"}</span><span>LLM tokens: {record.llm_token_usage?.average ?? "—"}</span></div>
-                    <PlayAudio url={record.recording_multi_channel_url} />
+                    <PlayAudio key={`${record.call_id}-${recordingUrl}`} url={recordingUrl} />
                 </SheetHeader>
                 <section className="space-y-4 border-b p-6">
                     <h2 className="text-xl font-medium">Conversation analysis</h2>
@@ -55,7 +59,7 @@ export function CallHistorySidebar({ record, onOpenChange }: { record: CallRecor
                 <Tabs defaultValue="transcript" className="gap-0">
                     <TabsList variant="line" className="h-14 w-full justify-start gap-5 border-b px-6"><TabsTrigger value="transcript">Transcription</TabsTrigger><TabsTrigger value="data">Data</TabsTrigger></TabsList>
                     <TabsContent value="transcript" className="space-y-4 p-6">
-                        <TranscriptView timeline={record.transcript_with_tool_calls} url={record.recording_multi_channel_url} />
+                        <TranscriptView timeline={transcript} url={recordingUrl} />
                     </TabsContent>
                     <TabsContent value="data" className="space-y-4 p-6"><div className="grid gap-4 sm:grid-cols-2"><div><p className="mb-1 text-muted-foreground">Dynamic variables</p><pre className="overflow-x-auto rounded-lg bg-muted p-3 text-xs">{JSON.stringify(record.retell_llm_dynamic_variables, null, 2)}</pre></div><div><p className="mb-1 text-muted-foreground">Collected variables</p><pre className="overflow-x-auto rounded-lg bg-muted p-3 text-xs">{JSON.stringify(record.collected_dynamic_variables, null, 2)}</pre></div></div></TabsContent>
                 </Tabs>

@@ -3,6 +3,7 @@ import { Inngest } from "inngest"
 import { prisma } from "@/lib/prisma"
 import type { Prisma } from "@/generated/prisma/client"
 import { redactAudioWithAssemblyAI } from "./scrubbed_post-session-assembly-ai-pipieline"
+import { scrubbed_post_session_uploadScrubbedAudioToS3 } from "./scrubbed_post-session-upload-audio-s3"
 
 export const scrubbedPostSessionTranscriptWithToolCallsInngestClient = new Inngest({
     id: SCRUBBED_POST_SESSION_TRANSCRIPT_WITH_TOOL_CALLS_INNGEST_CONSTANTS.app.clientId,
@@ -52,8 +53,15 @@ export const scrubbedPostSessionTranscriptWithToolCallsInngestProcess = scrubbed
         if (!Array.isArray(transcriptWithToolCalls)) throw new Error("Expected a transcript event array")
         if (!recordingUrl) throw new Error("Call recording URL is missing")
 
-        const { assembly_ai_raw_replacements, assembly_ai_raw_redactedAudioUrl } = await step.run(SCRUBBED_POST_SESSION_TRANSCRIPT_WITH_TOOL_CALLS_INNGEST_CONSTANTS.steps.process.redactAudio, async () => {
-            return redactAudioWithAssemblyAI("https://basicenglishspeaking.com/wp-content/uploads/audio/QA/QA-19.mp3")
+        const { assembly_ai_raw_replacements, scrubbedRecordingUrl_uploaded_ins3 } = await step.run(SCRUBBED_POST_SESSION_TRANSCRIPT_WITH_TOOL_CALLS_INNGEST_CONSTANTS.steps.process.redactAudio, async () => {
+            const pre_signedRecordingUrl_s3 = await getPresignedS3Url(recordingUrl)
+            const result = await redactAudioWithAssemblyAI(pre_signedRecordingUrl_s3)
+            const scrubbedRecordingUrl_uploaded_ins3 = await scrubbed_post_session_uploadScrubbedAudioToS3(callId, result.assembly_ai_raw_redactedAudioUrl)
+
+            return {
+                assembly_ai_raw_replacements: result.assembly_ai_raw_replacements,
+                scrubbedRecordingUrl_uploaded_ins3,
+            }
         })
 
         // ===============================================================
@@ -66,12 +74,12 @@ export const scrubbedPostSessionTranscriptWithToolCallsInngestProcess = scrubbed
                 where: { call_id: callId },
                 data: {
                     scrubbed_post_session_transcript_with_tool_calls: scrubbed,
-                    scrubbed_recording_url: assembly_ai_raw_redactedAudioUrl,
+                    scrubbed_recording_url: scrubbedRecordingUrl_uploaded_ins3,
                 },
             })
         })
 
-        return { success: true, callId, agentId, assembly_ai_raw_redactedAudioUrl }
+        return { success: true, callId, agentId, scrubbedRecordingUrl_uploaded_ins3 }
     }
 )
 
@@ -103,4 +111,13 @@ function scrubTranscript(events: Prisma.JsonArray, replacements: Record<string, 
         if (event.type === "function_call_output" && typeof event.output === "string") { return { ...event, output: redactPayload(event.output) } }
         throw new Error("Unsupported or malformed transcript event")
     })
+}
+
+export async function getPresignedS3Url(recordingUrl: string): Promise<string> {
+    const res = await fetch(`${process.env.STRIPE_CALLBACK_URL}/api/aws/presigned-s3?url=${encodeURIComponent(recordingUrl)}`)
+
+    if (!res.ok) throw new Error("Failed to generate presigned S3 URL")
+
+    const data = await res.json() as { url: string }
+    return data.url
 }

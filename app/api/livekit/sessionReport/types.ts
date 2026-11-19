@@ -88,7 +88,7 @@ type CallRecordLlmTokenUsage = { values: number[]; average: number; num_requests
 /** Prisma's generated CallRecord model with JSON columns narrowed for this app's readers. */
 export type CallRecordDatabaseData = Omit<
     CallRecord,
-    "call_type" | "channel" | "call_status" | "disconnection_reason" | "transcript_object" | "transcript_with_tool_calls" | "latency" | "call_analysis" | "call_cost" | "llm_token_usage"
+    "call_type" | "channel" | "call_status" | "disconnection_reason" | "transcript_object" | "transcript_with_tool_calls" | "scrubbed_post_session_transcript_with_tool_calls" | "latency" | "call_analysis" | "call_cost" | "llm_token_usage"
 > & {
     call_type: CallRecordCallType | null
     channel: CallRecordChannel
@@ -96,6 +96,7 @@ export type CallRecordDatabaseData = Omit<
     disconnection_reason: CallRecordDisconnectionReason | null
     transcript_object: CallRecordTranscriptItem[] | null
     transcript_with_tool_calls: CallRecordTranscriptEvent[] | null
+    scrubbed_post_session_transcript_with_tool_calls: CallRecordTranscriptEvent[] | null
     latency: CallRecordLatency | null
     call_analysis: CallRecordAnalysis | null
     call_cost: CallRecordCost | null
