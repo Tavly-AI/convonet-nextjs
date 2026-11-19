@@ -1,5 +1,5 @@
 // src/main.ts
-import { ServerOptions, cli, defineAgent, inference, voice as voice8 } from "@livekit/agents";
+import { ServerOptions, cli, defineAgent, inference, voice as voice9 } from "@livekit/agents";
 import dotenv from "dotenv";
 import { existsSync } from "fs";
 import { fileURLToPath } from "url";
@@ -10712,7 +10712,7 @@ async function createVoiceStack(agentId, agentConfig) {
     } : {}
   });
   const voiceId = agentConfig.config.voiceId?.trim() || "db6b0ed5-d5d3-463d-ae85-518a07d3c2b4";
-  let voice_updated = VOICES_UPDATED.find((voice9) => voice9.voice_id === voiceId);
+  let voice_updated = VOICES_UPDATED.find((voice10) => voice10.voice_id === voiceId);
   if (!voice_updated) {
     voice_updated = await solveCustomVoice(agentId, voiceId);
   }
@@ -14300,6 +14300,51 @@ function registerCallSettingsUserDtmf(ctx, session, agent) {
   ctx.addShutdownCallback(async () => cleanup());
 }
 
+// src/agent-config/call-settings/call-settings-end-call-on-silence.ts
+import { voice as voice8 } from "@livekit/agents";
+import { RoomEvent as RoomEvent2 } from "@livekit/rtc-node";
+function registerCallSettingsEndCallOnSilence(ctx, session, { channel, config }) {
+  const timeoutMs2 = config.end_call_after_silence_ms;
+  if (channel !== "voice" || typeof timeoutMs2 !== "number" || !Number.isFinite(config.end_call_after_silence_ms) || timeoutMs2 <= 0) return;
+  const events = voice8.AgentSessionEventTypes;
+  let timer;
+  let closed = false;
+  function clearTimer() {
+    clearTimeout(timer);
+    timer = void 0;
+  }
+  function onStateChanged() {
+    if (closed) return;
+    if (session.agentState !== "listening" || session.userState === "speaking") {
+      clearTimer();
+      return;
+    }
+    if (timer !== void 0) return;
+    timer = setTimeout(() => {
+      cleanup();
+      session.shutdown();
+    }, timeoutMs2);
+  }
+  function onDtmf() {
+    clearTimer();
+    onStateChanged();
+  }
+  function cleanup() {
+    closed = true;
+    clearTimer();
+    session.off(events.UserStateChanged, onStateChanged);
+    session.off(events.AgentStateChanged, onStateChanged);
+    session.off(events.Close, cleanup);
+    ctx.room.off(RoomEvent2.DtmfReceived, onDtmf);
+  }
+  session.on(events.UserStateChanged, onStateChanged);
+  session.on(events.AgentStateChanged, onStateChanged);
+  session.once(events.Close, cleanup);
+  ctx.room.on(RoomEvent2.DtmfReceived, onDtmf);
+  ctx.addShutdownCallback(async () => cleanup());
+  onStateChanged();
+}
+
 // src/main.ts
 dotenv.config({ path: ".env.local" });
 var main_default = defineAgent({
@@ -14315,6 +14360,7 @@ var main_default = defineAgent({
     await session.start({ agent, room: ctx.room, ...getSessionStartOptions(agentConfig) });
     registerCallSettingsDetectVoicemail(ctx, session, agentConfig);
     registerCallSettingsUserDtmf(ctx, session, agentConfig);
+    registerCallSettingsEndCallOnSilence(ctx, session, agentConfig);
     if (agentConfig.channel === "voice") {
       const egressRecording = registerS3DualChannelRecording(ctx);
       await egressRecording.start();
@@ -14340,7 +14386,7 @@ async function createRuntimeAgent(agentId, agentConfig) {
 }
 function createSession({ llm: llm3, stt, tts }, { channel, config }) {
   const isChat = channel === "chat";
-  return new voice8.AgentSession({
+  return new voice9.AgentSession({
     llm: llm3,
     ...isChat ? { vad: null, turnHandling: { turnDetection: null } } : {
       stt,
@@ -14361,7 +14407,7 @@ function getSessionStartOptions(agentConfig) {
   const isChat = agentConfig.channel === "chat";
   return {
     record: { audio: false },
-    inputOptions: isChat ? { textEnabled: true, audioEnabled: false, deleteRoomOnClose: true } : { deleteRoomOnClose: true, ...realtime_transcription_resolveDenoisingMode(agentConfig.config) },
+    inputOptions: isChat ? { textEnabled: true, audioEnabled: false, deleteRoomOnClose: true } : { deleteRoomOnClose: false, ...realtime_transcription_resolveDenoisingMode(agentConfig.config) },
     ...isChat && {
       outputOptions: { transcriptionEnabled: true, audioEnabled: false, syncTranscription: false }
     }
@@ -14377,7 +14423,7 @@ function registerSpeechSettingsReminders(ctx, session, { channel, config }) {
   const interval = config.reminder_trigger_ms ?? 1e4;
   const maxCount = Math.floor(config.reminder_max_count ?? 1);
   if (channel !== "voice" || interval <= 0 || maxCount <= 0) return;
-  const events = voice8.AgentSessionEventTypes;
+  const events = voice9.AgentSessionEventTypes;
   let count = 0;
   let hasSpoken = false;
   let closed = false;
@@ -14443,9 +14489,9 @@ async function resolveAmbientSound(ctx, session, agentConfig) {
     console.warn(`Background sound file missing: ${source}`);
     return;
   }
-  const backgroundAudio = new voice8.BackgroundAudioPlayer({ ambientSound: { source, volume: 0.3 } });
+  const backgroundAudio = new voice9.BackgroundAudioPlayer({ ambientSound: { source, volume: 0.3 } });
   ctx.addShutdownCallback(() => backgroundAudio.close());
-  session.once(voice8.AgentSessionEventTypes.Close, () => {
+  session.once(voice9.AgentSessionEventTypes.Close, () => {
     void backgroundAudio.close();
   });
   await backgroundAudio.start({ room: ctx.room, agentSession: session });

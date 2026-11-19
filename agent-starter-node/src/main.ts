@@ -100,7 +100,7 @@ function getSessionStartOptions(agentConfig: RuntimeAgentConfig) {
     record: { audio: false },
     inputOptions: isChat
       ? { textEnabled: true, audioEnabled: false, deleteRoomOnClose: true }
-      : { deleteRoomOnClose: true, ...realtime_transcription_resolveDenoisingMode(agentConfig.config) },
+      : { deleteRoomOnClose: false, ...realtime_transcription_resolveDenoisingMode(agentConfig.config) },
     ...(isChat && {
       outputOptions: { transcriptionEnabled: true, audioEnabled: false, syncTranscription: false },
     }),
